@@ -5,7 +5,7 @@
 
 | Компонент | Условия и обязательные материалы |
 |---|---|
-| PdfCraft и новые foundation-изменения | `MIT OR Apache-2.0`: сохранить `LICENSE-MIT`, `LICENSE-APACHE`, применимые copyright и `NOTICE`. Не заменять ArtCraft Team/PdfCraft contributors своим авторством. Изменённые файлы отмечены в истории и PR; лицензии исходного кода остаются применимы |
+| PdfCraft и новые foundation-изменения | `MIT OR Apache-2.0`: сохранить `LICENSE-MIT`, `LICENSE-APACHE`, применимые copyright и `NOTICE`. Не заменять ArtCraft Team/PdfCraft contributors своим авторством. Модификации перечислены в NOTICE, истории и PR; лицензии исходного кода остаются применимы |
 | Cargo dependencies | Точные разрешённые лицензии и полные тексты собираются cargo-about 0.9.2 из зафиксированного Windows dependency graph; результат `THIRD_PARTY_CARGO.html`. Build-time зависимости могут быть включены сверх runtime-набора. cargo-deny остаётся отдельной обязательной проверкой |
 | Локальные vendor patches | Полные LICENSE/NOTICE/COPYING из `vendor/` сохраняются отдельно с путями. Это покрывает patched hayro-family, lopdf, winit, egui-wgpu и vello_common; нельзя считать их автоматически включёнными в отчёт для registry crates |
 | Lucide и document icon | ISC, для document icon также MIT OR Apache-2.0. Сохранить `assets/icons/LICENSE-lucide.txt` и `assets/app-icon/LICENSE-document.txt`, включая copyright/disclaimer |

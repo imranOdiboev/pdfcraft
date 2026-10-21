@@ -1,18 +1,16 @@
 name: ODIBO foundation
 
 on:
-  push:
-    branches: [feature/odibo-foundation]
   pull_request:
     branches: [main]
-    paths: ['**/Cargo.toml', Cargo.lock, 'apps/**', 'crates/**', '.github/workflows/odibo-foundation.yml', '.github/odibo/**']
+    paths: ['**/Cargo.toml', Cargo.lock, deny.toml, NOTICE, 'LICENSE-*', 'ATTRIBUTION.*', 'apps/**', 'crates/**', 'xtask/**', 'assets/**', 'vendor/**', '.github/workflows/odibo-foundation.yml', '.github/odibo/**']
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: odibo-foundation-${{ github.event.pull_request.head.ref || github.ref }}
+  group: odibo-foundation-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
 env:

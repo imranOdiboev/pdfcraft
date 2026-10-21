@@ -27,6 +27,9 @@ permissions:
 
 jobs:
   windows-arm64:
+    # The upstream packager embeds separately licensed marks and upstream installer IDs.
+    # Fork test artifacts are produced by the independent, unbranded foundation workflow.
+    if: github.repository == 'storytold/pdfcraft'
     # Intentionally tracked at @main (not SHA-pinned) so org-wide CI improvements, security fixes, and build optimizations propagate without PR churn across all craftapp repos.
     uses: storytold/craft-common-actions/.github/workflows/windows-arm64.yml@main
     with:
