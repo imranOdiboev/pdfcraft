@@ -1,0 +1,21 @@
+PdfCraft foundation test build for the ODIBO PDF project
+
+This is an unsigned engineering test build, not an official PdfCraft or ODIBO PDF release.
+The application and executable names remain PdfCraft at this stage. ArtCraft trademark
+images and affiliation wording are excluded by the ui-egui/unbranded build feature.
+PDF functions, including OCR, have not been removed. Upstream links are retained as
+links to the upstream community, not as a promise of support or endorsement of this build.
+
+Extract the entire GitHub Actions artifact to a writable folder and run pdfcraft.exe.
+Keep models/, licences/, THIRD_PARTY_CARGO.html, NOTICE, attribution and licence files together.
+portable.txt keeps settings and recovery data in PdfCraftData next to the executables.
+This stage retains the upstream application IDs, installer publisher and update endpoint;
+those are on the next stage's rebranding checklist. No installer or official release is included.
+
+Original copyright and licence terms remain in LICENSE-MIT, LICENSE-APACHE, NOTICE,
+ATTRIBUTION.md and the accompanying licence files. New foundation code uses the same
+MIT OR Apache-2.0 terms. OCR models have their own attribution and CC BY-SA 4.0 licences
+in models/. No ownership of upstream code, fonts or models is claimed.
+
+BUILD_INFO.txt identifies the source commit. SHA256SUMS.txt covers the included files.
+The GitHub Actions download is a ZIP; sign in to GitHub to download it within seven days.

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>PdfCraft foundation dependency notices</title>
+<style>body{font:16px sans-serif;max-width:1000px;margin:2rem auto;padding:0 1rem}pre{white-space:pre-wrap}</style>
+<h1>Third-party Cargo dependency notices</h1>
+<p>Generated from Cargo.lock for the Windows x64 foundation test build. This inventory may include build-time dependencies.
+Local and vendored notices, bundled asset licences and OCR model notices accompany this file in the test archive.</p>
+{{#each licenses}}
+<section><h2>{{name}}</h2><ul>
+{{#each used_by}}<li>{{crate.name}} {{crate.version}} — {{crate.repository}}</li>{{/each}}
+</ul><pre>{{text}}</pre></section>
+{{/each}}
+</html>

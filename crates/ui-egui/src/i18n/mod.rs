@@ -481,7 +481,22 @@ pub fn key_name(s: &str) -> &str {
 
 /// Translate an English UI string; unknown strings come back unchanged.
 pub fn tr(lang: Lang, s: &str) -> &str {
+    #[cfg(feature = "unbranded")]
+    if let Some(label) = distribution_label(s) {
+        return label;
+    }
     lang.catalog().plain(s).unwrap_or(s)
+}
+
+/// Keep upstream links usable without presenting a test distribution as their product.
+/// Check the source string before translation, so every interface language follows the policy.
+#[cfg(feature = "unbranded")]
+fn distribution_label(source: &str) -> Option<&'static str> {
+    match source {
+        "Join the ArtCraft Discord" | "Join our Discord" => Some("Upstream Discord"),
+        "ArtCraft website" => Some("Upstream website"),
+        _ => None,
+    }
 }
 
 /// How the layers below say their own sentences in the current language.
@@ -502,6 +517,10 @@ pub fn tr_ctx<'a>(lang: Lang, context: &str, s: &'a str) -> &'a str {
 
 /// A string keyed by its command id, falling back to the translation of the English `label`.
 pub fn tr_id<'a>(lang: Lang, id: &str, label: &'a str) -> &'a str {
+    #[cfg(feature = "unbranded")]
+    if let Some(label) = distribution_label(label) {
+        return label;
+    }
     lang.catalog().id(id).unwrap_or_else(|| tr(lang, label))
 }
 
@@ -588,6 +607,10 @@ pub fn command_label(text: &str) -> String {
 /// A registered command's menu label: its `@id` catalog entry if there is one, otherwise
 /// [`command_label`] of the current English label.
 pub fn menu_label(id: &str, label: &str) -> String {
+    #[cfg(feature = "unbranded")]
+    if let Some(label) = distribution_label(label) {
+        return label.to_owned();
+    }
     match current().catalog().id(id) {
         Some(translated) => translated.to_owned(),
         None => command_label(label),

@@ -28,14 +28,19 @@ fn discord_button_in_the_top_bar_opens_discord() {
 
 #[test]
 fn home_screen_links() {
+    let (discord, website, heading) = if cfg!(feature = "unbranded") {
+        ("Upstream Discord", "Upstream website", "Upstream project")
+    } else {
+        ("Join our Discord", "ArtCraft website", "Join the ArtCraft community")
+    };
     for (label, url) in [
-        ("Join our Discord", links::DISCORD),
+        (discord, links::DISCORD),
         ("PdfCraft web page", "https://getartcraft.com/apps/pdfcraft"),
         ("PdfCraft on GitHub", "https://github.com/storytold/pdfcraft"),
-        ("ArtCraft website", "https://getartcraft.com"),
+        (website, "https://getartcraft.com"),
     ] {
         let mut h = harness(|_| {});
-        h.get_by_label("Join the ArtCraft community");
+        assert!(h.query_all_by_label(heading).count() > 0);
         h.get_by_label(label).click();
         h.run_steps(2);
         assert_eq!(h.state().last_opened_url.as_deref(), Some(url), "{label}");
@@ -50,8 +55,13 @@ fn about_dialog_shows_the_brand_and_links() {
         app.open_bytes("one.pdf", None, pdf.to_vec()).unwrap();
         app.dialog = Some(Dialog::About);
     });
-    assert!(h.query_all_by_label("ArtCraft").count() >= 2, "the mark and the wordmark (alt text)");
-    h.get_by_label("Join our Discord").click();
+    if cfg!(feature = "unbranded") {
+        assert_eq!(h.query_all_by_label("ArtCraft").count(), 0, "no trademark images in a test distribution");
+        assert_eq!(h.query_all_by_label("Part of").count(), 0, "no upstream affiliation claim");
+    } else {
+        assert!(h.query_all_by_label("ArtCraft").count() >= 2, "the mark and the wordmark (alt text)");
+    }
+    h.get_by_label(if cfg!(feature = "unbranded") { "Upstream Discord" } else { "Join our Discord" }).click();
     h.run_steps(2);
     assert_eq!(h.state().last_opened_url.as_deref(), Some(links::DISCORD));
 }
