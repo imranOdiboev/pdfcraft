@@ -2,7 +2,7 @@
 
 **Stage: alpha** · next: beta, ~25% (ready for real work 50% → 75%) and ~400–700 h away
 
-> **Fork update:** 2026-10-21 · ODIBO foundation: independent Windows x64 CI and synthetic PDF acceptance added; verification in progress. Upstream readiness estimates unchanged. See [foundation report](docs/ODIBO_FOUNDATION_REPORT.md).
+> **Fork update:** 2026-10-21 · ODIBO foundation: independent Windows x64 build, PDF acceptance and licence-bundle verification passed. Upstream readiness estimates unchanged. See [foundation report](docs/ODIBO_FOUNDATION_REPORT.md).
 
 > **Last reviewed:** 2026-10-18 · **Last updated:** 2026-10-18 · **Change:** minor (M5, PR #1971: bounded nested FDF export excludes source page/page-tree dictionaries; refreshed against upstream 4db6ac4a; estimates unchanged)
 > **Last reviewed:** 2026-10-15 · **Last updated:** 2026-10-15 · **Change:** minor (M7: the Edit text caret is as tall as the row it is on; estimates unchanged) · **Target:** Adobe Acrobat Pro (Acrobat DC, continuous track 26.002.21931, macOS)
@@ -174,7 +174,7 @@ Ranked; detail and the full milestone table in [docs/roadmap.md](docs/roadmap.md
 
 ## Progress log
 
-- **2026-10-21 (M0, ODIBO foundation):** Added an independent Windows x64 test-build workflow, patched two TLS dependency advisories, retained licence material and introduced synthetic CLI round-trip checks. ArtCraft marks are excluded only from the fork's test distribution. Verification is in progress; no release or merge.
+- **2026-10-21 (M0, ODIBO foundation):** Independent Windows x64 build and synthetic CLI round-trip acceptance passed in run 39579542556. Two TLS dependency advisories patched; original bundled font/CMap notices preserved; ZIP checksums verified. Linux unbranded workspace: 3856 passed / 15 ignored; Windows release acceptance: 3 passed. ArtCraft marks excluded from the test distribution. No release or merge; upstream readiness estimates unchanged.
 
 - **2026-10-19 (M14, #3373):** The main menu and its long submenus scroll in short windows, keeping their commands reachable. Estimates unchanged.
 

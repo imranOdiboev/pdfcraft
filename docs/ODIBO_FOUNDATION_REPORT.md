@@ -4,8 +4,14 @@
 Исходная база: `d695bc56545944fe9c7181901c61d0bf1c11c887`.
 Pull Request: https://github.com/imranOdiboev/pdfcraft/pull/1 → **main этого форка**.
 
-Статус: **проверки выполняются**. Этот промежуточный статус будет заменён фактическими
-результатами после завершения Actions. Наличие workflow само по себе не считается успешной сборкой.
+Статус: **технический этап выполнен, Windows x64 сборка и основные тесты прошли**.
+Код готов к следующему этапу — ребрендингу ODIBO PDF. Коммерческий релиз этим отчётом не утверждается.
+
+Проверенный исходный коммит: `34b6d72a9ba6c25291213c3f38414880ec20d97d`.
+Успешный [foundation run 39579542556](https://github.com/imranOdiboev/pdfcraft/actions/runs/39579542556).
+GitHub проверял PR merge commit `2bd9007b709096399c91aacfa4e6271f6b319d6c`; именно он указан
+в именах артефактов и BUILD_INFO.txt. Заключительный коммит обновляет только Markdown-документацию;
+исходники, lockfile и workflow после указанного успешного прогона не менялись.
 
 ## Изменения
 
@@ -37,18 +43,34 @@ Pull Request: https://github.com/imranOdiboev/pdfcraft/pull/1 → **main это�
 
 ## Проверки
 
-| Проверка | Фактическое состояние на этом промежуточном коммите |
+| Проверка | Фактический результат |
 |---|---|
 | Подготовка минимального lockfile | [Bootstrap run 39571488437](https://github.com/imranOdiboev/pdfcraft/actions/runs/39571488437) — success |
-| cargo-deny с исходной политикой | Прошёл, в том числе в PR run 39574204427; два целевых advisory устранены |
+| cargo-deny с исходной политикой | Прошёл в финальном foundation run; два целевых advisory устранены обновлением |
 | Генерация Windows dependency notices | Прошла с cargo-about 0.9.2, проверенным SHA-256, и `--fail --locked` |
-| Format | Первый проход нашёл форматирование нового теста; diff rustfmt применён; повторный format прошёл |
-| Windows release build / тесты | Выполняются; успешный результат пока не заявляется |
-| Linux Clippy | Прошёл в PR run 39574204427 с `-D warnings` и feature unbranded |
-| Linux workspace | Прошёл в foundation run 39575929434 (unbranded) и в исходном CI run 39575929430 (обычная конфигурация) |
-| Отдельный interop / собственный WASM gate | Выполняются; успешный результат пока не заявляется |
-| Лицензии шрифтов и CMap сверх cargo-about | Добавлена обязательная проверка и копирование оригинальных текстов; проверка нового шага выполняется в следующем запуске |
-| Готовность к ребрендингу | Решение после завершения проверок |
+| Format и Clippy `-D warnings` | Прошли, включая feature `pdfcraft-ui-egui/unbranded` |
+| Linux workspace с unbranded | **3 856 passed, 0 failed, 15 ignored** |
+| Отдельный Linux PDF acceptance | **3 passed, 0 failed**; обязательные qpdf и pdftotext |
+| Windows release build | `pdfcraft.exe` и `pdfcraft-cli.exe` 0.10.1, MSVC x64, статический CRT; успешно |
+| Windows acceptance в release-профиле | **3 passed, 0 failed, 0 ignored** |
+| Windows core/CLI tests | **1 167 passed, 0 failed, 6 ignored**; cos, organize, render, engine, automation, CLI |
+| Layering, asset licences/hashes, parity, WASM, CLI без MCP | Все прошли; assets: 272 repository, 6 bundled, 22 fetched; parity — проверка существующих записей, не новая оценка зрелости |
+| Home/About links и отсутствие marks | UI-тесты прошли; Home 1440×900 отрендерен и визуально просмотрен без системных шрифтов |
+| Лицензии fonts/CMap сверх cargo-about | Шаг прошёл; скачанный notice ZIP содержит все 10 ожидаемых файлов, хеш совпал |
+| Windows ZIP | Скачан и проверен без запуска exe: **58 файлов, 57 SHA-256 проверены**, оба PE имеют machine `0x8664` |
+
+Дополнительный [исходный CI run 39579542603](https://github.com/imranOdiboev/pdfcraft/actions/runs/39579542603)
+тоже успешен: обычная конфигурация Linux — **3 856 passed / 15 ignored**;
+Windows — **3 828 passed / 16 ignored**, в обоих случаях 0 failed. Унаследованный
+[FreeBSD build/test](https://github.com/imranOdiboev/pdfcraft/actions/runs/39579543292) прошёл.
+Суммы разных прогонов не складываются: многие тесты выполняются повторно.
+
+15 Linux ignored: 6 случаев с частными документами/шрифтами, 3 corpus-теста,
+4 измерительные/диагностические пробы, 1 сетевой тест updater и 1 тест частной D-Bus сессии.
+6 Windows core ignored: 3 corpus-теста, 2 случая с частными документами/шрифтами и 1 timing probe.
+Новые foundation acceptance-тесты не игнорируются. Плановый fuzz job на PR не запускается;
+ARM64 packaging намеренно пропущен для этого форка до адаптации брендинга и installer IDs.
+Ранний format failure исправлен; отменённые промежуточные runs заменены указанным успешным run.
 
 ## Что доказывает PDF acceptance
 
@@ -57,16 +79,25 @@ Pull Request: https://github.com/imranOdiboev/pdfcraft/pull/1 → **main это�
 повторное открытие, инкрементальное сохранение, raster preview и split на части по две страницы.
 Сверяются порядок текста, число страниц, сохранность байтов источников и предыдущей ревизии.
 Путь содержит кириллицу и пробелы. Linux CI обязательно использует независимые qpdf и pdftotext.
-На Windows их отсутствие явно печатается как skipped external check; внутренние acceptance-тесты
-при этом выполняются. Это не универсальная сертификация любого PDF и не ручной аудит всего GUI.
+На Windows в release acceptance явно пропущены 9 вызовов отсутствующего qpdf; это не 9
+игнорируемых Rust-тестов. Три acceptance-теста прошли. pdftotext не сообщал об отсутствии.
+Это не универсальная сертификация любого PDF и не ручной аудит Windows GUI.
 
 ## Как получить тестовую Windows-сборку
 
-После успешного Windows job открыть проверенный запуск **ODIBO foundation** в Actions,
-в разделе Artifacts скачать `odibo-foundation-windows-x64-<полный SHA>`.
-Войти в GitHub; артефакт хранится семь дней. Распаковать весь ZIP в отдельную доступную для записи
+Открыть [Windows artifact 12340774906](https://github.com/imranOdiboev/pdfcraft/actions/runs/39579542556/artifacts/12340774906)
+либо успешный run выше → Artifacts →
+`odibo-foundation-windows-x64-2bd9007b709096399c91aacfa4e6271f6b319d6c`.
+Войти в GitHub. ZIP — **85 976 773 байта, около 82 MiB**; хранится до **28.10.2026, 16:07
+Asia/Yekaterinburg**. Распаковать весь ZIP в отдельную доступную для записи
 папку и запустить `pdfcraft.exe`, сохранив остальные файлы рядом. CLI — `pdfcraft-cli.exe`.
 Версия/commit указаны в BUILD_INFO.txt, контрольные суммы — SHA256SUMS.txt.
+
+SHA-256 самого ZIP:
+`c9a3f4280cf23938724cf522a02359c8eefa33c613166c5719c3ec3287b23c04`.
+В архиве есть обе OCR-модели, их CC BY-SA attribution/licences, тексты лицензий
+assets/vendor/craft-fonts и dependency-bundled fonts/CMap, корневые лицензии и NOTICE.
+Снимок интерфейса доступен в [UI QA artifact](https://github.com/imranOdiboev/pdfcraft/actions/runs/39579542556/artifacts/12337949168).
 
 Это unsigned portable test build. Установщик и официальный релиз не публикуются. До ребрендинга
 остаются исходные namespace/IDs и upstream update links, поэтому закрыть другие экземпляры PdfCraft
@@ -87,5 +118,12 @@ Pull Request: https://github.com/imranOdiboev/pdfcraft/pull/1 → **main это�
 
 main не изменён напрямую; PR не объединён. В этом этапе нет нового коммерческого UI, смены
 названия, платформенной разработки Web/Android, оплаты, signing или массового релиза.
-Полное ребрендинг-тестирование, real-world corpus, GPU/принтеры, квалифицированные подписи,
-русский OCR и юридическое одобрение будущего коммерческого выпуска остаются последующими задачами.
+Неразрешённых ошибок сборки или проваленных тестов в указанных прогонах нет.
+Остаются исходные security exceptions и перечисленные ignored/неисполненные проверки.
+Комплект OCR-весов проверен, но распознавание с ними не было отдельным acceptance-критерием.
+Полное ребрендинг-тестирование, native Windows GUI/GPU, реальные принтеры, real-world corpus,
+квалифицированные подписи, русский OCR, собственный updater/IDs, signing и юридическое одобрение
+коммерческого выпуска остаются последующими задачами.
+
+Список файлов следующего этапа: [ODIBO_REBRANDING_CHECKLIST.md](ODIBO_REBRANDING_CHECKLIST.md).
+Обязательные уведомления: [ODIBO_LICENSE_NOTICES.md](ODIBO_LICENSE_NOTICES.md).
