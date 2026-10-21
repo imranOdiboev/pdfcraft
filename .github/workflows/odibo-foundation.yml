@@ -1,0 +1,27 @@
+name: ODIBO foundation
+
+on:
+  push:
+    branches: [feature/odibo-foundation]
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-lockfile:
+    name: Prepare minimal RustSec lockfile patch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.95.0
+      - name: Resolve the two patched dependencies on the isolated runner
+        run: |
+          cargo update -p rustls-webpki --precise 0.103.16
+          cargo update -p webpki-root-certs --precise 1.0.10
+          cargo metadata --locked --format-version 1 --no-deps > /dev/null
+          git diff -- Cargo.lock
