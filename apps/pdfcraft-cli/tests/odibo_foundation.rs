@@ -104,26 +104,32 @@ fn open_combine_save_reopen_and_split_preserve_pages_and_sources() {
     let all = ["LEFT-1", "LEFT-2", "RIGHT-1", "RIGHT-2", "RIGHT-3"];
     verify(&root, "merged.pdf", &all);
 
-    script(&root, json!([
-        {"tool":"doc_open", "args":{"path":"merged.pdf"}},
-        {"tool":"doc_set_info", "args":{"doc":1,"key":"Title","value":"Foundation round trip"}},
-        {"tool":"doc_save", "args":{"doc":1,"path":"saved.pdf"}},
-        {"tool":"doc_close", "args":{"doc":1}},
-        {"tool":"doc_open", "args":{"path":"saved.pdf"}},
-        {"tool":"page_render", "args":{"doc":2,"page":1,"dpi":72},"out":"preview.png"}
-    ]));
+    script(
+        &root,
+        json!([
+            {"tool":"doc_open", "args":{"path":"merged.pdf"}},
+            {"tool":"doc_set_info", "args":{"doc":1,"key":"Title","value":"Foundation round trip"}},
+            {"tool":"doc_save", "args":{"doc":1,"path":"saved.pdf"}},
+            {"tool":"doc_close", "args":{"doc":1}},
+            {"tool":"doc_open", "args":{"path":"saved.pdf"}},
+            {"tool":"page_render", "args":{"doc":2,"page":1,"dpi":72},"out":"preview.png"}
+        ]),
+    );
     verify(&root, "saved.pdf", &all);
     let png = std::fs::read(root.join("preview.png")).unwrap();
     assert!(png.starts_with(b"\x89PNG\r\n\x1a\n"));
     assert!(png.len() > 200, "a rendered labelled page must contain image data");
 
     let saved = std::fs::read(root.join("saved.pdf")).unwrap();
-    script(&root, json!([
-        {"tool":"doc_open", "args":{"path":"saved.pdf"}},
-        {"tool":"doc_set_info", "args":{"doc":1,"key":"Subject","value":"Incremental save"}},
-        {"tool":"doc_save", "args":{"doc":1}},
-        {"tool":"doc_close", "args":{"doc":1}}
-    ]));
+    script(
+        &root,
+        json!([
+            {"tool":"doc_open", "args":{"path":"saved.pdf"}},
+            {"tool":"doc_set_info", "args":{"doc":1,"key":"Subject","value":"Incremental save"}},
+            {"tool":"doc_save", "args":{"doc":1}},
+            {"tool":"doc_close", "args":{"doc":1}}
+        ]),
+    );
     assert!(std::fs::read(root.join("saved.pdf")).unwrap().starts_with(&saved), "in-place save must preserve the previous revision");
     verify(&root, "saved.pdf", &all);
     success(&root, &["split", "saved.pdf", "--every", "2", "--out-dir", "parts"]);

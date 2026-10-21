@@ -104,6 +104,21 @@ jobs:
         run: cargo test --locked --workspace --features pdfcraft-ui-egui/unbranded
       - name: Explicit PDF acceptance with required qpdf and Poppler
         run: cargo test --locked -p pdfcraft-cli --test odibo_foundation -- --nocapture
+      - name: Capture the actual unbranded Home view
+        env:
+          PDFCRAFT_SYSTEM_FONTS: '0'
+        run: |
+          mkdir -p dist/qa
+          cargo run --locked -p pdfcraft-ui-egui --features unbranded --example shot -- dist/qa/home.png --scale 1 --language en
+          echo 'Contributor-original screenshot of the foundation unbranded UI; MIT OR Apache-2.0. Only embedded openly licensed fonts and Lucide icons are shown. Source commit:' > dist/qa/ATTRIBUTION.txt
+          echo "$GITHUB_SHA" >> dist/qa/ATTRIBUTION.txt
+          sha256sum dist/qa/home.png >> dist/qa/ATTRIBUTION.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: odibo-foundation-ui-qa-${{ github.sha }}
+          path: dist/qa
+          retention-days: 7
+          if-no-files-found: error
       - name: Layering
         run: cargo xtask layers
       - name: Asset licences and hashes
