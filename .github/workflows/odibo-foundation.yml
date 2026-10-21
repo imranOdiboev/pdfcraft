@@ -54,6 +54,33 @@ jobs:
             --config .github/odibo/about.toml \
             --output-file dist/notices/THIRD_PARTY_CARGO.html .github/odibo/about.hbs
           git diff --exit-code -- Cargo.lock
+      - name: Preserve the original dependency-bundled font and CMap licences
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $metadata = cargo metadata --locked --format-version 1 --all-features --filter-platform x86_64-pc-windows-msvc | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $bundled = @(
+            @{ Name = 'epaint_default_fonts'; Version = '0.36.2'; Files = @('fonts/Hack-Regular.txt','fonts/OFL.txt','fonts/UFL.txt','fonts/emoji-icon-font-mit-license.txt') },
+            @{ Name = 'hayro-cmap'; Version = '0.1.0'; Files = @('LICENSE-APACHE','LICENSE-MIT','assets/LICENSE.txt') }
+          )
+          foreach ($spec in $bundled) {
+            $packages = @($metadata.packages | Where-Object { $_.name -eq $spec.Name })
+            if ($packages.Count -ne 1 -or $packages[0].version -ne $spec.Version) { throw "Review bundled notices after dependency change: $($spec.Name)" }
+            $package = $packages[0]
+            $source = Split-Path -Parent $package.manifest_path
+            $dest = Join-Path 'dist/notices/licences/dependencies' "$($package.name)-$($package.version)"
+            foreach ($relative in $spec.Files) {
+              $target = Join-Path $dest $relative
+              New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
+              Copy-Item -LiteralPath (Join-Path $source $relative) -Destination $target
+            }
+            @("Package: $($package.name) $($package.version)", "Source: $($package.source)", 'Files copied unmodified from the Cargo.lock-resolved package; no font or CMap binaries are copied.') | Set-Content -LiteralPath (Join-Path $dest 'SOURCE.txt') -Encoding utf8
+          }
+          $hack = Get-Content -Raw -LiteralPath 'dist/notices/licences/dependencies/epaint_default_fonts-0.36.2/fonts/Hack-Regular.txt'
+          if ($hack -notmatch 'BITSTREAM VERA LICENSE') { throw 'Missing Bitstream Vera licence text.' }
+          $cmap = Get-Content -Raw -LiteralPath 'dist/notices/licences/dependencies/hayro-cmap-0.1.0/assets/LICENSE.txt'
+          if ($cmap -notmatch 'Adobe') { throw 'Missing original CMap attribution.' }
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: odibo-foundation-notices-${{ github.sha }}
@@ -96,12 +123,12 @@ jobs:
             git diff -- '*.rs'
             exit 1
           fi
+      - name: Explicit PDF acceptance with required qpdf and Poppler
+        run: cargo test --locked -p pdfcraft-cli --test odibo_foundation -- --nocapture
       - name: Clippy
         run: cargo clippy --locked --workspace --all-targets --features pdfcraft-ui-egui/unbranded -- -D warnings
       - name: Workspace tests with the distribution branding policy
         run: cargo test --locked --workspace --features pdfcraft-ui-egui/unbranded
-      - name: Explicit PDF acceptance with required qpdf and Poppler
-        run: cargo test --locked -p pdfcraft-cli --test odibo_foundation -- --nocapture
       - name: Capture the actual unbranded Home view
         env:
           PDFCRAFT_SYSTEM_FONTS: '0'
@@ -156,10 +183,10 @@ jobs:
           targets: x86_64-pc-windows-msvc
       - name: Compile desktop and CLI (all PDF features retained)
         run: cargo build --release --locked --target x86_64-pc-windows-msvc -p pdfcraft -p pdfcraft-cli --features pdfcraft-ui-egui/unbranded
-      - name: Windows core and CLI tests
-        run: cargo test --locked --target x86_64-pc-windows-msvc -p pdfcraft-cos -p pdfcraft-organize -p pdfcraft-render -p pdfcraft-engine -p pdfcraft-automation -p pdfcraft-cli
       - name: Acceptance against the release CLI
         run: cargo test --release --locked --target x86_64-pc-windows-msvc -p pdfcraft-cli --test odibo_foundation -- --nocapture
+      - name: Windows core and CLI tests
+        run: cargo test --locked --target x86_64-pc-windows-msvc -p pdfcraft-cos -p pdfcraft-organize -p pdfcraft-render -p pdfcraft-engine -p pdfcraft-automation -p pdfcraft-cli
       - name: Check executable versions
         run: |
           & target/x86_64-pc-windows-msvc/release/pdfcraft.exe --version
@@ -178,6 +205,7 @@ jobs:
           Copy-Item -LiteralPath 'target/x86_64-pc-windows-msvc/release/pdfcraft.exe' -Destination $dest
           Copy-Item -LiteralPath 'target/x86_64-pc-windows-msvc/release/pdfcraft-cli.exe' -Destination $dest
           Copy-Item -LiteralPath 'LICENSE-MIT','LICENSE-APACHE','NOTICE','ATTRIBUTION.md','ATTRIBUTION.toml' -Destination $dest
+          Copy-Item -LiteralPath 'assets/app-icon/LICENSE-document.txt' -Destination (Join-Path $dest 'LICENSE-document.txt')
           Copy-Item -LiteralPath 'packaging/windows/portable.txt' -Destination $dest
           Copy-Item -LiteralPath '.github/odibo/TEST_BUILD.txt' -Destination $dest
           foreach ($area in @('assets','vendor','craft-fonts')) {

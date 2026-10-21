@@ -11,9 +11,9 @@
 | Lucide и document icon | ISC, для document icon также MIT OR Apache-2.0. Сохранить `assets/icons/LICENSE-lucide.txt` и `assets/app-icon/LICENSE-document.txt`, включая copyright/disclaimer |
 | Inter, JetBrains Mono, Dancing Script | Сохранить `assets/fonts/OFL-*.txt`. OFL относится к шрифтам; Reserved Font Names не присваиваются изменённым версиям |
 | craft-fonts | Закреплённая ревизия `3d9ab3a132ed0eff457e424226a435a901da30d3`; сохранить OFL/copyright для семейств. Копирование только этих OFL не заменяет лицензии локальных Inter/JetBrains/Dancing |
-| egui bundled fonts | Ubuntu Font Licence, OFL, MIT/Bitstream Vera и MIT для соответствующих файлов; учтены в dependency report и attribution. Проверять полные тексты, а не только SPDX в Cargo.toml |
+| egui bundled fonts | Ubuntu Font Licence, OFL, MIT/Bitstream Vera и MIT для соответствующих файлов. Одного cargo-about недостаточно: исходные `fonts/Hack-Regular.txt`, `OFL.txt`, `UFL.txt`, `emoji-icon-font-mit-license.txt` копируются из зафиксированного epaint_default_fonts 0.36.2 в `licences/dependencies/`; отсутствие файла останавливает сборку |
 | Foxit standard-14 substitutes | BSD-3-Clause, `vendor/hayro-interpret/assets/LICENSE_FOXIT`, PDFium/Foxit copyright и disclaimer. Не использовать имена для endorsement |
-| Adobe CMap | BSD-3-Clause для технических таблиц hayro-cmap, с сохранением исходных notices. Не даёт прав на Adobe artwork, логотипы или системные шрифты |
+| Adobe CMap | BSD-3-Clause для технических таблиц hayro-cmap: полный `assets/LICENSE.txt` из зафиксированного hayro-cmap 0.1.0 копируется в `licences/dependencies/`. Не даёт прав на Adobe artwork, логотипы или системные шрифты |
 | ICC data | Сохранить применимые сведения о происхождении и тексты, включая CGATS licence-файлы; не заменять их общей лицензией приложения |
 | OCR-модели | CC BY-SA 4.0, Robert Knight: `models/ATTRIBUTION.txt`, файлы `*.LICENCE.txt`, происхождение/хеши. xtask models загружает и проверяет их; OCR не удалён из сборки. EULA будущего продукта должна сохранять права на отдельно лицензированные веса |
 | ArtCraft trademarks | `docs/brand/LICENSE-brand.txt` исключает marks из open source. В тестовом exe они не встраиваются; авторское упоминание в NOTICE сохраняется. Прежний upstream-брендинг нельзя выдавать за собственный |

@@ -24,6 +24,9 @@ Pull Request: https://github.com/imranOdiboev/pdfcraft/pull/1 → **main это�
   название PdfCraft, upstream links, copyright и лицензии сохранены.
 - Windows-архив комплектуется обоими exe, моделями OCR и их лицензиями, root notices,
   third-party Cargo HTML, asset/vendor/font licences, portable mode, build information и SHA-256.
+- Дополнительно сохраняются исходные тексты лицензий встроенных egui fonts и CMap из
+  Cargo.lock-resolved пакетов: автоматический cargo-about не включил отдельный Bitstream Vera
+  notice. Наличие этих файлов и текста Bitstream проверяется до публикации артефакта.
 - Подготовлены `ODIBO_REBRANDING_CHECKLIST.md` и `ODIBO_LICENSE_NOTICES.md`.
 - Владелец явно выбрал display name IMR4N; добавлена только его запись people.toml.
   Генерируемая статистика contributors.json не изменялась.
@@ -42,7 +45,9 @@ Pull Request: https://github.com/imranOdiboev/pdfcraft/pull/1 → **main это�
 | Format | Первый проход нашёл форматирование нового теста; diff rustfmt применён; повторный format прошёл |
 | Windows release build / тесты | Выполняются; успешный результат пока не заявляется |
 | Linux Clippy | Прошёл в PR run 39574204427 с `-D warnings` и feature unbranded |
-| Linux workspace / interop / WASM | Выполняются; успешный результат пока не заявляется |
+| Linux workspace | Прошёл в foundation run 39575929434 (unbranded) и в исходном CI run 39575929430 (обычная конфигурация) |
+| Отдельный interop / собственный WASM gate | Выполняются; успешный результат пока не заявляется |
+| Лицензии шрифтов и CMap сверх cargo-about | Добавлена обязательная проверка и копирование оригинальных текстов; проверка нового шага выполняется в следующем запуске |
 | Готовность к ребрендингу | Решение после завершения проверок |
 
 ## Что доказывает PDF acceptance
@@ -67,6 +72,16 @@ Pull Request: https://github.com/imranOdiboev/pdfcraft/pull/1 → **main это�
 остаются исходные namespace/IDs и upstream update links, поэтому закрыть другие экземпляры PdfCraft
 перед тестом и не использовать Check for updates как канал обновления этого форка. Эти ограничения
 не следует переносить в коммерческую поставку; см. checklist следующего этапа.
+
+## Существующие исключения security policy
+
+В исходном deny.toml остаются пять явно обоснованных исключений: `RUSTSEC-2023-0071`
+для `rsa` (по upstream-политике — только public-key verification, private-key операции
+на native выполняет aws-lc-rs) и четыре сообщения об отсутствии сопровождения
+`proc-macro-error`, `zvariant`, `zbus_names`, `zvariant_derive`. Они не добавлены этим PR.
+Прохождение cargo-deny означает соответствие этой политике, а не отсутствие любых рисков.
+Два целевых TLS-advisory `RUSTSEC-2026-0382` и `RUSTSEC-2026-0383` исправляются обновлением,
+а не исключением из проверки.
 
 ## Границы этапа
 
