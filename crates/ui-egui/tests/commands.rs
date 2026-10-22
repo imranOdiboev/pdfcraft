@@ -441,17 +441,21 @@ fn view_menu(os: OperatingSystem) -> Harness<'static, PdfCraftApp> {
 fn view_menu_and_tooltips_write_shortcuts_for_the_platform() {
     // On Linux, View ▸ Zoom and Page navigation showed ⌘1, ⌘[ … (hard-coded) while the
     // registered items under them showed Ctrl+K; tooltips showed ⌘ too.
-    let h = view_menu(OperatingSystem::Nix);
+    let mut h = view_menu(OperatingSystem::Nix);
     h.get_by_label("Actual size Ctrl+1");
     h.get_by_label("Zoom to page level Ctrl+0");
     h.get_by_label("Rotate view counterclockwise Ctrl+Shift+−");
     h.get_by_label("Previous view Ctrl+[");
     h.get_by_label("Find tools and commands… Ctrl+K");
     h.get_by_label("Zoom in (Ctrl++)");
-    h.get_by_label("Print (Ctrl+P)");
     assert_eq!(h.query_all_by_label_contains("⌘").count(), 0, "no ⌘ outside macOS");
     assert_eq!(h.query_all_by_label_contains("Fit visible").count(), 1, "View lists Fit visible once");
     h.get_by_label("Fit visible Ctrl+3");
+    // The secondary document commands moved to the existing File menu.
+    h.get_by_label("File ⏵").hover();
+    h.run_steps(3);
+    h.get_by_label("Print… Ctrl+P");
+    h.get_by_label("Document properties… Ctrl+D");
 
     let h = view_menu(OperatingSystem::Mac);
     h.get_by_label("Actual size ⌘1");
@@ -462,13 +466,11 @@ fn view_menu_and_tooltips_write_shortcuts_for_the_platform() {
 
 #[test]
 fn the_top_bar_save_button_names_its_shortcut_not_a_milestone() {
-    // #962: on Windows the Save button's tooltip and accessibility name read "Save (M4)",
-    // an internal milestone tag, while Print and Document properties named their shortcuts.
+    // The visible button now says Save; its hover tooltip still names the platform shortcut.
     let mut h = harness();
     h.ctx.set_os(OperatingSystem::Windows);
     h.run_steps(2);
     h.get_by_label("Save (Ctrl+S)");
-    h.get_by_label("Print (Ctrl+P)");
     assert_eq!(h.query_all_by_label_contains("(M4)").count(), 0, "no milestone tag in the top bar");
     assert_eq!(h.query_all_by_label_contains("⌘").count(), 0, "no ⌘ outside macOS");
 

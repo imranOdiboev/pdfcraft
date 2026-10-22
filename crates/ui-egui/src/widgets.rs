@@ -112,20 +112,33 @@ pub(crate) fn focus_ring(ui: &egui::Ui, response: &Response) {
 }
 
 /// Primary command; stock egui interaction preserves keyboard and accessibility behavior.
-pub fn primary_button(ui: &mut egui::Ui, label: &str) -> Response {
+pub fn primary_button(ui: &mut egui::Ui, label: &str, accessible_label: &str) -> Response {
     let t = Tokens::get(ui.ctx());
     // The light-theme blue keeps white text legible in either theme.
     let fill = Tokens::for_kind(theme::ThemeKind::Light).accent;
-    ui.add(egui::Button::new(egui::RichText::new(label).font(theme::semibold(theme::BODY)).color(Color32::WHITE))
-        .fill(fill).stroke(Stroke::new(1.0, t.accent_text)).min_size(vec2(64.0, theme::CONTROL_HEIGHT)))
+    let response = ui.add(egui::Button::new(egui::RichText::new(label).font(theme::semibold(theme::CONTROL_LABEL)).color(Color32::WHITE))
+        .fill(fill).stroke(Stroke::new(1.0, t.accent_text)).min_size(vec2(64.0, theme::CONTROL_HEIGHT)));
+    // Keep the established shortcut-bearing automation name distinct from modal Save.
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), accessible_label));
+    response
 }
 
 /// A mode-bar tab: a bounded surface and underline identify the active mode without colour.
 pub fn mode_tab(ui: &mut egui::Ui, label: &str, active: bool) -> Response {
+    mode_control(ui, label, active, false)
+}
+
+/// Compact mode picker with a real chevron and the same selected/focus treatment.
+pub fn mode_menu(ui: &mut egui::Ui, label: &str) -> Response {
+    mode_control(ui, label, true, true)
+}
+
+fn mode_control(ui: &mut egui::Ui, label: &str, active: bool, menu: bool) -> Response {
     let t = Tokens::get(ui.ctx());
-    let font = if active { theme::semibold(theme::BODY) } else { theme::medium(theme::BODY) };
+    let font = if active { theme::semibold(theme::CONTROL_LABEL) } else { theme::medium(theme::CONTROL_LABEL) };
     let w = ui.fonts_mut(|f| f.layout_no_wrap(label.to_owned(), font.clone(), t.text).size().x);
-    let (rect, resp) = ui.allocate_exact_size(vec2(w + 22.0, 48.0), Sense::click());
+    let extra = if menu { 18.0 } else { 0.0 };
+    let (rect, resp) = ui.allocate_exact_size(vec2(w + 22.0 + extra, 48.0), Sense::click());
     resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, ui.is_enabled(), active, label));
     let press = theme::Press::track(ui, &resp);
     let well = rect.shrink2(vec2(2.0, 9.0));
@@ -138,7 +151,10 @@ pub fn mode_tab(ui: &mut egui::Ui, label: &str, active: bool) -> Response {
         press.wash(ui, well, 6, false);
     }
     let body = rect.translate(press.offset());
-    ui.painter().text(body.center(), Align2::CENTER_CENTER, label, font, if active { t.text } else { t.text_muted });
+    ui.painter().text(body.center() - vec2(extra / 2.0, 0.0), Align2::CENTER_CENTER, label, font, if active { t.text } else { t.text_muted });
+    if menu {
+        icons::paint(ui, Rect::from_center_size(body.right_center() - vec2(13.0, 0.0), vec2(16.0, 16.0)), "chevron-down", 14.0, t.text);
+    }
     if active {
         let r = Rect::from_min_max(rect.left_bottom() + vec2(10.0, -2.0), rect.right_bottom() - vec2(10.0, 0.0));
         ui.painter().rect_filled(r, CornerRadius { nw: 1, ne: 1, sw: 0, se: 0 }, t.accent);
@@ -589,6 +605,8 @@ pub fn split_pill(ui: &mut egui::Ui, icon: &str, label: &str, more: &str) -> (Re
     crate::icons::paint(ui, Rect::from_min_size(body.min + vec2(12.0, 7.0), vec2(16.0, 16.0)), icon, 15.0, t.text);
     ui.painter().text(body.left_center() + vec2(34.0, 0.0), Align2::LEFT_CENTER, label, font, t.text);
     crate::icons::paint(ui, Rect::from_center_size(more_body.center(), vec2(14.0, 14.0)), "chevron-down", 13.0, t.text);
+    focus_ring(ui, &main);
+    focus_ring(ui, &arrow);
     (theme::hand(main).on_hover_text(label), theme::hand(arrow).on_hover_text(more))
 }
 
@@ -609,6 +627,7 @@ pub fn icon_pill(ui: &mut egui::Ui, icon: &str, label: &str, primary: bool) -> R
     let body = rect.translate(press.offset());
     crate::icons::paint(ui, Rect::from_min_size(body.min + vec2(12.0, 7.0), vec2(16.0, 16.0)), icon, 15.0, text);
     ui.painter().text(body.left_center() + vec2(34.0, 0.0), Align2::LEFT_CENTER, label, font, text);
+    focus_ring(ui, &resp);
     theme::hand(resp)
 }
 
@@ -622,6 +641,7 @@ mod tests {
         for kind in [theme::ThemeKind::Light, theme::ThemeKind::Dark] {
             for active in [false, true] {
                 let ctx = egui::Context::default();
+                ctx.set_fonts(theme::font_definitions());
                 theme::apply(&ctx, kind);
                 let output = ctx.run_ui(egui::RawInput::default(), |ui| { mode_tab(ui, "Редактировать", active); });
                 let outlines = output.shapes.iter().filter(|s| matches!(&s.shape, egui::Shape::Rect(r) if r.stroke.width > 0.0)).count();
@@ -634,6 +654,7 @@ mod tests {
     #[test]
     fn focused_mode_accepts_enter_and_has_a_visible_focus_ring() {
         let ctx = egui::Context::default();
+        ctx.set_fonts(theme::font_definitions());
         theme::apply(&ctx, theme::ThemeKind::Light);
         let output = ctx.run_ui(egui::RawInput::default(), |ui| { mode_tab(ui, "Read", false).request_focus(); });
         output.drop_without_applying_deltas();

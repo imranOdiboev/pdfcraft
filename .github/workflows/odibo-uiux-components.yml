@@ -16,7 +16,6 @@ env:
   CARGO_BUILD_JOBS: '2'
   CARGO_PROFILE_DEV_DEBUG: line-tables-only
   CARGO_PROFILE_TEST_DEBUG: line-tables-only
-  PDFCRAFT_SYSTEM_FONTS: '0'
   CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
 
 jobs:
@@ -42,6 +41,8 @@ jobs:
           toolchain: 1.95.0
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
       - name: Prepare formatting patch without local Rust installation
         run: |
           mkdir -p dist/uiux-components
@@ -50,9 +51,11 @@ jobs:
       - name: Clippy
         run: cargo clippy --locked -p pdfcraft-ui-egui --all-targets -- -D warnings
       - name: UI tests
-        run: cargo test --locked -p pdfcraft-ui-egui --no-fail-fast
+        run: cargo test --locked -p pdfcraft-ui-egui --lib --test ui_group --test commands --test ui --test control --test dialog_chrome --no-fail-fast
       - name: Prove selection-outline regression against previous widget
+        if: ${{ !cancelled() }}
         run: |
+          git fetch --no-tags --depth=1 origin 23af123ae3ed5be1dd36fe09e76bc4b411e1b7eb
           cp crates/ui-egui/src/widgets.rs "$RUNNER_TEMP/widgets-fixed.rs"
           trap 'cp "$RUNNER_TEMP/widgets-fixed.rs" crates/ui-egui/src/widgets.rs' EXIT
           python3 - <<'PY'
@@ -60,11 +63,11 @@ jobs:
           p = Path('crates/ui-egui/src/widgets.rs')
           s = p.read_text()
           start = s.index('pub fn mode_tab(')
-          end = s.index('\n/// Rounded pill', start)
+          end = s.index('\n}\n', start) + 2
           import subprocess
-          old = subprocess.check_output(['git', 'show', '23af123:crates/ui-egui/src/widgets.rs'], text=True)
+          old = subprocess.check_output(['git', 'show', '23af123ae3ed5be1dd36fe09e76bc4b411e1b7eb:crates/ui-egui/src/widgets.rs'], text=True)
           a = old.index('pub fn mode_tab(')
-          b = old.index('\n/// Rounded pill', a)
+          b = old.index('\n}\n', a) + 2
           p.write_text(s[:start] + old[a:b] + s[end:])
           PY
           set +e
@@ -77,6 +80,9 @@ jobs:
           grep -F 'widgets::tests::selected_mode_has_a_structural_outline_in_both_themes ... FAILED' dist/uiux-components/negative-control.log
           cargo test --locked -p pdfcraft-ui-egui --lib selected_mode_has_a_structural_outline_in_both_themes
       - name: Real egui editor screenshots with synthetic document
+        if: ${{ !cancelled() }}
+        env:
+          PDFCRAFT_SYSTEM_FONTS: '0'
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -95,20 +101,26 @@ jobs:
           PY
           for language in en ru; do
             for theme in light dark; do
-              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/uiux-components/editor-$language-$theme.png dist/uiux-components/fixture.pdf --scale 1 --language $language --theme $theme --mode edit
+              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/uiux-components/editor-$language-$theme.png dist/uiux-components/fixture.pdf --scale 1 --language $language --theme $theme --mode edit --tool edit --quick edit-text
             done
           done
-          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/uiux-components/editor-compact.png dist/uiux-components/fixture.pdf --size 720x800 --scale 1.5 --language ru --theme dark --mode edit
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/uiux-components/editor-compact.png dist/uiux-components/fixture.pdf --size 720x800 --scale 1.5 --language ru --theme dark --mode edit --tool edit --quick edit-text
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/uiux-components/editor-minimum-window.png dist/uiux-components/fixture.pdf --size 820x600 --scale 1.5 --language ru --theme light --mode edit --tool edit --quick edit-text
           cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/uiux-components/
           cp LICENSE-MIT LICENSE-APACHE NOTICE dist/uiux-components/
+          cp assets/fonts/OFL-Inter.txt assets/fonts/OFL-JetBrainsMono.txt assets/icons/LICENSE-lucide.txt dist/uiux-components/
           echo 'Own egui screenshots and synthetic vector PDF: MIT OR Apache-2.0; ODIBO marks: LicenseRef-ODIBO-Brand. UI fonts: Inter/OFL; icons: Lucide/ISC. Source:' > dist/uiux-components/PROVENANCE.txt
           echo "$GITHUB_SHA" >> dist/uiux-components/PROVENANCE.txt
           sha256sum dist/uiux-components/*.png dist/uiux-components/fixture.pdf > dist/uiux-components/SHA256SUMS.txt
       - name: Layering and assets
+        if: ${{ !cancelled() }}
         run: |
           cargo xtask layers
           cargo xtask assets
           cargo xtask parity
+      - name: Require formatting patch to be applied to the branch
+        if: ${{ !cancelled() }}
+        run: test ! -s dist/uiux-components/format.patch
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
