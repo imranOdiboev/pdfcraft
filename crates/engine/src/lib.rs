@@ -428,7 +428,7 @@ impl std::fmt::Display for TextNotice {
         match (&self.field, self.redrawn_elsewhere) {
             (Some(name), true) => write!(
                 f,
-                "form field {name:?} (page {page}) holds {ch}, which its font can't draw: the value is saved, PdfCraft shows ? in its place, and other PDF viewers redraw the field from the value"
+                "form field {name:?} (page {page}) holds {ch}, which its font can't draw: the value is saved, ODIBO PDF shows ? in its place, and other PDF viewers redraw the field from the value"
             ),
             (Some(name), false) => write!(
                 f,
@@ -3084,7 +3084,7 @@ fn decode_data_file(bytes: &[u8]) -> Option<Result<String, String>> {
 
 /// Take the XFA out of `doc` and note what went with it: the packets, data no field showed,
 /// buttons that did nothing but run scripts, and fields whose value differs from the form's
-/// data (data PdfCraft could not read into them, now lost).
+/// data (data ODIBO PDF could not read into them, now lost).
 fn strip_xfa(doc: &mut pdfcraft_cos::Document, cx: &mut EditCtx) -> Result<(), EditError> {
     let fields = pdfcraft_forms::fields(doc);
     let data = xfa_field_data(doc);
@@ -3104,7 +3104,7 @@ fn strip_xfa(doc: &mut pdfcraft_cos::Document, cx: &mut EditCtx) -> Result<(), E
     cx.xfa_removed.extend(r.notes());
     if differ > 0 {
         cx.xfa_removed.push(format!(
-            "{differ} field(s) held a value other than the form's XFA data (data PdfCraft could not read into them); the data's version is gone"
+            "{differ} field(s) held a value other than the form's XFA data (data ODIBO PDF could not read into them); the data's version is gone"
         ));
     }
     Ok(())

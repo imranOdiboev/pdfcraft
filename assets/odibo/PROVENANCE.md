@@ -35,3 +35,5 @@ This feature excludes all includes of ODIBO graphical assets and substitutes an 
 openly licensed icon. It is tested with this directory absent. Before distributing an
 independently modified product, replace the product name and identity as described in
 the brand terms. The feature alone does not grant rights to market a fork as ODIBO PDF.
+
+Runtime wordmarks are resized to 1536 x 512 (below egui's baseline 2048 px texture limit). The original 2172 x 724 source remains byte-identical. High-quality resizing uses edge wrapping to prevent transparent sampling borders; no background mask or colour-key removal is applied by script.

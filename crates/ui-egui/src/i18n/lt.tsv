@@ -2685,3 +2685,12 @@ key	Space	Tarpas
 	The password must have at least 6 characters.	Slaptažodį turi sudaryti bent 6 simboliai.
 	This file changed on disk. Reload it to see the new version; your unsaved changes will be lost.	Šis failas diske pasikeitė. Įkelkite jį iš naujo, kad pamatytumėte naują versiją; neįrašyti pakeitimai bus prarasti.
 theme	Appearance	Išvaizda
+
+# ODIBO branding additions, IMR4N (AI-assisted), 2026-10-22.
+	Report an issue	Pranešti apie problemą
+	ODIBO PDF documentation	ODIBO PDF dokumentacija
+	Project repository	Projekto saugykla
+	Get help, report issues and follow development on GitHub.	Gaukite pagalbos, praneškite apie problemas ir sekite kūrimą GitHub platformoje.
+	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Atvirasis kodas: MIT OR Apache-2.0. ODIBO prekės ženklo medžiagai taikomos atskiros sąlygos.
+	ODIBO PDF project	ODIBO PDF projektas
+	Feedback	Atsiliepimai

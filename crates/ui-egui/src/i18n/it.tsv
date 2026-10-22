@@ -2646,3 +2646,12 @@ certificate	Key usage	Utilizzo chiave
 certificate	Self-signed	Autofirmato
 certificate	SHA-1 digest	Impronta SHA-1
 certificate	SHA-256 digest	Impronta SHA-256
+
+# ODIBO branding additions, IMR4N (AI-assisted), 2026-10-22.
+	Report an issue	Segnala un problema
+	ODIBO PDF documentation	Documentazione ODIBO PDF
+	Project repository	Repository del progetto
+	Get help, report issues and follow development on GitHub.	Ricevi assistenza, segnala problemi e segui lo sviluppo su GitHub.
+	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Codice aperto: MIT OR Apache-2.0. I materiali del marchio ODIBO hanno condizioni separate.
+	ODIBO PDF project	Progetto ODIBO PDF
+	Feedback	Commenti

@@ -2687,3 +2687,12 @@ key	Space	Space
 # Historical snapshot notice bar (View signed version / View revision).
 	You are viewing the signed version of “{from}” (revision {rev}). It is a snapshot: changes here won't affect the original.	Bạn đang xem phiên bản đã ký của “{from}” (bản sửa đổi {rev}). Đây là ảnh nhanh: các thay đổi ở đây không được áp dụng đến bản gốc.
 	You are viewing revision {rev} of “{from}”. It is a snapshot: changes here won't affect the original.	Bạn đang xem bản sửa đổi {rev} của “{from}”. Đây là ảnh nhanh: các thay đổi ở đây không được áp dụng đến bản gốc.
+
+# ODIBO branding additions, IMR4N (AI-assisted), 2026-10-22.
+	Report an issue	Báo cáo sự cố
+	ODIBO PDF documentation	Tài liệu ODIBO PDF
+	Project repository	Kho mã nguồn dự án
+	Get help, report issues and follow development on GitHub.	Nhận trợ giúp, báo cáo sự cố và theo dõi phát triển trên GitHub.
+	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Mã nguồn mở: MIT OR Apache-2.0. Tài nguyên thương hiệu ODIBO có điều khoản riêng.
+	ODIBO PDF project	Dự án ODIBO PDF
+	Feedback	Phản hồi

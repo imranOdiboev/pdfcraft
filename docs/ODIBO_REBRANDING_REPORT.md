@@ -88,3 +88,7 @@ followed by actual browser acceptance; a WASM compile is only compatibility evid
 Android: choose a UI/runtime integration and Android package identity, sandboxed file
 access/lifecycle, rendering performance, notices and a dedicated build/test pipeline.
 Neither platform is delivered by this Windows stage.
+
+## Verification findings addressed during implementation
+
+The first complete runs exposed launcher/app-ID and link-contract mismatches. A later UI sweep caught egui's 2048 px texture limit: a supplied 2172 px wordmark caused a Home-screen panic. Runtime wordmarks are now 1536 x 512, with a dedicated asset-dimension regression. New branding labels were translated in all 22 existing catalogues without disabling translation coverage. The macOS bundle-ID template follows the shared app ID, while complete non-Windows packaging remains outside this Windows acceptance stage. Final rerun evidence is pending.

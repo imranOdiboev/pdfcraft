@@ -39,6 +39,20 @@ fn home_screen_links() {
     }
 }
 
+/// The default egui test context (and low-limit devices) accepts at most 2048 px.
+/// A 2172 px supplied logo previously panicked while opening the Home screen.
+#[cfg(not(feature = "unbranded"))]
+#[test]
+fn shipped_brand_textures_fit_the_baseline_gpu_limit() {
+    for bytes in [
+        include_bytes!("../../../../assets/odibo/logo-light.png").as_slice(),
+        include_bytes!("../../../../assets/odibo/logo-dark.png").as_slice(),
+    ] {
+        let image = image::load_from_memory(bytes).unwrap();
+        assert!(image.width() <= 2048 && image.height() <= 2048);
+    }
+}
+
 #[test]
 fn about_dialog_shows_the_brand_and_links() {
     let pdf = b"%PDF-1.7\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF";

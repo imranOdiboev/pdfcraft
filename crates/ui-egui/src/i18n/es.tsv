@@ -2574,3 +2574,12 @@ animation effects	Off	Desactivados
 # Historical snapshot notice bar (View signed version / View revision).
 	You are viewing the signed version of “{from}” (revision {rev}). It is a snapshot: changes here won't affect the original.	Estás viendo la versión firmada de «{from}» (revisión {rev}). Es una instantánea: los cambios aquí no afectarán al original.
 	You are viewing revision {rev} of “{from}”. It is a snapshot: changes here won't affect the original.	Estás viendo la revisión {rev} de «{from}». Es una instantánea: los cambios aquí no afectarán al original.
+
+# ODIBO branding additions, IMR4N (AI-assisted), 2026-10-22.
+	Report an issue	Informar de un problema
+	ODIBO PDF documentation	Documentación de ODIBO PDF
+	Project repository	Repositorio del proyecto
+	Get help, report issues and follow development on GitHub.	Obtén ayuda, informa de problemas y sigue el desarrollo en GitHub.
+	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Código abierto: MIT OR Apache-2.0. Los recursos de marca ODIBO tienen condiciones independientes.
+	ODIBO PDF project	Proyecto ODIBO PDF
+	Feedback	Comentarios

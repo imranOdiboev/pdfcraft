@@ -371,7 +371,7 @@ pub const WORDINGS: &[&str] = &[
     "The signer's certificate was not valid at the time of signing.",
     "The signer's certificate does not allow digital signatures (its key usage has neither digital signature nor non-repudiation).",
     "The signer's certificate is not issued for signing documents (its extended key usage has no document-signing purpose).",
-    "The signer's certificate has critical extensions PdfCraft does not recognize ({}).",
+    "The signer's certificate has critical extensions ODIBO PDF does not recognize ({}).",
     // Why a certificate that matched the issuer was not used to build the chain.
     "The certificate of {} is not a CA certificate that may issue certificates, so it is not used to vouch for {}.",
     "The certificate of {} does not allow this many CA certificates below it (path length), so it is not used to vouch for {}.",
