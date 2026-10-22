@@ -1,9 +1,16 @@
 [package]
 name = "pdfcraft"
-description = "PdfCraft desktop app"
+description = "ODIBO PDF desktop app"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+
+[[bin]]
+name = "odibo-pdf"
+path = "src/main.rs"
+
+[features]
+unbranded = ["pdfcraft-ui-egui/unbranded"]
 
 [lints]
 workspace = true

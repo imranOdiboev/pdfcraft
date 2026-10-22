@@ -131,7 +131,7 @@ impl McpServer {
                 Ok(json!({
                     "protocolVersion": version,
                     "capabilities": { "tools": { "listChanged": false }, "resources": { "listChanged": false, "subscribe": false } },
-                    "serverInfo": { "name": "pdfcraft", "title": "PdfCraft", "version": env!("CARGO_PKG_VERSION"), "websiteUrl": pdfcraft_engine::links::APP_PAGE },
+                    "serverInfo": { "name": "odibo-pdf", "title": "ODIBO PDF", "version": env!("CARGO_PKG_VERSION"), "websiteUrl": pdfcraft_engine::links::APP_PAGE },
                     "instructions": if self.compact { format!("{INSTRUCTIONS}{COMPACT_INSTRUCTIONS}") } else { INSTRUCTIONS.to_string() },
                 }))
             }
@@ -203,7 +203,7 @@ fn meta_tools() -> [Value; 2] {
     [
         json!({
             "name": TOOL_SEARCH,
-            "title": "Find PdfCraft tools",
+            "title": "Find ODIBO PDF tools",
             "description": "Search and list all PdfCraft automation tools, including the core tools, with a one-sentence description each. Filter by query \
         (words matched against name, title and description) and/or category (the name prefix: doc, page, text, form, …). \
         With name, return that one tool in full, including its input_schema. Run a tool with tool_call.",
@@ -217,12 +217,12 @@ fn meta_tools() -> [Value; 2] {
                 "required": [],
                 "additionalProperties": false,
             },
-            "annotations": { "title": "Find PdfCraft tools", "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false },
+            "annotations": { "title": "Find ODIBO PDF tools", "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false },
         }),
         json!({
             "name": TOOL_CALL,
-            "title": "Run any PdfCraft tool",
-            "description": "Run any PdfCraft tool by name with its arguments, exactly as if it were called directly. \
+            "title": "Run any ODIBO PDF tool",
+            "description": "Run any ODIBO PDF tool by name with its arguments, exactly as if it were called directly. \
         Find names and argument schemas with tool_search. The result is the tool's own result.",
             "inputSchema": {
                 "type": "object",
@@ -233,7 +233,7 @@ fn meta_tools() -> [Value; 2] {
                 "required": ["name"],
                 "additionalProperties": false,
             },
-            "annotations": { "title": "Run any PdfCraft tool", "readOnlyHint": false, "destructiveHint": true, "idempotentHint": false, "openWorldHint": false },
+            "annotations": { "title": "Run any ODIBO PDF tool", "readOnlyHint": false, "destructiveHint": true, "idempotentHint": false, "openWorldHint": false },
         }),
     ]
 }

@@ -1,5 +1,5 @@
 //! Community links: the Discord button is one click away everywhere; Help menu, About dialog and
-//! home screen open the ArtCraft and PdfCraft pages.
+//! home screen open the ArtCraft and ODIBO PDF pages.
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
@@ -20,25 +20,17 @@ fn harness(setup: impl FnOnce(&mut PdfCraftApp) + 'static) -> Harness<'static, P
 #[test]
 fn discord_button_in_the_top_bar_opens_discord() {
     let mut h = harness(|_| {});
-    h.get_by_label("Discord").click();
+    h.get_by_label("Feedback").click();
     h.run_steps(2);
     assert_eq!(h.state().last_opened_url.as_deref(), Some(links::DISCORD));
-    assert_eq!(links::DISCORD, "https://discord.gg/artcraft");
+    assert_eq!(links::DISCORD, "https://github.com/imranOdiboev/pdfcraft/issues");
 }
 
 #[test]
 fn home_screen_links() {
-    let (discord, website, heading) = if cfg!(feature = "unbranded") {
-        ("Upstream Discord", "Upstream website", "Upstream project")
-    } else {
-        ("Join our Discord", "ArtCraft website", "Join the ArtCraft community")
-    };
-    for (label, url) in [
-        (discord, links::DISCORD),
-        ("PdfCraft web page", "https://getartcraft.com/apps/pdfcraft"),
-        ("PdfCraft on GitHub", "https://github.com/storytold/pdfcraft"),
-        (website, "https://getartcraft.com"),
-    ] {
+    for link in links::LINKS {
+        let (label, url) = (link.label, link.url);
+        let heading = "ODIBO PDF project";
         let mut h = harness(|_| {});
         assert!(h.query_all_by_label(heading).count() > 0);
         h.get_by_label(label).click();
@@ -55,13 +47,9 @@ fn about_dialog_shows_the_brand_and_links() {
         app.open_bytes("one.pdf", None, pdf.to_vec()).unwrap();
         app.dialog = Some(Dialog::About);
     });
-    if cfg!(feature = "unbranded") {
-        assert_eq!(h.query_all_by_label("ArtCraft").count(), 0, "no trademark images in a test distribution");
-        assert_eq!(h.query_all_by_label("Part of").count(), 0, "no upstream affiliation claim");
-    } else {
-        assert!(h.query_all_by_label("ArtCraft").count() >= 2, "the mark and the wordmark (alt text)");
-    }
-    h.get_by_label(if cfg!(feature = "unbranded") { "Upstream Discord" } else { "Join our Discord" }).click();
+    assert_eq!(h.query_all_by_label("ArtCraft").count(), 0);
+    assert_eq!(h.query_all_by_label("Part of").count(), 0);
+    h.get_by_label("Report an issue").click();
     h.run_steps(2);
     assert_eq!(h.state().last_opened_url.as_deref(), Some(links::DISCORD));
 }

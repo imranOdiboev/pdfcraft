@@ -24,7 +24,7 @@ pub enum ThemePreference {
 
 impl ThemePreference {
     /// The colours to draw. `system` is what the operating system says, `None` when it says
-    /// nothing; `fallback` is supplied by the caller. PdfCraft uses Light for an unknown desktop.
+    /// nothing; `fallback` is supplied by the caller. ODIBO PDF uses Light for an unknown desktop.
     pub fn resolve(self, system: Option<bool>, fallback: ThemeKind) -> ThemeKind {
         match self {
             Self::Light => ThemeKind::Light,
@@ -86,19 +86,19 @@ impl Tokens {
                 hover: Color32::from_rgb(0xF0, 0xF0, 0xF3),
                 pressed: Color32::from_rgb(0xE4, 0xE4, 0xE9),
                 selected: Color32::from_rgb(0xE6, 0xEE, 0xFD),
-                accent: Color32::from_rgb(0x1B, 0x63, 0xE0),
+                accent: Color32::from_rgb(0x00, 0x5C, 0xE6),
                 accent_text: Color32::from_rgb(0x17, 0x55, 0xC4),
                 accent_soft: Color32::from_rgb(0xE3, 0xEC, 0xFD),
                 field: Color32::from_rgb(0xFF, 0xFF, 0xFF),
-                badge_new: Color32::from_rgb(0x1B, 0x63, 0xE0),
+                badge_new: Color32::from_rgb(0x00, 0x5C, 0xE6),
                 page_shadow: Color32::from_black_alpha(34),
                 radius: 6,
             },
             ThemeKind::Dark => Self {
                 kind,
-                titlebar: Color32::from_rgb(0x1B, 0x1B, 0x1E),
-                chrome: Color32::from_rgb(0x26, 0x26, 0x2A),
-                panel: Color32::from_rgb(0x26, 0x26, 0x2A),
+                titlebar: Color32::from_rgb(0x08, 0x15, 0x2A),
+                chrome: Color32::from_rgb(0x10, 0x20, 0x38),
+                panel: Color32::from_rgb(0x10, 0x20, 0x38),
                 pasteboard: Color32::from_rgb(0x19, 0x19, 0x1C),
                 card: Color32::from_rgb(0x2E, 0x2E, 0x33),
                 border: Color32::from_rgb(0x3C, 0x3C, 0x43),

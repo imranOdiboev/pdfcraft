@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 use std::process::{Command, Output};
 
-const BIN: &str = env!("CARGO_BIN_EXE_pdfcraft-cli");
+const BIN: &str = env!("CARGO_BIN_EXE_odibo-pdf-cli");
 
 /// A PDF with `n` empty 200×300 pt pages.
 fn fixture(n: usize) -> Vec<u8> {
@@ -32,7 +32,7 @@ fn fixture(n: usize) -> Vec<u8> {
 
 /// A fresh directory holding `report.pdf` (3 pages).
 fn workdir(test: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("pdfcraft-cli-split-{test}-{}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("odibo-pdf-cli-split-{test}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).unwrap();
     std::fs::write(d.join("report.pdf"), fixture(3)).unwrap();

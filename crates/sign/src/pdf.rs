@@ -344,7 +344,7 @@ pub const WORDINGS: &[&str] = &[
     "The signature's byte range does not exclude exactly its contents.",
     "The signature contents are not hexadecimal.",
     "The signature could not be read ({}).",
-    "PdfCraft can't check this signature yet: {}.",
+    "ODIBO PDF can't check this signature yet: {}.",
     "The signature uses the legacy adbe.x509.rsa_sha1 format.",
     // What was read leniently on the way, each sentence worded where the reading happens.
     "The signature is BER-encoded (indefinite lengths) rather than DER; it was read leniently.",
@@ -734,7 +734,7 @@ fn validate_into(doc: &Document, bytes: &[u8], trust: &TrustStore, v: &Dict, inf
     let unsupported = |info: &mut SignatureInfo, why: &str| {
         info.status = Status::Unknown;
         // What is not supported yet is named by the reader, in its own words.
-        info.details.push(Detail::of("PdfCraft can't check this signature yet: {}.", Fill::Reason(why.to_owned())));
+        info.details.push(Detail::of("ODIBO PDF can't check this signature yet: {}.", Fill::Reason(why.to_owned())));
     };
     if info.sub_filter.as_deref() == Some("adbe.x509.rsa_sha1") {
         return validate_x509_rsa_sha1(doc, bytes, trust, v, info, cache, (l0, o1, covered), &contents);
@@ -1164,7 +1164,7 @@ fn validate_x509_rsa_sha1(
             info.certificate = Some(cert);
             info.status = Status::Unknown;
             // What is not supported yet is named by the reader, in its own words.
-            info.details.push(Detail::of("PdfCraft can't check this signature yet: {}.", Fill::Reason(e.to_string())));
+            info.details.push(Detail::of("ODIBO PDF can't check this signature yet: {}.", Fill::Reason(e.to_string())));
             return;
         }
         Err(e) => {
@@ -1832,7 +1832,7 @@ fn sign_inner(
         }
     }
     let mut app = Dict::new();
-    app.set(b"Name".to_vec(), Object::name("PdfCraft"));
+    app.set(b"Name".to_vec(), Object::name("ODIBO PDF"));
     let mut build = Dict::new();
     build.set(b"App".to_vec(), Object::Dict(app));
     v.set(b"Prop_Build".to_vec(), Object::Dict(build));
@@ -2005,7 +2005,7 @@ pub fn timestamp_document(doc: &Document, tsa: &dyn crate::timestamp::TimestampA
     v.set(b"Contents".to_vec(), Object::String(PdfString { bytes: vec![0; TOKEN_RESERVE], hex: true }));
     v.set(b"M".to_vec(), PdfString::literal(date.as_bytes().to_vec()));
     let mut app = Dict::new();
-    app.set(b"Name".to_vec(), Object::name("PdfCraft"));
+    app.set(b"Name".to_vec(), Object::name("ODIBO PDF"));
     let mut build = Dict::new();
     build.set(b"App".to_vec(), Object::Dict(app));
     v.set(b"Prop_Build".to_vec(), Object::Dict(build));

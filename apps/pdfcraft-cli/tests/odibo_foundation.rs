@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use pdfcraft_testkit::Pdf;
 use serde_json::json;
 
-const BIN: &str = env!("CARGO_BIN_EXE_pdfcraft-cli");
+const BIN: &str = env!("CARGO_BIN_EXE_odibo-pdf-cli");
 static NEXT: AtomicU64 = AtomicU64::new(0);
 
 struct Workdir(PathBuf);

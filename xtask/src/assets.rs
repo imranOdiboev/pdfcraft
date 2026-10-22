@@ -41,6 +41,13 @@ pub const ALLOWED_LICENCES: &[&str] = &[
 /// (AGENTS.md §1.2).
 pub const BRAND_LICENCE: &str = "LicenseRef-Storyteller-Trademark";
 
+/// Closed owner-approved ODIBO assets. Do not broaden this to all proprietary assets.
+pub const ODIBO_BRAND_ASSETS: &[&str] = &[
+    "source-icon.png", "source-logo.png", "icon-1024.png", "icon-16.png", "icon-32.png",
+    "icon-48.png", "icon-64.png", "icon-128.png", "icon-256.png", "icon-512.png",
+    "odibo-pdf.ico", "logo-light.png", "logo-dark.png",
+];
+
 pub const ADOBE_DATA_ALLOWED: &[(&str, &str)] = &[("hayro-cmap", "assets/cmaps.brotli"), ("hayro-interpret", "src/font/generated/metrics.rs")];
 
 /// First-party files on that same closed list: generated tables of Adobe-authored non-visual
@@ -241,7 +248,11 @@ pub fn check(root: &Path, m: &Manifest, repo_files: &[String], lock: &BTreeSet<(
         if !seen.insert(a.path.clone()) {
             problems.push(format!("{}: listed twice", a.path));
         }
-        let brand = a.licence == BRAND_LICENCE && a.kind == "logo" && a.path.starts_with("docs/brand/");
+        let odibo = a.licence == "LicenseRef-ODIBO-Brand"
+            && a.kind == "logo"
+            && a.licence_file == "assets/odibo/LICENSE-ODIBO-BRAND.txt"
+            && a.path.strip_prefix("assets/odibo/").is_some_and(|p| ODIBO_BRAND_ASSETS.contains(&p));
+        let brand = odibo || (a.licence == BRAND_LICENCE && a.kind == "logo" && a.path.starts_with("docs/brand/"));
         if !brand {
             licence_ok(&a.path, &a.licence, &mut problems);
         }
@@ -561,6 +572,22 @@ mod tests {
             a.licence_file = "docs/brand/LICENSE-brand.txt".into();
             let m = Manifest { asset: vec![a], ..Default::default() };
             let p = check(&root, &m, &[], &BTreeSet::new());
+            assert_eq!(p.iter().all(|p| !p.contains("allowlist")), pass, "{path} {kind}: {p:?}");
+        }
+    }
+
+    #[test]
+    fn odibo_exception_requires_exact_path_kind_and_terms() {
+        for (path, kind, licence_file, pass) in [
+            ("assets/odibo/source-icon.png", "logo", "assets/odibo/LICENSE-ODIBO-BRAND.txt", true),
+            ("assets/odibo/unapproved.png", "logo", "assets/odibo/LICENSE-ODIBO-BRAND.txt", false),
+            ("assets/odibo/../icons/x.png", "logo", "assets/odibo/LICENSE-ODIBO-BRAND.txt", false),
+            ("assets/odibo/source-icon.png", "font", "assets/odibo/LICENSE-ODIBO-BRAND.txt", false),
+            ("assets/odibo/source-icon.png", "logo", "LICENSE-MIT", false),
+        ] {
+            let mut a = asset(path, "IMR4N (AI-generated through OpenAI ChatGPT)", kind, "LicenseRef-ODIBO-Brand");
+            a.licence_file = licence_file.into();
+            let p = check(&root(), &Manifest { asset: vec![a], ..Default::default() }, &[], &BTreeSet::new());
             assert_eq!(p.iter().all(|p| !p.contains("allowlist")), pass, "{path} {kind}: {p:?}");
         }
     }

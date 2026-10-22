@@ -2,7 +2,7 @@
 //!
 //! The desktop app supplies how to ask ([`PdfCraftApp::update_source`]), so this crate has no
 //! network code; without a source (the web build, tests) the command opens the releases page.
-//! PdfCraft never downloads or installs anything itself: the user downloads the new version.
+//! ODIBO PDF never downloads or installs anything itself: the user downloads the new version.
 //! It asks only when the user does: there is no check at start (the owner's decision).
 
 use std::sync::Arc;
@@ -11,8 +11,11 @@ use egui::{Align, Layout};
 
 use crate::{PdfCraftApp, theme, widgets};
 
-/// Where every PdfCraft release is listed.
-pub const RELEASES_PAGE: &str = "https://github.com/storytold/pdfcraft/releases";
+/// Where every ODIBO PDF release is listed.
+pub const RELEASES_PAGE: &str = "https://github.com/imranOdiboev/pdfcraft/releases";
+
+/// This test distribution has no configured ODIBO update service.
+pub const DISABLED_MESSAGE: &str = "Update checks are disabled in this ODIBO PDF test build. No update service is configured.";
 
 /// The latest published release.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -66,7 +69,8 @@ impl PdfCraftApp {
     /// Help ▸ Check for updates: ask for the latest release and show the outcome.
     pub fn check_for_updates(&mut self) {
         let Some(source) = self.update_source.clone() else {
-            self.open_url(RELEASES_PAGE);
+            self.updates.open = true;
+            self.updates.check = Check::Done(Err(DISABLED_MESSAGE.into()));
             return;
         };
         #[cfg(not(target_arch = "wasm32"))]
@@ -136,7 +140,7 @@ pub(crate) fn dialog(app: &mut PdfCraftApp, ctx: &egui::Context) {
             }
             Check::Done(Ok(r)) if is_newer(&r.version, current) => {
                 let version = r.version.trim_start_matches(['v', 'V']);
-                ui.label(egui::RichText::new(crate::i18n::fmt(tl!("PdfCraft {v} is available."), &[("v", version)])).strong());
+                ui.label(egui::RichText::new(crate::i18n::fmt(tl!("ODIBO PDF {v} is available."), &[("v", version)])).strong());
                 ui.label(
                     egui::RichText::new(crate::i18n::fmt(
                         tl!("You have version {c}. Download the new version from its release page."),
@@ -147,7 +151,7 @@ pub(crate) fn dialog(app: &mut PdfCraftApp, ctx: &egui::Context) {
                 download = Some(r.url.clone());
             }
             Check::Done(Ok(_)) => {
-                ui.label(crate::i18n::fmt(tl!("PdfCraft {c} is up to date."), &[("c", current)]));
+                ui.label(crate::i18n::fmt(tl!("ODIBO PDF {c} is up to date."), &[("c", current)]));
             }
             Check::Done(Err(e)) => {
                 ui.label(crate::i18n::fmt(tl!("Couldn't check for updates: {e}"), &[("e", &e.to_string())]));
