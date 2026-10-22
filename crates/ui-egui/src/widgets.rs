@@ -499,25 +499,25 @@ pub fn progress_notice(app: &PdfCraftApp, ctx: &egui::Context) -> bool {
     cancel
 }
 
-/// The ArtCraft wordmark (Storyteller's brand, docs/brand/; not open source), sized to `height`.
+/// Approved ODIBO wordmark; separate brand terms, sized to `height`.
 #[cfg(not(feature = "unbranded"))]
-pub fn artcraft_logo(ui: &mut egui::Ui, height: f32) -> Response {
+pub fn odibo_logo(ui: &mut egui::Ui, height: f32) -> Response {
     let dark = ui.visuals().dark_mode;
     let (uri, bytes): (&str, &'static [u8]) = if dark {
-        ("bytes://artcraft-logo-white.svg", include_bytes!("../../../docs/brand/artcraft-logo-white.svg"))
+        ("bytes://odibo-logo-dark.png", include_bytes!("../../../assets/odibo/logo-dark.png"))
     } else {
-        ("bytes://artcraft-logo.svg", include_bytes!("../../../docs/brand/artcraft-logo.svg"))
+        ("bytes://odibo-logo-light.png", include_bytes!("../../../assets/odibo/logo-light.png"))
     };
-    ui.add(egui::Image::from_bytes(uri, bytes).max_height(height).alt_text("ArtCraft"))
+    ui.add(egui::Image::from_bytes(uri, bytes).max_height(height).alt_text("ODIBO PDF"))
 }
 
-/// The ArtCraft mark (brand blue, works on light and dark), `size` points square.
+/// Approved ODIBO application mark, `size` points square.
 #[cfg(not(feature = "unbranded"))]
-pub fn artcraft_mark(ui: &mut egui::Ui, size: f32) -> Response {
+pub fn odibo_mark(ui: &mut egui::Ui, size: f32) -> Response {
     ui.add(
-        egui::Image::from_bytes("bytes://artcraft-mark.svg", include_bytes!("../../../docs/brand/artcraft-mark.svg"))
+        egui::Image::from_bytes("bytes://odibo-mark.png", include_bytes!("../../../assets/odibo/icon-256.png"))
             .fit_to_exact_size(vec2(size, size))
-            .alt_text("ArtCraft"),
+            .alt_text("ODIBO PDF"),
     )
 }
 
@@ -528,7 +528,7 @@ pub fn community_links(ui: &mut egui::Ui) -> Option<&'static str> {
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(8.0, 8.0);
         for (i, l) in pdfcraft_engine::links::LINKS.iter().enumerate() {
-            let resp = if i == 0 { icon_pill(ui, l.icon, tl!("Join our Discord"), true) } else { icon_pill(ui, l.icon, tl!(l.label), false) };
+            let resp = if i == 0 { icon_pill(ui, l.icon, tl!(l.label), true) } else { icon_pill(ui, l.icon, tl!(l.label), false) };
             if resp.on_hover_text(l.url).clicked() {
                 clicked = Some(l.command);
             }

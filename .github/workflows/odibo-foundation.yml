@@ -1,4 +1,4 @@
-name: ODIBO foundation
+name: ODIBO Windows test build
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: odibo-foundation-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: odibo-rebranding-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
 env:
@@ -83,7 +83,7 @@ jobs:
           if ($cmap -notmatch 'Adobe') { throw 'Missing original CMap attribution.' }
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: odibo-foundation-notices-${{ github.sha }}
+          name: odibo-rebranding-notices-${{ github.sha }}
           path: dist/notices
           retention-days: 7
           if-no-files-found: error
@@ -126,21 +126,29 @@ jobs:
       - name: Explicit PDF acceptance with required qpdf and Poppler
         run: cargo test --locked -p pdfcraft-cli --test odibo_foundation -- --nocapture
       - name: Clippy
-        run: cargo clippy --locked --workspace --all-targets --features pdfcraft-ui-egui/unbranded -- -D warnings
+        run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Workspace tests with the distribution branding policy
-        run: cargo test --locked --workspace --features pdfcraft-ui-egui/unbranded
-      - name: Capture the actual unbranded Home view
+        id: workspace_tests
+        run: cargo test --locked --workspace --no-fail-fast
+      - name: Capture ODIBO Home and About in both themes
+        id: capture_ui
+        if: ${{ !cancelled() && steps.workspace_tests.outcome != 'skipped' }}
         env:
           PDFCRAFT_SYSTEM_FONTS: '0'
         run: |
           mkdir -p dist/qa
-          cargo run --locked -p pdfcraft-ui-egui --features unbranded --example shot -- dist/qa/home.png --scale 1 --language en
-          echo 'Contributor-original screenshot of the foundation unbranded UI; MIT OR Apache-2.0. Only embedded openly licensed fonts and Lucide icons are shown. Source commit:' > dist/qa/ATTRIBUTION.txt
+          cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/qa/
+          for theme in light dark; do
+            cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/qa/home-$theme.png --scale 1 --language en --theme $theme
+            cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/qa/about-$theme.png --scale 1 --language en --theme $theme --dialog about
+          done
+          echo 'Own UI screenshot: open-source code and fonts retain their licences; ODIBO marks use LicenseRef-ODIBO-Brand. Source commit:' > dist/qa/ATTRIBUTION.txt
           echo "$GITHUB_SHA" >> dist/qa/ATTRIBUTION.txt
-          sha256sum dist/qa/home.png >> dist/qa/ATTRIBUTION.txt
+          sha256sum dist/qa/*.png >> dist/qa/ATTRIBUTION.txt
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: ${{ !cancelled() && steps.capture_ui.outcome == 'success' }}
         with:
-          name: odibo-foundation-ui-qa-${{ github.sha }}
+          name: odibo-rebranding-ui-qa-${{ github.sha }}
           path: dist/qa
           retention-days: 7
           if-no-files-found: error
@@ -148,6 +156,33 @@ jobs:
         run: cargo xtask layers
       - name: Asset licences and hashes
         run: cargo xtask assets
+      - name: Prove the texture regression fails before the fix and passes after it
+        run: |
+          cp assets/odibo/logo-light.png "$RUNNER_TEMP/odibo-runtime-logo.png"
+          trap 'cp "$RUNNER_TEMP/odibo-runtime-logo.png" assets/odibo/logo-light.png' EXIT
+          cp assets/odibo/source-logo.png assets/odibo/logo-light.png
+          set +e
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group \
+            links::shipped_brand_textures_fit_the_baseline_gpu_limit -- --exact \
+            > "$RUNNER_TEMP/odibo-texture-red.log" 2>&1
+          result=$?
+          set -e
+          cp "$RUNNER_TEMP/odibo-runtime-logo.png" assets/odibo/logo-light.png
+          trap - EXIT
+          if [ "$result" -eq 0 ] || ! grep -Fq 'test links::shipped_brand_textures_fit_the_baseline_gpu_limit ... FAILED' "$RUNNER_TEMP/odibo-texture-red.log"; then
+            cat "$RUNNER_TEMP/odibo-texture-red.log"
+            echo 'The original oversized logo did not fail the intended regression test.' >&2
+            exit 1
+          fi
+          echo 'Negative control: the original 2172 px wordmark failed the intended texture-limit assertion.'
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group \
+            links::shipped_brand_textures_fit_the_baseline_gpu_limit -- --exact
+          git diff --exit-code -- assets/odibo
+      - name: Build without ODIBO brand resources
+        run: |
+          mv assets/odibo "$RUNNER_TEMP/odibo-assets"
+          cargo check --locked -p pdfcraft --features unbranded
+          mv "$RUNNER_TEMP/odibo-assets" assets/odibo
       - name: Parity evidence
         run: cargo xtask parity
       - name: WASM compatibility
@@ -182,32 +217,44 @@ jobs:
           toolchain: 1.95.0
           targets: x86_64-pc-windows-msvc
       - name: Compile desktop and CLI (all PDF features retained)
-        run: cargo build --release --locked --target x86_64-pc-windows-msvc -p pdfcraft -p pdfcraft-cli --features pdfcraft-ui-egui/unbranded
+        id: release_build
+        run: cargo build --release --locked --target x86_64-pc-windows-msvc -p pdfcraft -p pdfcraft-cli
       - name: Acceptance against the release CLI
         run: cargo test --release --locked --target x86_64-pc-windows-msvc -p pdfcraft-cli --test odibo_foundation -- --nocapture
+      - name: Check Windows identity, ICO and real GUI startup
+        run: pwsh -NoProfile -File packaging/windows/test-odibo-build.ps1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: odibo-rebranding-windows-ui-qa-${{ github.sha }}
+          path: dist/windows-qa
+          retention-days: 7
+          if-no-files-found: warn
       - name: Windows core and CLI tests
-        run: cargo test --locked --target x86_64-pc-windows-msvc -p pdfcraft-cos -p pdfcraft-organize -p pdfcraft-render -p pdfcraft-engine -p pdfcraft-automation -p pdfcraft-cli
+        if: ${{ !cancelled() && steps.release_build.outcome == 'success' }}
+        run: cargo test --locked --target x86_64-pc-windows-msvc --no-fail-fast -p pdfcraft-cos -p pdfcraft-organize -p pdfcraft-render -p pdfcraft-engine -p pdfcraft-automation -p pdfcraft-cli
       - name: Check executable versions
         run: |
-          & target/x86_64-pc-windows-msvc/release/pdfcraft.exe --version
+          & target/x86_64-pc-windows-msvc/release/odibo-pdf.exe --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          & target/x86_64-pc-windows-msvc/release/pdfcraft-cli.exe --version
+          & target/x86_64-pc-windows-msvc/release/odibo-pdf-cli.exe --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
-          name: odibo-foundation-notices-${{ github.sha }}
+          name: odibo-rebranding-notices-${{ github.sha }}
           path: dist/windows-x64
       - name: Stage executables, OCR models and all existing licence material
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $dest = Join-Path $PWD 'dist/windows-x64'
-          Copy-Item -LiteralPath 'target/x86_64-pc-windows-msvc/release/pdfcraft.exe' -Destination $dest
-          Copy-Item -LiteralPath 'target/x86_64-pc-windows-msvc/release/pdfcraft-cli.exe' -Destination $dest
+          Copy-Item -LiteralPath 'target/x86_64-pc-windows-msvc/release/odibo-pdf.exe' -Destination $dest
+          Copy-Item -LiteralPath 'target/x86_64-pc-windows-msvc/release/odibo-pdf-cli.exe' -Destination $dest
           Copy-Item -LiteralPath 'LICENSE-MIT','LICENSE-APACHE','NOTICE','ATTRIBUTION.md','ATTRIBUTION.toml' -Destination $dest
           Copy-Item -LiteralPath 'assets/app-icon/LICENSE-document.txt' -Destination (Join-Path $dest 'LICENSE-document.txt')
           Copy-Item -LiteralPath 'packaging/windows/portable.txt' -Destination $dest
           Copy-Item -LiteralPath '.github/odibo/TEST_BUILD.txt' -Destination $dest
+          Copy-Item -LiteralPath 'assets/odibo/PROVENANCE.md' -Destination (Join-Path $dest 'BRAND_PROVENANCE.md')
           foreach ($area in @('assets','vendor','craft-fonts')) {
             Get-ChildItem -LiteralPath $area -Recurse -File | Where-Object { $_.Name -match '(?i)licen[cs]e|^OFL|^COPYING|^NOTICE|^COPYRIGHT' } | ForEach-Object {
               $relative = [IO.Path]::GetRelativePath($PWD.Path, $_.FullName)
@@ -221,7 +268,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           git diff --exit-code -- Cargo.lock
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          @("Commit: $env:GITHUB_SHA", 'Target: x86_64-pc-windows-msvc', 'Rust: 1.95.0', 'UI feature: unbranded', 'Unsigned test build; not an official release.') | Set-Content -LiteralPath (Join-Path $dest 'BUILD_INFO.txt') -Encoding utf8
+          @("Commit: $env:GITHUB_SHA", 'Target: x86_64-pc-windows-msvc', 'Rust: 1.95.0', 'UI: ODIBO PDF', 'Unsigned test build; not an official release.') | Set-Content -LiteralPath (Join-Path $dest 'BUILD_INFO.txt') -Encoding utf8
           $files = Get-ChildItem -LiteralPath $dest -Recurse -File
           $bytes = ($files | Measure-Object -Property Length -Sum).Sum
           if ($bytes -gt 200MB) { throw 'Test artifact exceeds the 200 MiB free-storage safeguard.' }
@@ -231,7 +278,7 @@ jobs:
           } | Set-Content -LiteralPath (Join-Path $dest 'SHA256SUMS.txt') -Encoding utf8
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: odibo-foundation-windows-x64-${{ github.sha }}
+          name: odibo-rebranding-windows-x64-${{ github.sha }}
           path: dist/windows-x64
           retention-days: 7
           if-no-files-found: error

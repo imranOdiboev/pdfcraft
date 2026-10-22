@@ -20,7 +20,7 @@ pub fn directory(
     }
     // XDG requires absolute environment paths; empty and relative overrides are ignored.
     let preferred = config_home.filter(|p| p.is_absolute()).or_else(|| home.filter(|p| p.is_absolute()).map(|p| p.join(".config")));
-    let Some(preferred) = preferred.map(|p| p.join("pdfcraft")) else { return Ok(legacy) };
+    let Some(preferred) = preferred.map(|p| p.join("odibo-pdf")) else { return Ok(legacy) };
     let target = preferred.join("app.ron");
     if std::fs::symlink_metadata(&target).is_ok() {
         return Ok(Some(preferred));
@@ -92,8 +92,8 @@ mod tests {
     fn xdg_preferences_use_config_instead_of_data() {
         let fixture = Fixture::new();
         let home = fixture.0.join("home");
-        let data = home.join(".local/share/pdfcraft");
-        assert_eq!(directory(true, None, Some(data), None, Some(home.clone())).unwrap(), Some(home.join(".config/pdfcraft")));
+        let data = home.join(".local/share/odibo-pdf");
+        assert_eq!(directory(true, None, Some(data), None, Some(home.clone())).unwrap(), Some(home.join(".config/odibo-pdf")));
     }
 
     struct Fixture(PathBuf);
@@ -116,9 +116,9 @@ mod tests {
         let f = Fixture::new();
         let home = f.0.join("home");
         let config = f.0.join("custom-config");
-        assert_eq!(directory(true, None, None, Some(config.clone()), Some(home.clone())).unwrap(), Some(config.join("pdfcraft")));
+        assert_eq!(directory(true, None, None, Some(config.clone()), Some(home.clone())).unwrap(), Some(config.join("odibo-pdf")));
         for invalid in [PathBuf::new(), PathBuf::from("relative")] {
-            assert_eq!(directory(true, None, None, Some(invalid), Some(home.clone())).unwrap(), Some(home.join(".config/pdfcraft")));
+            assert_eq!(directory(true, None, None, Some(invalid), Some(home.clone())).unwrap(), Some(home.join(".config/odibo-pdf")));
         }
         assert_eq!(directory(true, None, Some(f.0.clone()), None, None).unwrap(), Some(f.0.clone()));
     }
@@ -126,14 +126,14 @@ mod tests {
     #[test]
     fn migration_preserves_preferences_and_other_data() {
         let f = Fixture::new();
-        let data = f.0.join("data/pdfcraft");
+        let data = f.0.join("data/odibo-pdf");
         let config = f.0.join("config");
         std::fs::create_dir_all(data.join("recovery")).unwrap();
         std::fs::write(data.join("app.ron"), b"(theme:Dark,language:German)").unwrap();
         std::fs::write(data.join("recovery/unsaved.pdf"), b"UNSAVED").unwrap();
         std::fs::write(data.join("digital-id.p12"), b"KEY").unwrap();
         let selected = directory(true, None, Some(data.clone()), Some(config.clone()), None).unwrap().unwrap();
-        assert_eq!(selected, config.join("pdfcraft"));
+        assert_eq!(selected, config.join("odibo-pdf"));
         assert_eq!(std::fs::read(selected.join("app.ron")).unwrap(), std::fs::read(data.join("app.ron")).unwrap());
         assert_eq!(std::fs::read(data.join("recovery/unsaved.pdf")).unwrap(), b"UNSAVED");
         assert_eq!(std::fs::read(data.join("digital-id.p12")).unwrap(), b"KEY");
@@ -149,7 +149,7 @@ mod tests {
     fn existing_or_concurrently_created_preferences_are_never_replaced() {
         let f = Fixture::new();
         let source = f.0.join("old.ron");
-        let config = f.0.join("config/pdfcraft");
+        let config = f.0.join("config/odibo-pdf");
         std::fs::write(&source, b"OLD").unwrap();
         std::fs::create_dir_all(&config).unwrap();
         let target = config.join("app.ron");
@@ -172,7 +172,7 @@ mod tests {
     #[test]
     fn portable_and_non_xdg_platforms_keep_their_locations() {
         let f = Fixture::new();
-        let portable = f.0.join("PdfCraftData");
+        let portable = f.0.join("ODIBOPDFData");
         for xdg in [true, false] {
             assert_eq!(directory(xdg, Some(&portable), Some(f.0.clone()), Some(f.0.clone()), None).unwrap(), Some(portable.clone()));
         }

@@ -1,21 +1,17 @@
-PdfCraft foundation test build for the ODIBO PDF project
+ODIBO PDF — unsigned Windows x64 engineering test build
 
-This is an unsigned engineering test build, not an official PdfCraft or ODIBO PDF release.
-The application and executable names remain PdfCraft at this stage. ArtCraft trademark
-images and affiliation wording are excluded by the ui-egui/unbranded build feature.
-PDF functions, including OCR, have not been removed. Upstream links are retained as
-links to the upstream community, not as a promise of support or endorsement of this build.
+Extract the whole ZIP to a writable folder and run odibo-pdf.exe.
+The CLI is odibo-pdf-cli.exe. Keep models/, licences/, THIRD_PARTY_CARGO.html,
+LICENSE-MIT, LICENSE-APACHE, NOTICE and attribution files with the executables.
+portable.txt keeps settings, logs, recovery and new digital IDs in ODIBOPDFData.
+Without that marker, ODIBO uses its own per-user directories; PdfCraft data is not migrated.
 
-Extract the entire GitHub Actions artifact to a writable folder and run pdfcraft.exe.
-Keep models/, licences/, THIRD_PARTY_CARGO.html, NOTICE, attribution and licence files together.
-portable.txt keeps settings and recovery data in PdfCraftData next to the executables.
-This stage retains the upstream application IDs, installer publisher and update endpoint;
-those are on the next stage's rebranding checklist. No installer or official release is included.
+Updates are disabled: no ODIBO update service is configured. No installer, signing
+identity or official release is included. Do not use irreplaceable originals for testing.
 
-Original copyright and licence terms remain in LICENSE-MIT, LICENSE-APACHE, NOTICE,
-ATTRIBUTION.md and the accompanying licence files. New foundation code uses the same
-MIT OR Apache-2.0 terms. OCR models have their own attribution and CC BY-SA 4.0 licences
-in models/. No ownership of upstream code, fonts or models is claimed.
+Code retains MIT OR Apache-2.0 and upstream copyright notices. ODIBO graphics have
+separate terms in licences/assets/odibo/LICENSE-ODIBO-BRAND.txt. Fonts, components
+and OCR models retain their own licences. No exclusive AI copyright is claimed.
 
-BUILD_INFO.txt identifies the source commit. SHA256SUMS.txt covers the included files.
-The GitHub Actions download is a ZIP; sign in to GitHub to download it within seven days.
+BUILD_INFO.txt records the source commit. SHA256SUMS.txt covers the package files.
+The GitHub Actions artifact ZIP requires GitHub sign-in and expires after seven days.

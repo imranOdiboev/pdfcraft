@@ -39,7 +39,18 @@ Every asset must be one of:
 
 **One narrow exception: the ArtCraft brand.** The ArtCraft name, wordmark and logos in `docs/brand/` are trademarks of the ArtCraft Team and are **not** open source (manifest identifier `LicenseRef-Storyteller-Trademark`, terms in `docs/brand/LICENSE-brand.txt`). They may be used only unmodified, only within PdfCraft, and only as `kind = "logo"` entries from that directory, to identify the project. Forks and modified versions must remove them. Never add other files under this licence, and never modify the logos.
 
+**Owner-approved ODIBO exception (2026-10-22):** the two IMR4N-approved images generated
+through OpenAI ChatGPT for ODIBO PDF and their technical icon/logo derivatives may use
+`LicenseRef-ODIBO-Brand`, solely under `assets/odibo/`, with terms in
+`assets/odibo/LICENSE-ODIBO-BRAND.txt`. Own UI screenshots may display these permitted
+marks; the marks remain subject to those terms. This is not a general allowance for
+other proprietary assets. Every committed derivative still requires its own provenance,
+licence-file and SHA-256 entry. Do not claim exclusive copyright in fully AI-generated
+elements or trademark registration. Open-source code and upstream notices keep their
+existing licences. A build without the ODIBO brand materials must remain possible.
+
 Anything else is forbidden, including assets whose licence you cannot prove from the source. Examples:
+
 - system fonts (Apple, Microsoft, Google Android system UI fonts that are not openly licensed);
 - emoji artwork from Apple, Microsoft or Samsung;
 - stock photos;

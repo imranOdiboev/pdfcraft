@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=ODIBO PDF
+GenericName=PDF Editor
+Comment=Read, organize, combine, split and secure PDFs
+Exec=odibo-pdf %U
+TryExec=odibo-pdf
+Icon=ODIBO.PDF
+Terminal=false
+StartupNotify=true
+StartupWMClass=ODIBO.PDF
+Categories=Office;Viewer;
+Keywords=pdf;viewer;editor;annotate;sign;forms;merge;split;
+MimeType=application/pdf;

@@ -4,13 +4,13 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
-const BIN: &str = env!("CARGO_BIN_EXE_pdfcraft-cli");
+const BIN: &str = env!("CARGO_BIN_EXE_odibo-pdf-cli");
 
 struct Workdir(PathBuf);
 
 impl Workdir {
     fn new(test: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("pdfcraft-cli-check-{test}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("odibo-pdf-cli-check-{test}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("input/nested")).unwrap();
         let objects = [

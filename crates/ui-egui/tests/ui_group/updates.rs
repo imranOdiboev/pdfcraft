@@ -55,7 +55,7 @@ fn a_newer_release_is_offered_for_download() {
     let mut h = harness(Ok("v99.0.0"));
     h.state_mut().execute("help.check_updates");
     settle(&mut h);
-    h.get_by_label_contains("PdfCraft 99.0.0 is available");
+    h.get_by_label_contains("ODIBO PDF 99.0.0 is available");
     h.get_by_label("Download");
     h.get_by_label("Later").click();
     h.run_steps(3);
@@ -99,5 +99,20 @@ fn nothing_is_asked_until_the_user_checks() {
     h.state_mut().execute("help.check_updates");
     settle(&mut h);
     assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
-    h.get_by_label_contains("PdfCraft 99.0.0 is available");
+    h.get_by_label_contains("ODIBO PDF 99.0.0 is available");
+}
+
+#[test]
+fn no_update_service_reports_disabled_without_opening_a_browser() {
+    let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe(|_cc| {
+        let mut app = PdfCraftApp::new();
+        app.set_option("language", "en").unwrap();
+        app
+    });
+    h.state_mut().execute("help.check_updates");
+    h.run_steps(4);
+    h.get_by_label_contains("Update checks are disabled");
+    assert!(h.state().last_opened_url.is_none());
+    assert!(h.query_by_label("Download").is_none());
+    assert!(h.query_by_label_contains("Asks GitHub").is_none());
 }

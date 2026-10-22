@@ -1,0 +1,55 @@
+ODIBO PDF Brand Materials — Limited Permission
+
+Project representative: IMR4N.
+
+1. Scope and separation
+
+These terms apply only to the ODIBO logo images, application icons, wordmark artwork,
+their derived sizes and theme variants identified as LicenseRef-ODIBO-Brand in
+ATTRIBUTION.toml, and the ODIBO brand elements appearing in project screenshots.
+These materials are excluded from the repository's MIT and Apache-2.0 grants.
+Software source code and third-party components retain their applicable licences.
+The name ODIBO PDF is used as a project identifier; no trademark registration is claimed.
+This text does not assert copyright ownership of a name or of otherwise unprotectable material.
+
+2. Permitted project use
+
+IMR4N authorizes use of the materials in ODIBO PDF and its project documentation,
+builds and test distributions. Contributors acting for this project may make technical
+adaptations needed for that work, including cropping, background removal, resizing,
+icon conversion and light/dark presentation, while preserving the approved identity.
+Project screenshots may be displayed and shared to describe or review ODIBO PDF.
+
+Users may run official ODIBO PDF builds and build the official project for their own
+use with its included branding. Unmodified official build archives may be redistributed
+with all included licence and notice files, accurately identified as official project
+builds or test builds. This is not permission to claim endorsement or official status
+for a modified build.
+
+3. Other products and modified distributions
+
+No permission is granted by these terms to use the ODIBO brand materials or name
+as the identity of a separate product, or to distribute modified software under the
+ODIBO identity, without additional express permission from IMR4N. Third-party forks
+can use the open-source code under its licences and must replace the ODIBO branding
+before distributing their modified products. Accurate factual references to the
+project are permitted and must not imply sponsorship or endorsement.
+
+4. Generative AI and limits of the permission
+
+The two original images were generated through ChatGPT by OpenAI specifically for this project, as
+reported by IMR4N on 2026-10-22. The applicable service terms and the extent of
+human creative contribution have not been independently verified. Neither this
+notice nor inclusion in the project establishes exclusivity, registrability,
+copyright protection, or absence of third-party rights. Permissions and reservations
+apply only to the extent that IMR4N can lawfully grant or reserve them. These terms
+do not create rights in public-domain or otherwise unprotected material, bind parties
+who have not accepted applicable contractual terms, or override mandatory law,
+lawful fair use, or other statutory exceptions.
+
+5. Notices and warranty
+
+Keep this notice with copies of the brand material and official build archives.
+The materials are provided as is, without a warranty of exclusivity, title,
+non-infringement or fitness for a particular purpose, to the extent permitted by law.
+No rights in third-party brands, fonts or other third-party materials are granted.
