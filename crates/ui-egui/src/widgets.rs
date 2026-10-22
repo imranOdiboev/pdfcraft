@@ -103,16 +103,34 @@ pub(crate) fn paint_left(ui: &egui::Ui, pos: egui::Pos2, text: &str, font: egui:
     ui.painter().with_clip_rect(clip).text(pos, Align2::LEFT_CENTER, shown, font, color);
 }
 
-/// A mode-bar tab: text with an underline when active.
+/// Shared visible keyboard focus for allocate-and-paint controls.
+pub(crate) fn focus_ring(ui: &egui::Ui, response: &Response) {
+    if response.has_focus() {
+        let t = Tokens::get(ui.ctx());
+        ui.painter().rect_stroke(response.rect.shrink(2.0), 4, Stroke::new(2.0, t.text), egui::StrokeKind::Inside);
+    }
+}
+
+/// Primary command; stock egui interaction preserves keyboard and accessibility behavior.
+pub fn primary_button(ui: &mut egui::Ui, label: &str) -> Response {
+    let t = Tokens::get(ui.ctx());
+    // The light-theme blue keeps white text legible in either theme.
+    let fill = Tokens::for_kind(theme::ThemeKind::Light).accent;
+    ui.add(egui::Button::new(egui::RichText::new(label).font(theme::semibold(theme::BODY)).color(Color32::WHITE))
+        .fill(fill).stroke(Stroke::new(1.0, t.accent_text)).min_size(vec2(64.0, theme::CONTROL_HEIGHT)))
+}
+
+/// A mode-bar tab: a bounded surface and underline identify the active mode without colour.
 pub fn mode_tab(ui: &mut egui::Ui, label: &str, active: bool) -> Response {
     let t = Tokens::get(ui.ctx());
-    let font = if active { theme::semibold(13.5) } else { theme::medium(13.5) };
+    let font = if active { theme::semibold(theme::BODY) } else { theme::medium(theme::BODY) };
     let w = ui.fonts_mut(|f| f.layout_no_wrap(label.to_owned(), font.clone(), t.text).size().x);
     let (rect, resp) = ui.allocate_exact_size(vec2(w + 22.0, 48.0), Sense::click());
     resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, ui.is_enabled(), active, label));
     let press = theme::Press::track(ui, &resp);
     let well = rect.shrink2(vec2(2.0, 9.0));
     if active {
+        ui.painter().rect(well, 6, t.accent_soft, Stroke::new(1.0, t.text_muted), egui::StrokeKind::Inside);
         if press.down > 0.01 {
             ui.painter().rect_filled(well, CornerRadius::same(6), t.pressed.gamma_multiply(press.down));
         }
@@ -125,6 +143,7 @@ pub fn mode_tab(ui: &mut egui::Ui, label: &str, active: bool) -> Response {
         let r = Rect::from_min_max(rect.left_bottom() + vec2(10.0, -2.0), rect.right_bottom() - vec2(10.0, 0.0));
         ui.painter().rect_filled(r, CornerRadius { nw: 1, ne: 1, sw: 0, se: 0 }, t.accent);
     }
+    focus_ring(ui, &resp);
     theme::hand(resp)
 }
 
@@ -143,6 +162,7 @@ pub fn pill_button(ui: &mut egui::Ui, label: &str, primary: bool) -> Response {
     };
     ui.painter().rect(rect, CornerRadius::same(14), fill, stroke, egui::StrokeKind::Inside);
     ui.painter().text(rect.translate(press.offset()).center(), Align2::CENTER_CENTER, label, font, text);
+    focus_ring(ui, &resp);
     theme::hand(resp)
 }
 
@@ -163,6 +183,7 @@ pub fn ghost_button_sized(ui: &mut egui::Ui, icon: &str, label: &str, height: f3
     let body = rect.translate(press.offset());
     icons::paint(ui, Rect::from_min_size(body.min + vec2(6.0, (height - 18.0) / 2.0), vec2(18.0, 18.0)), icon, 17.0, t.icon);
     ui.painter().text(body.left_center() + vec2(30.0, 0.0), Align2::LEFT_CENTER, label, font, t.text);
+    focus_ring(ui, &resp);
     theme::hand(resp)
 }
 
@@ -177,7 +198,7 @@ pub fn search_box(ui: &mut egui::Ui, placeholder: &str, width: f32) -> Response 
     ui.painter().rect(rect, CornerRadius::same(16), fill, Stroke::new(1.0, edge), egui::StrokeKind::Inside);
     icons::paint(ui, Rect::from_min_size(rect.min + vec2(10.0, 8.0), vec2(16.0, 16.0)), "search", 15.0, t.text_muted);
     let shortcut = crate::commands::command_shortcut_label(ui.ctx(), "view.palette");
-    let shortcut = ui.painter().layout_no_wrap(shortcut, theme::regular(11.5), t.text_faint);
+    let shortcut = ui.painter().layout_no_wrap(shortcut, theme::regular(theme::SECONDARY), t.text_muted);
     let shortcut_pos = rect.right_center() - vec2(12.0 + shortcut.size().x, shortcut.size().y * 0.5);
     // Reserve the measured shortcut width in every language; long translations are elided
     // within the remaining space rather than painted underneath the shortcut.
@@ -190,6 +211,7 @@ pub fn search_box(ui: &mut egui::Ui, placeholder: &str, width: f32) -> Response 
     let elided = text.elided;
     ui.painter().with_clip_rect(text_rect).galley(egui::pos2(text_left, rect.center().y - text.size().y * 0.5), text, t.text_faint);
     ui.painter().with_clip_rect(rect).galley(shortcut_pos, shortcut, t.text_faint);
+    focus_ring(ui, &resp);
     let resp = resp.on_hover_cursor(egui::CursorIcon::Text);
     if elided { resp.on_hover_text(placeholder) } else { resp }
 }
@@ -594,6 +616,34 @@ pub fn icon_pill(ui: &mut egui::Ui, icon: &str, label: &str, primary: bool) -> R
 mod tests {
     use super::*;
     use egui::Pos2;
+
+    #[test]
+    fn selected_mode_has_a_structural_outline_in_both_themes() {
+        for kind in [theme::ThemeKind::Light, theme::ThemeKind::Dark] {
+            for active in [false, true] {
+                let ctx = egui::Context::default();
+                theme::apply(&ctx, kind);
+                let output = ctx.run_ui(egui::RawInput::default(), |ui| { mode_tab(ui, "Редактировать", active); });
+                let outlines = output.shapes.iter().filter(|s| matches!(&s.shape, egui::Shape::Rect(r) if r.stroke.width > 0.0)).count();
+                assert_eq!(outlines > 0, active, "selection must remain identifiable without colour");
+                output.drop_without_applying_deltas();
+            }
+        }
+    }
+
+    #[test]
+    fn focused_mode_accepts_enter_and_has_a_visible_focus_ring() {
+        let ctx = egui::Context::default();
+        theme::apply(&ctx, theme::ThemeKind::Light);
+        let output = ctx.run_ui(egui::RawInput::default(), |ui| { mode_tab(ui, "Read", false).request_focus(); });
+        output.drop_without_applying_deltas();
+        let input = egui::RawInput { events: vec![egui::Event::Key { key: egui::Key::Enter, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::NONE }], ..Default::default() };
+        let mut clicked = false;
+        let output = ctx.run_ui(input, |ui| { clicked = mode_tab(ui, "Read", false).clicked(); });
+        assert!(clicked, "keyboard activation must use the same action as a pointer");
+        assert!(output.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Rect(r) if r.stroke.width >= 2.0)), "focused controls need a visible outline");
+        output.drop_without_applying_deltas();
+    }
 
     #[test]
     fn search_placeholder_never_overlaps_the_shortcut() {

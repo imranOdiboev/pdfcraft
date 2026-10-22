@@ -6,6 +6,13 @@ use std::sync::Arc;
 use egui::epaint::text::{FontTweak, HintingTarget, SmoothHinting};
 use egui::{Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Rect, Response, Stroke, Vec2, Visuals};
 
+/// Logical points: native DPI and the user's UI scale remain owned by `ui_scale`.
+/// Keep secondary information readable without changing saved workspace geometry.
+pub const BODY: f32 = 14.0;
+pub const SECONDARY: f32 = 12.0;
+pub const TOOL_LABEL: f32 = 14.0;
+pub const CONTROL_HEIGHT: f32 = 32.0;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum ThemeKind {
     #[default]
@@ -475,9 +482,9 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
         s.spacing.scroll.floating = true;
         s.spacing.scroll.floating_width = 3.0;
         s.spacing.scroll.foreground_color = true;
-        s.text_styles.insert(egui::TextStyle::Body, regular(13.0));
-        s.text_styles.insert(egui::TextStyle::Button, regular(13.0));
-        s.text_styles.insert(egui::TextStyle::Small, regular(11.0));
+        s.text_styles.insert(egui::TextStyle::Body, regular(BODY));
+        s.text_styles.insert(egui::TextStyle::Button, medium(BODY));
+        s.text_styles.insert(egui::TextStyle::Small, regular(SECONDARY));
         s.text_styles.insert(egui::TextStyle::Heading, semibold(17.0));
         s.interaction.tooltip_delay = 0.35;
     });

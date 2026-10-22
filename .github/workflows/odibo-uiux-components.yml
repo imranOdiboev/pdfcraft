@@ -1,0 +1,118 @@
+name: ODIBO egui components
+
+on:
+  push:
+    branches: [feature/odibo-uiux]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: odibo-uiux-components-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_BUILD_JOBS: '2'
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
+  PDFCRAFT_SYSTEM_FONTS: '0'
+  CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+
+jobs:
+  components:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: storytold/craft-fonts
+          ref: 3d9ab3a132ed0eff457e424226a435a901da30d3
+          path: craft-fonts
+          persist-credentials: false
+      - name: Linux dependencies on disposable runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libgtk-3-dev
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.95.0
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+      - name: Prepare formatting patch without local Rust installation
+        run: |
+          mkdir -p dist/uiux-components
+          cargo fmt --all
+          git diff --binary -- '*.rs' > dist/uiux-components/format.patch
+      - name: Clippy
+        run: cargo clippy --locked -p pdfcraft-ui-egui --all-targets -- -D warnings
+      - name: UI tests
+        run: cargo test --locked -p pdfcraft-ui-egui --no-fail-fast
+      - name: Prove selection-outline regression against previous widget
+        run: |
+          cp crates/ui-egui/src/widgets.rs "$RUNNER_TEMP/widgets-fixed.rs"
+          trap 'cp "$RUNNER_TEMP/widgets-fixed.rs" crates/ui-egui/src/widgets.rs' EXIT
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('crates/ui-egui/src/widgets.rs')
+          s = p.read_text()
+          start = s.index('pub fn mode_tab(')
+          end = s.index('\n/// Rounded pill', start)
+          import subprocess
+          old = subprocess.check_output(['git', 'show', '23af123:crates/ui-egui/src/widgets.rs'], text=True)
+          a = old.index('pub fn mode_tab(')
+          b = old.index('\n/// Rounded pill', a)
+          p.write_text(s[:start] + old[a:b] + s[end:])
+          PY
+          set +e
+          cargo test --locked -p pdfcraft-ui-egui --lib selected_mode_has_a_structural_outline_in_both_themes > dist/uiux-components/negative-control.log 2>&1
+          status=$?
+          set -e
+          cp "$RUNNER_TEMP/widgets-fixed.rs" crates/ui-egui/src/widgets.rs
+          trap - EXIT
+          test "$status" -ne 0
+          grep -F 'widgets::tests::selected_mode_has_a_structural_outline_in_both_themes ... FAILED' dist/uiux-components/negative-control.log
+          cargo test --locked -p pdfcraft-ui-egui --lib selected_mode_has_a_structural_outline_in_both_themes
+      - name: Real egui editor screenshots with synthetic document
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          objects = [b'<< /Type /Catalog /Pages 2 0 R >>', b'<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>', b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << >> /Contents 5 0 R >>', b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] >>', b'<< /Length 55 >>\nstream\n0.9 0.94 1 rg 60 620 475 140 re f 0 0.36 0.9 rg 60 620 8 140 re f\nendstream']
+          # No text/fonts/images in the PDF: only original vector rectangles.
+          stream = objects[4].split(b'stream\n')[1].split(b'\nendstream')[0]
+          objects[4] = b'<< /Length ' + str(len(stream)).encode() + b' >>\nstream\n' + stream + b'\nendstream'
+          out = bytearray(b'%PDF-1.7\n'); offsets = []
+          for i, obj in enumerate(objects, 1):
+              offsets.append(len(out)); out.extend(f'{i} 0 obj\n'.encode() + obj + b'\nendobj\n')
+          xref = len(out)
+          out.extend(f'xref\n0 {len(objects)+1}\n0000000000 65535 f \n'.encode())
+          for offset in offsets: out.extend(f'{offset:010d} 00000 n \n'.encode())
+          out.extend(f'trailer\n<< /Size {len(objects)+1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n'.encode())
+          Path('dist/uiux-components/fixture.pdf').write_bytes(out)
+          PY
+          for language in en ru; do
+            for theme in light dark; do
+              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/uiux-components/editor-$language-$theme.png dist/uiux-components/fixture.pdf --scale 1 --language $language --theme $theme --mode edit
+            done
+          done
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/uiux-components/editor-compact.png dist/uiux-components/fixture.pdf --size 720x800 --scale 1.5 --language ru --theme dark --mode edit
+          cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/uiux-components/
+          cp LICENSE-MIT LICENSE-APACHE NOTICE dist/uiux-components/
+          echo 'Own egui screenshots and synthetic vector PDF: MIT OR Apache-2.0; ODIBO marks: LicenseRef-ODIBO-Brand. UI fonts: Inter/OFL; icons: Lucide/ISC. Source:' > dist/uiux-components/PROVENANCE.txt
+          echo "$GITHUB_SHA" >> dist/uiux-components/PROVENANCE.txt
+          sha256sum dist/uiux-components/*.png dist/uiux-components/fixture.pdf > dist/uiux-components/SHA256SUMS.txt
+      - name: Layering and assets
+        run: |
+          cargo xtask layers
+          cargo xtask assets
+          cargo xtask parity
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: odibo-egui-components-${{ github.sha }}
+          path: dist/uiux-components
+          retention-days: 7
+          if-no-files-found: error
