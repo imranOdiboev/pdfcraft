@@ -44,10 +44,9 @@ fn home_screen_links() {
 #[cfg(not(feature = "unbranded"))]
 #[test]
 fn shipped_brand_textures_fit_the_baseline_gpu_limit() {
-    for bytes in [
-        include_bytes!("../../../../assets/odibo/logo-light.png").as_slice(),
-        include_bytes!("../../../../assets/odibo/logo-dark.png").as_slice(),
-    ] {
+    for bytes in
+        [include_bytes!("../../../../assets/odibo/logo-light.png").as_slice(), include_bytes!("../../../../assets/odibo/logo-dark.png").as_slice()]
+    {
         let image = image::load_from_memory(bytes).unwrap();
         assert!(image.width() <= 2048 && image.height() <= 2048);
     }
