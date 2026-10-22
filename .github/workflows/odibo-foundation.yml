@@ -137,6 +137,7 @@ jobs:
           PDFCRAFT_SYSTEM_FONTS: '0'
         run: |
           mkdir -p dist/qa
+          cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/qa/
           for theme in light dark; do
             cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/qa/home-$theme.png --scale 1 --language en --theme $theme
             cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/qa/about-$theme.png --scale 1 --language en --theme $theme --dialog about

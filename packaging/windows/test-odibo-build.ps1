@@ -1,6 +1,7 @@
 param([string]$BinDir = 'target/x86_64-pc-windows-msvc/release', [string]$QaDir = 'dist/windows-qa')
 $ErrorActionPreference = 'Stop'
 New-Item -ItemType Directory -Path $QaDir -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot '../../assets/odibo/LICENSE-ODIBO-BRAND.txt') -Destination $QaDir
 $gui = (Resolve-Path (Join-Path $BinDir 'odibo-pdf.exe')).Path
 $cli = (Resolve-Path (Join-Path $BinDir 'odibo-pdf-cli.exe')).Path
 foreach ($exe in @($gui, $cli)) {
