@@ -9,6 +9,11 @@ rust-version = "1.95"
 [lints]
 workspace = true
 
+[features]
+# Test distributions must not embed ArtCraft's separately licensed trademarks.
+# This changes branding only; the PDF feature set and the PdfCraft name stay intact.
+unbranded = []
+
 [dependencies]
 craft-ui = { workspace = true }
 # macOS: a window close quits through `terminate:` (the Touch Bar crash, #1136); elsewhere a no-op.

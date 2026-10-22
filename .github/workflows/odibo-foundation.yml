@@ -1,0 +1,238 @@
+name: ODIBO foundation
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['**/Cargo.toml', Cargo.lock, deny.toml, NOTICE, 'LICENSE-*', 'ATTRIBUTION.*', 'apps/**', 'crates/**', 'xtask/**', 'assets/**', 'vendor/**', '.github/workflows/odibo-foundation.yml', '.github/odibo/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: odibo-foundation-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: never
+  RUST_BACKTRACE: '1'
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
+  CARGO_BUILD_JOBS: '2'
+
+jobs:
+  security:
+    name: Security and Windows dependency notices
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.95.0
+      - name: Enforce existing licence, source and advisory policy
+        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25
+        with:
+          command: check
+          arguments: --all-features --locked
+      - name: Install pinned notice generator on the disposable runner
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/cargo-about.tar.gz" \
+            https://github.com/EmbarkStudios/cargo-about/releases/download/0.9.2/cargo-about-0.9.2-x86_64-unknown-linux-musl.tar.gz
+          echo "9099a59e820c38a68b9d65f300662a567d56562f9a10f6aa4c7e86c17c2566af  $RUNNER_TEMP/cargo-about.tar.gz" | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/cargo-about"
+          tar -xzf "$RUNNER_TEMP/cargo-about.tar.gz" -C "$RUNNER_TEMP/cargo-about"
+          find "$RUNNER_TEMP/cargo-about" -type f -name cargo-about -exec cp '{}' "$HOME/.cargo/bin/cargo-about" \;
+          cargo about --version
+      - name: Generate notices for the locked Windows dependency graph
+        run: |
+          mkdir -p dist/notices
+          cargo about generate --locked --workspace --all-features --fail \
+            --config .github/odibo/about.toml \
+            --output-file dist/notices/THIRD_PARTY_CARGO.html .github/odibo/about.hbs
+          git diff --exit-code -- Cargo.lock
+      - name: Preserve the original dependency-bundled font and CMap licences
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $metadata = cargo metadata --locked --format-version 1 --all-features --filter-platform x86_64-pc-windows-msvc | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $bundled = @(
+            @{ Name = 'epaint_default_fonts'; Version = '0.36.2'; Files = @('fonts/Hack-Regular.txt','fonts/OFL.txt','fonts/UFL.txt','fonts/emoji-icon-font-mit-license.txt') },
+            @{ Name = 'hayro-cmap'; Version = '0.1.0'; Files = @('LICENSE-APACHE','LICENSE-MIT','assets/LICENSE.txt') }
+          )
+          foreach ($spec in $bundled) {
+            $packages = @($metadata.packages | Where-Object { $_.name -eq $spec.Name })
+            if ($packages.Count -ne 1 -or $packages[0].version -ne $spec.Version) { throw "Review bundled notices after dependency change: $($spec.Name)" }
+            $package = $packages[0]
+            $source = Split-Path -Parent $package.manifest_path
+            $dest = Join-Path 'dist/notices/licences/dependencies' "$($package.name)-$($package.version)"
+            foreach ($relative in $spec.Files) {
+              $target = Join-Path $dest $relative
+              New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
+              Copy-Item -LiteralPath (Join-Path $source $relative) -Destination $target
+            }
+            @("Package: $($package.name) $($package.version)", "Source: $($package.source)", 'Files copied unmodified from the Cargo.lock-resolved package; no font or CMap binaries are copied.') | Set-Content -LiteralPath (Join-Path $dest 'SOURCE.txt') -Encoding utf8
+          }
+          $hack = Get-Content -Raw -LiteralPath 'dist/notices/licences/dependencies/epaint_default_fonts-0.36.2/fonts/Hack-Regular.txt'
+          if ($hack -notmatch 'BITSTREAM VERA LICENSE') { throw 'Missing Bitstream Vera licence text.' }
+          $cmap = Get-Content -Raw -LiteralPath 'dist/notices/licences/dependencies/hayro-cmap-0.1.0/assets/LICENSE.txt'
+          if ($cmap -notmatch 'Adobe') { throw 'Missing original CMap attribution.' }
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: odibo-foundation-notices-${{ github.sha }}
+          path: dist/notices
+          retention-days: 7
+          if-no-files-found: error
+
+  checks:
+    name: Linux tests, PDF interoperability and quality gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+      CRAFT_FONTS_REQUIRED: '1'
+      PDFCRAFT_ORACLES_REQUIRED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: storytold/craft-fonts
+          ref: 3d9ab3a132ed0eff457e424226a435a901da30d3
+          path: craft-fonts
+          persist-credentials: false
+      - name: Install Linux build dependencies and independent PDF checkers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libxkbcommon-dev libwayland-dev \
+            libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libgtk-3-dev qpdf poppler-utils
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.95.0
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+      - name: Format
+        run: |
+          if ! cargo fmt --all -- --check; then
+            cargo fmt --all
+            git diff -- '*.rs'
+            exit 1
+          fi
+      - name: Explicit PDF acceptance with required qpdf and Poppler
+        run: cargo test --locked -p pdfcraft-cli --test odibo_foundation -- --nocapture
+      - name: Clippy
+        run: cargo clippy --locked --workspace --all-targets --features pdfcraft-ui-egui/unbranded -- -D warnings
+      - name: Workspace tests with the distribution branding policy
+        run: cargo test --locked --workspace --features pdfcraft-ui-egui/unbranded
+      - name: Capture the actual unbranded Home view
+        env:
+          PDFCRAFT_SYSTEM_FONTS: '0'
+        run: |
+          mkdir -p dist/qa
+          cargo run --locked -p pdfcraft-ui-egui --features unbranded --example shot -- dist/qa/home.png --scale 1 --language en
+          echo 'Contributor-original screenshot of the foundation unbranded UI; MIT OR Apache-2.0. Only embedded openly licensed fonts and Lucide icons are shown. Source commit:' > dist/qa/ATTRIBUTION.txt
+          echo "$GITHUB_SHA" >> dist/qa/ATTRIBUTION.txt
+          sha256sum dist/qa/home.png >> dist/qa/ATTRIBUTION.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: odibo-foundation-ui-qa-${{ github.sha }}
+          path: dist/qa
+          retention-days: 7
+          if-no-files-found: error
+      - name: Layering
+        run: cargo xtask layers
+      - name: Asset licences and hashes
+        run: cargo xtask assets
+      - name: Parity evidence
+        run: cargo xtask parity
+      - name: WASM compatibility
+        run: cargo xtask wasm
+      - name: CLI without optional MCP
+        run: cargo check --locked -p pdfcraft-cli --no-default-features
+      - name: Lockfile unchanged
+        run: git diff --exit-code -- Cargo.lock
+
+  windows:
+    name: Windows x64 build and acceptance
+    needs: security
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+      CRAFT_FONTS_REQUIRED: '1'
+      PDFCRAFT_REQUIRE_WINRES: '1'
+      CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: '-C target-feature=+crt-static'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: storytold/craft-fonts
+          ref: 3d9ab3a132ed0eff457e424226a435a901da30d3
+          path: craft-fonts
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.95.0
+          targets: x86_64-pc-windows-msvc
+      - name: Compile desktop and CLI (all PDF features retained)
+        run: cargo build --release --locked --target x86_64-pc-windows-msvc -p pdfcraft -p pdfcraft-cli --features pdfcraft-ui-egui/unbranded
+      - name: Acceptance against the release CLI
+        run: cargo test --release --locked --target x86_64-pc-windows-msvc -p pdfcraft-cli --test odibo_foundation -- --nocapture
+      - name: Windows core and CLI tests
+        run: cargo test --locked --target x86_64-pc-windows-msvc -p pdfcraft-cos -p pdfcraft-organize -p pdfcraft-render -p pdfcraft-engine -p pdfcraft-automation -p pdfcraft-cli
+      - name: Check executable versions
+        run: |
+          & target/x86_64-pc-windows-msvc/release/pdfcraft.exe --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & target/x86_64-pc-windows-msvc/release/pdfcraft-cli.exe --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: odibo-foundation-notices-${{ github.sha }}
+          path: dist/windows-x64
+      - name: Stage executables, OCR models and all existing licence material
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dest = Join-Path $PWD 'dist/windows-x64'
+          Copy-Item -LiteralPath 'target/x86_64-pc-windows-msvc/release/pdfcraft.exe' -Destination $dest
+          Copy-Item -LiteralPath 'target/x86_64-pc-windows-msvc/release/pdfcraft-cli.exe' -Destination $dest
+          Copy-Item -LiteralPath 'LICENSE-MIT','LICENSE-APACHE','NOTICE','ATTRIBUTION.md','ATTRIBUTION.toml' -Destination $dest
+          Copy-Item -LiteralPath 'assets/app-icon/LICENSE-document.txt' -Destination (Join-Path $dest 'LICENSE-document.txt')
+          Copy-Item -LiteralPath 'packaging/windows/portable.txt' -Destination $dest
+          Copy-Item -LiteralPath '.github/odibo/TEST_BUILD.txt' -Destination $dest
+          foreach ($area in @('assets','vendor','craft-fonts')) {
+            Get-ChildItem -LiteralPath $area -Recurse -File | Where-Object { $_.Name -match '(?i)licen[cs]e|^OFL|^COPYING|^NOTICE|^COPYRIGHT' } | ForEach-Object {
+              $relative = [IO.Path]::GetRelativePath($PWD.Path, $_.FullName)
+              $target = Join-Path (Join-Path $dest 'licences') $relative
+              New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
+              Copy-Item -LiteralPath $_.FullName -Destination $target
+            }
+          }
+          Copy-Item -LiteralPath 'docs/brand/LICENSE-brand.txt' -Destination (Join-Path $dest 'licences/ArtCraft-brand-terms.txt')
+          cargo xtask models (Join-Path $dest 'models')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git diff --exit-code -- Cargo.lock
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          @("Commit: $env:GITHUB_SHA", 'Target: x86_64-pc-windows-msvc', 'Rust: 1.95.0', 'UI feature: unbranded', 'Unsigned test build; not an official release.') | Set-Content -LiteralPath (Join-Path $dest 'BUILD_INFO.txt') -Encoding utf8
+          $files = Get-ChildItem -LiteralPath $dest -Recurse -File
+          $bytes = ($files | Measure-Object -Property Length -Sum).Sum
+          if ($bytes -gt 200MB) { throw 'Test artifact exceeds the 200 MiB free-storage safeguard.' }
+          $files | Sort-Object FullName | ForEach-Object {
+            $relative = [IO.Path]::GetRelativePath($dest, $_.FullName).Replace('\','/')
+            '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $relative
+          } | Set-Content -LiteralPath (Join-Path $dest 'SHA256SUMS.txt') -Encoding utf8
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: odibo-foundation-windows-x64-${{ github.sha }}
+          path: dist/windows-x64
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 9

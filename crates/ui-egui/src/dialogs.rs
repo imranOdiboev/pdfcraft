@@ -1155,6 +1155,7 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                     2 => crate::credits::models_ui(ui),
                     _ => {
                         ui.horizontal(|ui| {
+                            #[cfg(not(feature = "unbranded"))]
                             widgets::artcraft_mark(ui, 40.0);
                             ui.vertical(|ui| {
                                 ui.label(egui::RichText::new("PdfCraft").font(theme::semibold(20.0)));
@@ -1171,6 +1172,7 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                             .small(),
                         );
                         ui.add_space(12.0);
+                        #[cfg(not(feature = "unbranded"))]
                         ui.horizontal(|ui| {
                             ui.label(egui::RichText::new(tl!("Part of")).color(t.text_muted));
                             widgets::artcraft_logo(ui, 16.0);
