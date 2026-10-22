@@ -114,4 +114,5 @@ fn no_update_service_reports_disabled_without_opening_a_browser() {
     h.get_by_label_contains("Update checks are disabled");
     assert!(h.state().last_opened_url.is_none());
     assert!(h.query_by_label("Download").is_none());
+    assert!(h.query_by_label_contains("Asks GitHub").is_none());
 }
