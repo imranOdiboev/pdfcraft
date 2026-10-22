@@ -157,23 +157,23 @@ pub(crate) fn dialog(app: &mut PdfCraftApp, ctx: &egui::Context) {
             Check::Done(Err(e)) => {
                 ui.label(crate::i18n::fmt(tl!("Couldn't check for updates: {e}"), &[("e", &e.to_string())]));
                 if !disabled {
-                ui.label(
-                    egui::RichText::new(crate::i18n::fmt(
-                        tl!("You have version {c}. All releases are listed at {page}."),
-                        &[("c", current), ("page", RELEASES_PAGE)],
-                    ))
-                    .color(t.text_muted),
-                );
+                    ui.label(
+                        egui::RichText::new(crate::i18n::fmt(
+                            tl!("You have version {c}. All releases are listed at {page}."),
+                            &[("c", current), ("page", RELEASES_PAGE)],
+                        ))
+                        .color(t.text_muted),
+                    );
                 }
             }
         }
         ui.add_space(10.0);
         if !disabled {
-        ui.label(
-            egui::RichText::new(tl!("Asks GitHub for the latest release. Nothing is downloaded or installed automatically."))
-                .color(t.text_muted)
-                .small(),
-        );
+            ui.label(
+                egui::RichText::new(tl!("Asks GitHub for the latest release. Nothing is downloaded or installed automatically."))
+                    .color(t.text_muted)
+                    .small(),
+            );
         }
         ui.add_space(12.0);
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
