@@ -51,7 +51,7 @@ jobs:
       - name: Clippy
         run: cargo clippy --locked -p pdfcraft-ui-egui --all-targets -- -D warnings
       - name: UI tests
-        run: cargo test --locked -p pdfcraft-ui-egui --lib --test ui_group --test commands --test ui --test control --test dialog_chrome --no-fail-fast
+        run: cargo test --locked -p pdfcraft-ui-egui --lib --test ui_group --test commands --test ui --test control --test dialog_chrome --test accessibility --test actions --test editing --test javascript --test signing --no-fail-fast
       - name: Prove selection-outline regression against previous widget
         if: ${{ !cancelled() }}
         run: |

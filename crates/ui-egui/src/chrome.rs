@@ -503,10 +503,12 @@ pub fn mode_bar(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 ui.add_space(6.0);
                 ui.painter().vline(ui.cursor().left(), ui.max_rect().y_range().shrink(12.0), Stroke::new(1.0, t.divider));
                 ui.add_space(10.0);
-                let modes = [(Mode::AllTools, "All tools"), (Mode::Read, "Read"), (Mode::Edit, "Edit"), (Mode::Convert, "Convert"), (Mode::Sign, "E-Sign")];
+                let modes =
+                    [(Mode::AllTools, "All tools"), (Mode::Read, "Read"), (Mode::Edit, "Edit"), (Mode::Convert, "Convert"), (Mode::Sign, "E-Sign")];
                 // Measure translated labels, not the window's physical pixels. Reserve space
                 // for Save and the palette before choosing the presentation of the modes.
-                let mode_width: f32 = modes.iter().map(|(_, label)| widgets::text_width(ui, tl!(label), &theme::semibold(theme::CONTROL_LABEL)) + 24.0).sum();
+                let mode_width: f32 =
+                    modes.iter().map(|(_, label)| widgets::text_width(ui, tl!(label), &theme::semibold(theme::CONTROL_LABEL)) + 24.0).sum();
                 let save_width = widgets::text_width(ui, tl!("Save"), &theme::semibold(theme::CONTROL_LABEL)) + 24.0;
                 let compact = ui.available_width() < mode_width + save_width + 64.0;
                 if compact {

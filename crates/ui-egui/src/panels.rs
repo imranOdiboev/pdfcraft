@@ -133,8 +133,14 @@ fn tool_row(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup) -> egui::Response {
         }
         _ => 8.0,
     };
-    let clipped =
-        row_label(ui, tl!(g.label), theme::regular(theme::TOOL_LABEL), t.text, body.left_center() + vec2(36.0, 0.0), rect.width() - 36.0 - right_reserved);
+    let clipped = row_label(
+        ui,
+        tl!(g.label),
+        theme::regular(theme::TOOL_LABEL),
+        t.text,
+        body.left_center() + vec2(36.0, 0.0),
+        rect.width() - 36.0 - right_reserved,
+    );
     match (g.badge, g.availability) {
         (Some(b), _) => {
             let font = theme::semibold(theme::SECONDARY);
@@ -263,7 +269,14 @@ fn tool_detail(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static
                 let chip_label = tl!(chip).to_string();
                 let w = crate::widgets::text_width(ui, &chip_label, &font);
                 let r = Rect::from_center_size(body.right_center() - vec2(w / 2.0 + 10.0, 0.0), vec2(w + 10.0, 20.0));
-                row_label(ui, tl!(item.label), theme::regular(theme::TOOL_LABEL), fg, body.left_center() + vec2(34.0, 0.0), r.left() - body.left() - 42.0);
+                row_label(
+                    ui,
+                    tl!(item.label),
+                    theme::regular(theme::TOOL_LABEL),
+                    fg,
+                    body.left_center() + vec2(34.0, 0.0),
+                    r.left() - body.left() - 42.0,
+                );
                 ui.painter().rect_filled(r, CornerRadius::same(4), fill);
                 ui.painter().text(r.center(), Align2::CENTER_CENTER, chip_label, font, cfg);
                 widgets::focus_ring(ui, &resp);

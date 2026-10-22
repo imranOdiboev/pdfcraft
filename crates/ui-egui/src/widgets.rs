@@ -116,8 +116,12 @@ pub fn primary_button(ui: &mut egui::Ui, label: &str, accessible_label: &str) ->
     let t = Tokens::get(ui.ctx());
     // The light-theme blue keeps white text legible in either theme.
     let fill = Tokens::for_kind(theme::ThemeKind::Light).accent;
-    let response = ui.add(egui::Button::new(egui::RichText::new(label).font(theme::semibold(theme::CONTROL_LABEL)).color(Color32::WHITE))
-        .fill(fill).stroke(Stroke::new(1.0, t.accent_text)).min_size(vec2(64.0, theme::CONTROL_HEIGHT)));
+    let response = ui.add(
+        egui::Button::new(egui::RichText::new(label).font(theme::semibold(theme::CONTROL_LABEL)).color(Color32::WHITE))
+            .fill(fill)
+            .stroke(Stroke::new(1.0, t.accent_text))
+            .min_size(vec2(64.0, theme::CONTROL_HEIGHT)),
+    );
     // Keep the established shortcut-bearing automation name distinct from modal Save.
     response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), accessible_label));
     response
@@ -643,7 +647,9 @@ mod tests {
                 let ctx = egui::Context::default();
                 ctx.set_fonts(theme::font_definitions());
                 theme::apply(&ctx, kind);
-                let output = ctx.run_ui(egui::RawInput::default(), |ui| { mode_tab(ui, "Редактировать", active); });
+                let output = ctx.run_ui(egui::RawInput::default(), |ui| {
+                    mode_tab(ui, "Редактировать", active);
+                });
                 let outlines = output.shapes.iter().filter(|s| matches!(&s.shape, egui::Shape::Rect(r) if r.stroke.width > 0.0)).count();
                 assert_eq!(outlines > 0, active, "selection must remain identifiable without colour");
                 output.drop_without_applying_deltas();
@@ -656,13 +662,29 @@ mod tests {
         let ctx = egui::Context::default();
         ctx.set_fonts(theme::font_definitions());
         theme::apply(&ctx, theme::ThemeKind::Light);
-        let output = ctx.run_ui(egui::RawInput::default(), |ui| { mode_tab(ui, "Read", false).request_focus(); });
+        let output = ctx.run_ui(egui::RawInput::default(), |ui| {
+            mode_tab(ui, "Read", false).request_focus();
+        });
         output.drop_without_applying_deltas();
-        let input = egui::RawInput { events: vec![egui::Event::Key { key: egui::Key::Enter, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::NONE }], ..Default::default() };
+        let input = egui::RawInput {
+            events: vec![egui::Event::Key {
+                key: egui::Key::Enter,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+            ..Default::default()
+        };
         let mut clicked = false;
-        let output = ctx.run_ui(input, |ui| { clicked = mode_tab(ui, "Read", false).clicked(); });
+        let output = ctx.run_ui(input, |ui| {
+            clicked = mode_tab(ui, "Read", false).clicked();
+        });
         assert!(clicked, "keyboard activation must use the same action as a pointer");
-        assert!(output.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Rect(r) if r.stroke.width >= 2.0)), "focused controls need a visible outline");
+        assert!(
+            output.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Rect(r) if r.stroke.width >= 2.0)),
+            "focused controls need a visible outline"
+        );
         output.drop_without_applying_deltas();
     }
 
