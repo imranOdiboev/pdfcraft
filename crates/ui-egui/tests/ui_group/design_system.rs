@@ -15,12 +15,13 @@ fn tool_selection_follows_the_existing_command_and_accessibility_state() {
     h.run_steps(4);
     h.get_by_label("Edit").click();
     h.run_steps(3);
-    assert!(h.get_by_label("Edit text & images").accesskit_node().is_selected() == Some(true));
+    assert!(h.query_all_by_label("Edit text & images").count() > 0);
+    assert!(h.query_all_by_label("Edit text & images").all(|node| node.accesskit_node().toggled() == Some(egui::accesskit::Toggled::True)));
     h.get_by_role_and_label(egui::accesskit::Role::Button, "Text").click();
     h.run_steps(3);
     assert_eq!(h.state().quick_tool, QuickTool::AddText);
-    assert!(h.get_by_role_and_label(egui::accesskit::Role::Button, "Text").accesskit_node().is_selected() == Some(true));
-    assert!(h.get_by_label("Edit text & images").accesskit_node().is_selected() == Some(false));
+    assert!(h.get_by_role_and_label(egui::accesskit::Role::Button, "Text").accesskit_node().toggled() == Some(egui::accesskit::Toggled::True));
+    assert!(h.query_all_by_label("Edit text & images").all(|node| node.accesskit_node().toggled() == Some(egui::accesskit::Toggled::False)));
     let doc = h.state().session.get(h.state().views[0].id).unwrap();
     assert!(!doc.dirty, "choosing a tool must not edit the document");
 }
@@ -48,7 +49,7 @@ fn compact_toolbar_keeps_modes_and_palette_reachable() {
                 let save_rect = save.rect();
                 let search = h.get_by_label(search_label).rect();
                 let mode = h.get_by_role_and_label(egui::accesskit::Role::Button, all_label);
-                assert!(mode.accesskit_node().is_selected() == Some(true));
+                assert!(mode.accesskit_node().toggled() == Some(egui::accesskit::Toggled::True));
                 assert!(mode.rect().right() <= search.left(), "mode and search overlap");
                 assert!(search.right() <= save_rect.left(), "search and Save overlap");
                 assert!(save_rect.right() <= 640.0, "Save escaped the viewport");
@@ -58,7 +59,7 @@ fn compact_toolbar_keeps_modes_and_palette_reachable() {
                 h.run_steps(3);
                 assert_eq!(h.state().mode, Mode::Edit);
                 assert_eq!(h.state().quick_tool, QuickTool::EditText);
-                assert!(h.get_by_label(edit_label).accesskit_node().is_selected() == Some(true));
+                assert!(h.get_by_label(edit_label).accesskit_node().toggled() == Some(egui::accesskit::Toggled::True));
                 h.get_by_label(search_label).click();
                 h.run_steps(2);
                 assert!(h.state().palette_open);

@@ -651,8 +651,8 @@ mod tests {
                     mode_tab(ui, "Редактировать", active);
                 });
                 let outlines = output.shapes.iter().filter(|s| matches!(&s.shape, egui::Shape::Rect(r) if r.stroke.width > 0.0)).count();
-                assert_eq!(outlines > 0, active, "selection must remain identifiable without colour");
                 output.drop_without_applying_deltas();
+                assert_eq!(outlines > 0, active, "selection must remain identifiable without colour");
             }
         }
     }
