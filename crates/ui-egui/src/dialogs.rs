@@ -1172,11 +1172,7 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                             .small(),
                         );
                         ui.add_space(12.0);
-                        #[cfg(not(feature = "unbranded"))]
-                        ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("IMR4N · Based on PdfCraft").color(t.text_muted));
-                            widgets::odibo_logo(ui, 16.0);
-                        });
+                        ui.label(egui::RichText::new("IMR4N · Based on PdfCraft").color(t.text_muted));
                         ui.add_space(6.0);
                         if let Some(cmd) = widgets::community_links(ui) {
                             link_command = Some(cmd);

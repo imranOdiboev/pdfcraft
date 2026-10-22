@@ -554,9 +554,11 @@ mod tests {
     }
 
     #[test]
-    fn urls_follow_the_artcraft_scheme() {
-        assert_eq!(super::APP_PAGE, format!("{}/apps/{}", super::WEBSITE, super::APP));
-        assert_eq!(super::GITHUB, format!("https://github.com/storytold/{}", super::APP));
+    fn urls_follow_the_odibo_repository_scheme() {
+        assert_eq!(super::GITHUB, "https://github.com/imranOdiboev/pdfcraft");
+        assert_eq!(super::APP_PAGE, format!("{}#readme", super::GITHUB));
+        assert_eq!(super::DISCORD, format!("{}/issues", super::GITHUB));
+        assert_eq!(super::WEBSITE, super::GITHUB);
         for l in super::LINKS {
             assert!(l.url.starts_with("https://"), "{}", l.url);
             assert!(crate::commands::command(l.command).is_some(), "{} is a registered command", l.command);

@@ -3180,7 +3180,8 @@ impl eframe::App for PdfCraftApp {
             }
         }
         let t = theme::Tokens::get(&ctx);
-        egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.pasteboard)).show(ui, |ui| {
+        let background = if self.active.is_none() { t.panel } else { t.pasteboard };
+        egui::CentralPanel::default().frame(egui::Frame::NONE.fill(background)).show(ui, |ui| {
             if self.mode == Mode::Read {
                 match self.active {
                     None if self.combine_showing() => combine_ui::page(self, ui),

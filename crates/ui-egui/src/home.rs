@@ -23,7 +23,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
         egui::Frame::NONE.inner_margin(egui::Margin { left: 36, right: 36, top: 28, bottom: 28 }).show(ui, |ui| {
             #[cfg(not(feature = "unbranded"))]
-            widgets::odibo_logo(ui, 64.0);
+            widgets::odibo_logo(ui, 96.0);
             ui.label(egui::RichText::new(tl!("Welcome to ODIBO PDF")).font(theme::semibold(24.0)));
             ui.label(
                 egui::RichText::new(tl!("An open-source PDF workbench — local, private, and scriptable."))

@@ -128,8 +128,11 @@ jobs:
       - name: Clippy
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Workspace tests with the distribution branding policy
-        run: cargo test --locked --workspace
+        id: workspace_tests
+        run: cargo test --locked --workspace --no-fail-fast
       - name: Capture ODIBO Home and About in both themes
+        id: capture_ui
+        if: ${{ !cancelled() && steps.workspace_tests.outcome != 'skipped' }}
         env:
           PDFCRAFT_SYSTEM_FONTS: '0'
         run: |
@@ -142,6 +145,7 @@ jobs:
           echo "$GITHUB_SHA" >> dist/qa/ATTRIBUTION.txt
           sha256sum dist/qa/*.png >> dist/qa/ATTRIBUTION.txt
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: ${{ !cancelled() && steps.capture_ui.outcome == 'success' }}
         with:
           name: odibo-rebranding-ui-qa-${{ github.sha }}
           path: dist/qa
@@ -190,11 +194,10 @@ jobs:
           toolchain: 1.95.0
           targets: x86_64-pc-windows-msvc
       - name: Compile desktop and CLI (all PDF features retained)
+        id: release_build
         run: cargo build --release --locked --target x86_64-pc-windows-msvc -p pdfcraft -p pdfcraft-cli
       - name: Acceptance against the release CLI
         run: cargo test --release --locked --target x86_64-pc-windows-msvc -p pdfcraft-cli --test odibo_foundation -- --nocapture
-      - name: Windows core and CLI tests
-        run: cargo test --locked --target x86_64-pc-windows-msvc -p pdfcraft-cos -p pdfcraft-organize -p pdfcraft-render -p pdfcraft-engine -p pdfcraft-automation -p pdfcraft-cli
       - name: Check Windows identity, ICO and real GUI startup
         run: pwsh -NoProfile -File packaging/windows/test-odibo-build.ps1
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
@@ -204,6 +207,9 @@ jobs:
           path: dist/windows-qa
           retention-days: 7
           if-no-files-found: warn
+      - name: Windows core and CLI tests
+        if: ${{ !cancelled() && steps.release_build.outcome == 'success' }}
+        run: cargo test --locked --target x86_64-pc-windows-msvc --no-fail-fast -p pdfcraft-cos -p pdfcraft-organize -p pdfcraft-render -p pdfcraft-engine -p pdfcraft-automation -p pdfcraft-cli
       - name: Check executable versions
         run: |
           & target/x86_64-pc-windows-msvc/release/odibo-pdf.exe --version
