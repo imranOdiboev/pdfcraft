@@ -10,7 +10,8 @@ project representative / Manufacturer IMR4N. Internal Rust package names are ret
 No release, payment integration, signing identity or merge is authorized by this work.
 
 UI labels and translation catalogues use ODIBO PDF. ArtCraft graphics and affiliation
-claims are excluded. Links point to the real fork and its issues, preserving command IDs.
+claims are excluded. Eight restricted ArtCraft logo files and the original screenshot
+containing that mark are removed; the original brand terms and author notices remain. Links point to the real fork and its issues, preserving command IDs.
 The existing PDF engine and operations are retained; PDF private keys and compatibility
 identifiers are not globally renamed. New-document Producer and new annotation default
 author identify ODIBO; existing document authors are not replaced by this work.
