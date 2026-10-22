@@ -1163,7 +1163,7 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                             });
                         });
                         ui.add_space(6.0);
-                        ui.label(tl!("A clean-room, open-source PDF application written in Rust. MIT OR Apache-2.0."));
+                        ui.label(tl!("Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms."));
                         ui.label(
                             egui::RichText::new(
                                 "Rendering: hayro (bootstrap) · UI: egui · Icons: Lucide (ISC) · Fonts: Inter, JetBrains Mono, Dancing Script (OFL)",
