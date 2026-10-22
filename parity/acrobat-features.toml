@@ -1766,8 +1766,8 @@ milestone = "M3"
 status = "partial"
 commands = ["help.check_updates"]
 tools = []
-evidence = ["crates/ui-egui/tests/ui_group/updates.rs::a_newer_release_is_offered_for_download", "crates/ui-egui/tests/ui_group/updates.rs::nothing_is_asked_until_the_user_checks", "apps/pdfcraft/src/updates.rs::answers_are_read_and_only_our_release_pages_are_offered"]
-notes = "asks GitHub Releases on request and offers the release page. By the owner's decision there is no check at start and no in-place install (Acrobat has both)"
+evidence = ["crates/ui-egui/tests/ui_group/updates.rs::a_newer_release_is_offered_for_download", "crates/ui-egui/tests/ui_group/updates.rs::nothing_is_asked_until_the_user_checks", "crates/ui-egui/tests/ui_group/updates.rs::no_update_service_reports_disabled_without_opening_a_browser", "apps/pdfcraft/src/updates.rs::test_build_never_offers_an_upstream_update"]
+notes = "ODIBO PDF test builds have no configured update service: the command reports disabled without querying upstream or opening a browser. Mock-source UI handling remains tested for future integration. No startup check, download, in-place install or working ODIBO update backend is provided."
 
 [[feature]]
 id = "view.single-key-accelerators"
