@@ -155,6 +155,28 @@ jobs:
         run: cargo xtask layers
       - name: Asset licences and hashes
         run: cargo xtask assets
+      - name: Prove the texture regression fails before the fix and passes after it
+        run: |
+          cp assets/odibo/logo-light.png "$RUNNER_TEMP/odibo-runtime-logo.png"
+          trap 'cp "$RUNNER_TEMP/odibo-runtime-logo.png" assets/odibo/logo-light.png' EXIT
+          cp assets/odibo/source-logo.png assets/odibo/logo-light.png
+          set +e
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group \
+            links::shipped_brand_textures_fit_the_baseline_gpu_limit -- --exact \
+            > "$RUNNER_TEMP/odibo-texture-red.log" 2>&1
+          result=$?
+          set -e
+          cp "$RUNNER_TEMP/odibo-runtime-logo.png" assets/odibo/logo-light.png
+          trap - EXIT
+          if [ "$result" -eq 0 ] || ! grep -Fq 'test links::shipped_brand_textures_fit_the_baseline_gpu_limit ... FAILED' "$RUNNER_TEMP/odibo-texture-red.log"; then
+            cat "$RUNNER_TEMP/odibo-texture-red.log"
+            echo 'The original oversized logo did not fail the intended regression test.' >&2
+            exit 1
+          fi
+          echo 'Negative control: the original 2172 px wordmark failed the intended texture-limit assertion.'
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group \
+            links::shipped_brand_textures_fit_the_baseline_gpu_limit -- --exact
+          git diff --exit-code -- assets/odibo
       - name: Build without ODIBO brand resources
         run: |
           mv assets/odibo "$RUNNER_TEMP/odibo-assets"
