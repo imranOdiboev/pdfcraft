@@ -19,7 +19,11 @@ fn main() {
         return;
     }
     let mut res = winresource::WindowsResource::new();
-    let icon = if std::env::var_os("CARGO_FEATURE_UNBRANDED").is_some() { "../../assets/app-icon/pdfcraft-document.ico" } else { "../../assets/odibo/odibo-pdf.ico" };
+    let icon = if std::env::var_os("CARGO_FEATURE_UNBRANDED").is_some() {
+        "../../assets/app-icon/pdfcraft-document.ico"
+    } else {
+        "../../assets/odibo/odibo-pdf.ico"
+    };
     res.set_icon(icon)
         .set_icon_with_id("../../assets/app-icon/pdfcraft-document.ico", "2")
         .set_manifest(windows_manifest::WINDOWS_MANIFEST)

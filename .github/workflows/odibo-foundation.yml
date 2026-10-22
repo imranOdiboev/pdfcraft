@@ -225,6 +225,7 @@ jobs:
           Copy-Item -LiteralPath 'assets/app-icon/LICENSE-document.txt' -Destination (Join-Path $dest 'LICENSE-document.txt')
           Copy-Item -LiteralPath 'packaging/windows/portable.txt' -Destination $dest
           Copy-Item -LiteralPath '.github/odibo/TEST_BUILD.txt' -Destination $dest
+          Copy-Item -LiteralPath 'assets/odibo/PROVENANCE.md' -Destination (Join-Path $dest 'BRAND_PROVENANCE.md')
           foreach ($area in @('assets','vendor','craft-fonts')) {
             Get-ChildItem -LiteralPath $area -Recurse -File | Where-Object { $_.Name -match '(?i)licen[cs]e|^OFL|^COPYING|^NOTICE|^COPYRIGHT' } | ForEach-Object {
               $relative = [IO.Path]::GetRelativePath($PWD.Path, $_.FullName)

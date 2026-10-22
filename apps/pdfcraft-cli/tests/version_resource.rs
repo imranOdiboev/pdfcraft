@@ -34,6 +34,7 @@ fn the_exe_has_version_info_with_the_package_version() {
     let resource = &exe[start..];
     for (key, value) in [
         ("ProductName", "ODIBO PDF"),
+        ("CompanyName", "IMR4N"),
         ("FileDescription", "ODIBO PDF command-line tool"),
         ("LegalCopyright", "Copyright (c) the PdfCraft contributors. MIT OR Apache-2.0."),
         ("OriginalFilename", "odibo-pdf-cli.exe"),

@@ -43,9 +43,19 @@ pub const BRAND_LICENCE: &str = "LicenseRef-Storyteller-Trademark";
 
 /// Closed owner-approved ODIBO assets. Do not broaden this to all proprietary assets.
 pub const ODIBO_BRAND_ASSETS: &[&str] = &[
-    "source-icon.png", "source-logo.png", "icon-1024.png", "icon-16.png", "icon-32.png",
-    "icon-48.png", "icon-64.png", "icon-128.png", "icon-256.png", "icon-512.png",
-    "odibo-pdf.ico", "logo-light.png", "logo-dark.png",
+    "source-icon.png",
+    "source-logo.png",
+    "icon-1024.png",
+    "icon-16.png",
+    "icon-32.png",
+    "icon-48.png",
+    "icon-64.png",
+    "icon-128.png",
+    "icon-256.png",
+    "icon-512.png",
+    "odibo-pdf.ico",
+    "logo-light.png",
+    "logo-dark.png",
 ];
 
 pub const ADOBE_DATA_ALLOWED: &[(&str, &str)] = &[("hayro-cmap", "assets/cmaps.brotli"), ("hayro-interpret", "src/font/generated/metrics.rs")];
