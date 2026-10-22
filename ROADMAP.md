@@ -596,4 +596,4 @@ Newest first: the date, what moved, and the new overall estimate.
 
 - **2026-10-18 (M8, #1350):** Published the history-preserving integration; simplified the inherited-form resource guard for Rust 1.96 Clippy. Formatting, 64 redaction tests, scoped Clippy, layering, assets and the scoped wasm check pass locally. CI remains pending; estimates unchanged.
 
-- 2026-10-22: ODIBO rebranding implementation started on feature/odibo-rebranding after PR #1 merge; separate brand terms approved by IMR4N. Verification pending; parity/maturity claims unchanged.
+- 2026-10-22: ODIBO Windows rebranding verified in Actions run 39810140502: independent identity/storage, separate brand terms, x64 release ZIP, PDF acceptance and light/dark GUI screenshots. PR #2 awaits owner review; unsigned test build, manual hardware/visual acceptance remains. Parity/maturity estimates unchanged.

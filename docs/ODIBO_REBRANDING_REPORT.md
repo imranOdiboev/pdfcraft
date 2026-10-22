@@ -1,94 +1,127 @@
-# ODIBO PDF — Windows x64 rebranding
+# ODIBO PDF — отчёт второго этапа
 
-Status: implementation in progress; isolated verification pending. Updated 2026-10-22.
+Дата: 22.10.2026. Статус: тестовая Windows x64 сборка собрана, проверена и готова к ручной приёмке.
 
-## Scope
+## Ветка и объём изменений
 
-Branch `feature/odibo-rebranding` starts at merged foundation `0508b22ce34fbfb842c9d268b307a3a4bf3cdd0a`.
-Executable names are `odibo-pdf.exe` and `odibo-pdf-cli.exe`, product ODIBO PDF,
-project representative / Manufacturer IMR4N. Internal Rust package names are retained.
-No release, payment integration, signing identity or merge is authorized by this work.
+Работа ведётся в `feature/odibo-rebranding`, [PR №2](https://github.com/imranOdiboev/pdfcraft/pull/2), от объединённого foundation-коммита `0508b22ce34fbfb842c9d268b307a3a4bf3cdd0a`.
+Проверяемый исходный коммит: `64ed7ddfb4834f75c065d6c0415e679fe8608e65`.
+Actions для PR собирает временный merge-коммит `521a95fec62cc6bb1db87fd8003ca6398cea2484`; он указан в имени артефактов и BUILD_INFO.txt. Это не объединение PR с main.
 
-UI labels and translation catalogues use ODIBO PDF. ArtCraft graphics and affiliation
-claims are excluded. Eight restricted ArtCraft logo files and the original screenshot
-containing that mark are removed; the original brand terms and author notices remain. Links point to the real fork and its issues, preserving command IDs.
-The existing PDF engine and operations are retained; PDF private keys and compatibility
-identifiers are not globally renamed. New-document Producer and new annotation default
-author identify ODIBO; existing document authors are not replaced by this work.
+Продукт — **ODIBO PDF**, представитель / Windows Manufacturer — **IMR4N**.
+Исполняемые файлы — `odibo-pdf.exe` и `odibo-pdf-cli.exe`. Внутренние имена Rust-пакетов сохранены для совместимости с upstream.
+Заменены видимые имена, значки, Home/About, ссылки на проект и брендовые строки во всех 22 существующих каталогах переводов.
+PDF-ядро и набор PDF-функций сохранены; приватные ключи и идентификаторы формата не переименовывались массово. Producer новых документов и автор по умолчанию новых аннотаций используют ODIBO; авторство существующих документов не заменяется.
 
-## Independent data
+Убраны восемь ограниченных ArtCraft-графических файлов и старый скриншот с их знаком. Исходные условия бренда, сведения об авторах, MIT/Apache и NOTICE сохранены.
+Релиз, платные ресурсы, подпись и объединение PR не выполняются. Программы на компьютер пользователя не устанавливались; сборка и тесты выполняются в GitHub Actions. Стандартные runners публичного репозитория (`windows-2025`, `ubuntu-24.04`) соответствуют бесплатному режиму [GitHub Docs](https://docs.github.com/en/actions/reference/runners/github-hosted-runners). Larger runners и платные сервисы не подключались. Поставка ограничена 200 MiB до сжатия, артефакты хранятся 7 дней; общая квота хранения аккаунта отдельно не менялась и не аудировалась.
 
-Windows per-user storage uses ODIBO PDF; XDG directories use `odibo-pdf`.
-Portable data uses `ODIBOPDFData`; logs use `odibo-pdf.log` and rotated names.
-Recovery, clipboard and single-instance sockets use ODIBO namespaces. The former
-PrintCraft-to-PdfCraft automatic folder move is removed, and upstream preference keys
-are not loaded. Opt-in control/MCP authentication and path confinement remain in place.
+## Независимые настройки и идентификаторы
 
-The future MSI template has separate UpgradeCode, component GUIDs, registry keys,
-ProgIDs, executable registrations and shortcuts. This stage packages a portable test
-ZIP; it does not certify installation/upgrade/uninstallation or publish an MSI.
+- App ID: `ODIBO.PDF`.
+- Пользовательские каталоги Windows: ODIBO PDF; XDG: `odibo-pdf`.
+- Portable-данные: `ODIBOPDFData`; журнал: `odibo-pdf.log` и ротации.
+- Recovery, буфер обмена и single-instance IPC используют отдельные пространства имён ODIBO.
+- Старый автоматический перенос PrintCraft/PdfCraft удалён; настройки предыдущего продукта не подхватываются.
+- Opt-in MCP, токены локального control-канала и ограничения путей сохранены.
 
-There is no configured update service. Manual checks return an explicit disabled
-message without querying upstream. The no-source UI path does not open upstream
-release pages. No automatic update request is added.
+Portable-режим хранит рабочие данные рядом с EXE, но существующий безопасный single-instance IPC использует закрытый каталог пользователя, в том числе LocalAppData на Windows. Полное отсутствие любых записей за пределами папки ZIP не гарантируется.
 
-## Brand assets and licences
+Для будущего MSI выделены собственные UpgradeCode, GUID компонентов, ProgID, ключи реестра, регистрации EXE и ярлыки. MSI на этом этапе не создаётся: установка, обновление и удаление установщика ещё требуют отдельной проверки.
 
-See `assets/odibo/PROVENANCE.md` and `assets/odibo/LICENSE-ODIBO-BRAND.txt`.
-IMR4N reports original generation through ChatGPT/OpenAI. Original PNGs are preserved,
-with per-file SHA-256 entries for sources and derivatives. The brand has separate
-LicenseRef-ODIBO-Brand terms; code remains under its applicable open licences.
-Original PdfCraft authors, MIT/Apache texts and required dependency notices are preserved.
-No exclusive AI copyright or trademark registration is asserted.
+Сервис обновлений ODIBO не настроен. Команда проверки обновлений показывает явное сообщение об отключении и не обращается к upstream. Автоматическая проверка при запуске не добавлена.
 
-Windows ICO contains PNG-compressed 16, 32, 48, 64, 128 and 256 px entries; standalone
-PNGs also include 512 and 1024 px. No vector master is claimed. Generative cutouts
-showed edge artefacts and were rejected. Clean opaque navy mattes are used for the
-icon and dark logo; the icon's exterior corners are navy, not transparent. Final
-visual acceptance, particularly taskbar/Explorer backgrounds and small icons, still
-requires the owner. The light logo preserves the original raster on a light UI.
+## Графика и лицензии
 
-The `unbranded` desktop feature excludes ODIBO image includes. CI checks a build
-with `assets/odibo/` physically absent; it does not grant permission to distribute a
-different product under the ODIBO identity. Original open components remain usable
-under their own licences.
+Исходные изображения сохранены без изменения байтов. По сообщению IMR4N, они созданы через ChatGPT от OpenAI специально для проекта.
+Каждый включённый исходник и производный PNG/ICO имеет запись происхождения, лицензии и SHA-256 в ATTRIBUTION.toml. ATTRIBUTION.md сгенерирован штатным xtask в Actions.
 
-## Verification
+Графика использует отдельную `LicenseRef-ODIBO-Brand`; исходный код сохраняет применимые MIT OR Apache-2.0. Узкое согласованное исключение в AGENTS.md действует только для утверждённых ODIBO-ресурсов. Оно не отключает проверки происхождения, хешей и остальных лицензий.
+Не заявляются регистрация товарного знака или исключительное авторское право на полностью ИИ-сгенерированные элементы. Условия не ограничивают права на открытые компоненты, неохраняемые материалы и законные фактические упоминания.
 
-Results will be filled from completed Actions runs, not inferred from source review.
-Planned gates: formatting, clippy, workspace tests, RustSec/licence checks, assets and
-layering, WASM compatibility, unbranded build, required Linux PDF oracles, Windows
-release acceptance, PE metadata, ICO structure, native Windows startup/control
-screenshots and Home/About light/dark headless screenshots.
+См. [условия бренда](../assets/odibo/LICENSE-ODIBO-BRAND.txt), [происхождение](../assets/odibo/PROVENANCE.md), [сохранённые уведомления](ODIBO_LICENSE_NOTICES.md), [запросы imagegen и обработка](ODIBO_ASSET_PROCESSING.md).
 
-Synthetic acceptance checks open/combine/split/save/reopen, page order/text and source
-byte preservation, Cyrillic paths, invalid ranges and failed writes. No user PDF is
-uploaded or used. Tests execute in standard GitHub-hosted runners, not the user's PC.
+ICO содержит PNG-кадры **16, 32, 48, 64, 128 и 256 px**; отдельные PNG также включают 512 и 1024 px. Рабочие логотипы — 1536 × 512 px.
+Попытки генеративного удаления фона дали дефекты и не включены. Итоговая иконка и тёмный логотип используют непрозрачный тёмный фон; углы иконки также тёмные. Светлая версия сохраняет светлые детали оригинала. Идеальная прозрачность и векторный мастер не заявляются; вид значка в Explorer и на панели задач требует приёмки владельцем.
 
-## Download and manual checks
+Набор уведомлений craft-fonts также содержит лишний OFL для Noto Sans CJK SC из общего checkout. Сам запрещённый шрифт не встраивается: crates/fonts/build.rs исключает его до include_bytes, что подтверждено предупреждением «not embedding Noto Sans CJK SC Regular» в логах Windows. Файлы шрифтов этого семейства в ZIP не включены.
 
-After a successful run, download the `odibo-rebranding-windows-x64-…` ZIP artifact from
-**Actions → ODIBO Windows test build**. Sign in to GitHub; retention is seven days.
-Extract the complete archive and run `odibo-pdf.exe`; keep the licence and model files.
-Screenshots are separate UI QA artifacts. The final run and PR links are pending.
+Опция `unbranded` исключает графические ODIBO-включения и использует имеющийся открытый значок. CI дополнительно проверяет компиляцию с физически отсутствующим `assets/odibo/`. Это проверка компиляции, а не опубликованный отдельный нейтральный EXE. Для распространения другого продукта требуется также собственная идентичность.
 
-The owner must still check Explorer/taskbar icon appearance, Windows light/dark and
-high-DPI monitors, real GPU/driver behavior, printing, recovery after interruption,
-and coexistence with their installed PdfCraft. Automated runner screenshots are not
-a manual hardware test. Use copies of disposable PDFs for initial checks.
+## Результаты проверок
 
-Before public distribution: finish visual acceptance, verify marks in target markets
-and original AI service terms, choose signing/distribution/update arrangements, and
-test any eventual MSI install/upgrade/uninstall on a clean VM.
+[Основной CI](https://github.com/imranOdiboev/pdfcraft/actions/runs/39810141484):
 
-## Later platforms
+| Проверка | Результат |
+|---|---|
+| Linux workspace с craft-fonts | Успех: 3 858 passed, 0 failed, 14 ignored, 172 сводки test result |
+| Windows workspace | Успех: 3 830 passed, 0 failed, 15 ignored, 172 сводки test result |
+| Clippy с запретом предупреждений, слои и ресурсы | Успех на Linux и Windows |
+| RustSec / лицензии зависимостей | Успех, без отключения исходной политики |
+| WASM библиотек | Успех; не является приёмкой Web-продукта |
+| Fuzz 15 минут | Не запускался: исходное условие workflow для этого PR |
 
-Web: separate identity/storage/cache, offline behavior, hosting/privacy and notices,
-followed by actual browser acceptance; a WASM compile is only compatibility evidence.
-Android: choose a UI/runtime integration and Android package identity, sandboxed file
-access/lifecycle, rendering performance, notices and a dedicated build/test pipeline.
-Neither platform is delivered by this Windows stage.
+Количество passed — сумма сводок Cargo в конкретном job, включая doctests, а не оценка уникальных продуктовых сценариев.
+Ignored оставлены исходными: приватные corpus/PDF/шрифты, измерительные пробы, отдельный D-Bus probe; на Windows также две проверки с созданием сертификатов в системном хранилище. Отсутствующие независимые PDF-инструменты на Windows не считаются проверенными: обязательные qpdf и Poppler запускаются в Linux-приёмке.
 
-## Verification findings addressed during implementation
+[Независимая сборка и приёмка](https://github.com/imranOdiboev/pdfcraft/actions/runs/39810140502):
 
-The first complete runs exposed launcher/app-ID and link-contract mismatches. A later UI sweep caught egui's 2048 px texture limit: a supplied 2172 px wordmark caused a Home-screen panic. Runtime wordmarks are now 1536 x 512, with a dedicated asset-dimension regression. New branding labels were translated in all 22 existing catalogues without disabling translation coverage. The macOS bundle-ID template follows the shared app ID, while complete non-Windows packaging remains outside this Windows acceptance stage. Final rerun evidence is pending.
+| Проверка | Результат |
+|---|---|
+| cargo-deny и генерация уведомлений Windows | Успех |
+| Linux PDF acceptance с обязательными qpdf и Poppler | Успех, 3 сценария |
+| Компиляция Windows x64 GUI + CLI в release | Успех |
+| Приёмка release CLI, PE/ICO, запуск GUI в двух темах | Успех: 3 PDF-теста, метаданные/ICO, light/dark запуск и control-скриншоты |
+| Независимые workspace, скриншоты Home/About, unbranded и отрицательная регрессия | Успех; отрицательный контроль упал с большим исходником, затем исправленная версия прошла |
+| Parity evidence | Успех; устаревшая ссылка на upstream update test исправлена в 64ed7dd, проверка реестра проходит |
+| Windows core/CLI-тесты | Успех: 1 167 passed, 0 failed, 6 ignored; отдельно release acceptance — 3 passed |
+
+[FreeBSD CI](https://github.com/imranOdiboev/pdfcraft/actions/runs/39810143031) прошёл. Packaging lint прошёл. Nix workflow прошёл условный путь без полной Nix-сборки. Windows ARM64 пропущен действующим ограничением форка. Другие платформы не сертифицированы этим этапом.
+
+Синтетическая PDF-приёмка проверяет открытие документов на 2 и 3 страницы, объединение и сохранение, повторное открытие, рендеринг, инкрементальную запись, разделение 2+2+1, порядок/текст/число страниц, неизменность исходных байтов и пути с кириллицей и пробелами. Дополнительно проверяются неверный PDF, диапазоны и неудачная запись без повреждения исходника/контрольного файла. Пользовательские PDF не загружаются.
+
+Во время разработки исправлены реальные найденные CI ошибки: несовпадение App ID и desktop-файла, устаревший контракт ссылок, неполные переводы новых строк, общая проверка bundle ID и паника Home из-за текстуры 2172 px при базовом лимите egui 2048 px. Для последней добавлены регрессия размеров и CI-проверка с временным возвратом большого исходника, затем восстановлением исправленного файла.
+
+## Сборка, скриншоты и скачивание
+
+[Готовый Windows x64 ZIP, артефакт 12444247763](https://github.com/imranOdiboev/pdfcraft/actions/runs/39810140502/artifacts/12444247763).
+Run 39810140502 целиком завершился успешно, все три job прошли. ZIP: **86 653 557 байт** (около 82,6 MiB), до сжатия 176 115 456 байт.
+
+SHA-256 ZIP:
+
+```text
+d5442bebdabfdbb7b264d5fc356b27fb0dff77a06eb10ac9c5f99d656212f213
+```
+
+Архив скачан и проверен без запуска EXE: 60 файлов, все 59 записей SHA256SUMS совпали, нет неучтённых файлов или небезопасных ZIP-путей. Оба PE имеют machine 0x8664. Размер GUI — 94 646 784 байта, CLI — 68 295 168 байт. MIT/Apache совпадают с оригинальными файлами репозитория. Проверены полные уведомления, условия ODIBO, исходные условия ArtCraft и обе модели OCR с лицензиями. Ограниченные ArtCraft PNG/SVG не включены.
+
+Артефакт хранится до **29.10.2026 17:17 UTC**. Для длительного хранения сохраните скачанный ZIP у себя. Локальная копия для передачи: `.work/deliverables/ODIBO-PDF-Windows-x64-test.zip` вне репозитория.
+
+1. Войти в GitHub и открыть указанный выше run **ODIBO Windows test build**.
+2. Внизу страницы, в Artifacts, выбрать `odibo-rebranding-windows-x64-…`.
+3. Скачать ZIP, распаковать целиком в доступную для записи папку и запустить `odibo-pdf.exe`.
+4. Сохранить рядом CLI, models, licences, NOTICE и файлы лицензий. portable.txt включает `ODIBOPDFData`.
+
+Срок хранения Actions-артефактов — 7 дней. ZIP не подписан, установщика и официального релиза нет. BUILD_INFO.txt связывает сборку с коммитом; SHA256SUMS.txt покрывает файлы пакета.
+
+Скриншоты runner являются автоматическим свидетельством запуска/отрисовки, а не ручной проверкой оборудования. Для первых запусков используйте копии безопасных PDF.
+
+## Что осталось владельцу
+
+Проверить и утвердить вид значков в Explorer/панели задач, светлую/тёмную тему и high-DPI на реальном мониторе, GPU/драйверы, печать, восстановление после прерывания и сосуществование с установленным PdfCraft. До публичного коммерческого распространения нужны отдельные решения о подписании, доставке/обновлениях, проверке бренда и применимых условий исходной ИИ-генерации; будущий MSI требует теста установки/обновления/удаления на чистой VM.
+
+Web потребует собственной идентичности/кэша/хранилища, offline-проверок, условий размещения и браузерной приёмки. Android — выбора UI/runtime, package ID, файлового sandbox/lifecycle, проверки рендеринга и отдельного pipeline. Эти продукты текущим Windows-этапом не поставляются; оценки зрелости и parity upstream не повышались.
+
+## Полученные скриншоты
+
+Home/About в двух темах: [артефакт 12441462028](https://github.com/imranOdiboev/pdfcraft/actions/runs/39810140502/artifacts/12441462028), SHA-256 9487c3cb20c2a30a5dcc5b0da562e61d810d8c156dd35c2ef7bf66988a26bba2.
+
+Запущенный Windows EXE: [артефакт 12441688321](https://github.com/imranOdiboev/pdfcraft/actions/runs/39810140502/artifacts/12441688321), SHA-256 fc9064cfdf9363de272f48407b6f251629e4ddbe841147383d7212c9b3a27edd.
+
+Все шесть изображений просмотрены. На Windows runner используется программный рендеринг: видимое уведомление о работе без GPU сохранено на снимках. Это ограничение среды, а не свидетельство аппаратного GPU-теста. У горизонтальных логотипов видна прямоугольная подложка; её окончательное визуальное принятие остаётся за IMR4N.
+
+## Итог и границы готовности
+
+Неустранённых ошибок компиляции или падающих проверок в указанном полном прогоне нет. Пропущенные тесты и ручные проверки перечислены выше. Готова инженерная тестовая версия Windows; готовность к официальному коммерческому выпуску не заявляется.
+
+Финальная фиксация отчётов изменяет только Markdown. Исходный код, Cargo.lock, workflows, упаковка и графические ресурсы поставки соответствуют проверенному коммиту 64ed7ddfb4834f75c065d6c0415e679fe8608e65. Если GitHub автоматически повторяет CI после отправки документации, это отдельный прогон; доказательства и ZIP выше относятся к уже завершённому run 39810140502.
