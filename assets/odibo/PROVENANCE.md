@@ -11,6 +11,11 @@ has been introduced. The raster wordmark is supplied artwork, not a bundled type
 Technical transparent-background adaptations use the imagegen tool with the approved
 sources as edit targets. Prompts require preservation of the O silhouette, white/cyan
 gradient, vivid blue base and red folded corner; no new visual concept is authorized.
+Transparent cutouts showed edge artefacts and were rejected. The final icon and dark
+wordmark use clean opaque navy mattes from imagegen; the light wordmark preserves the
+original white matte and is displayed on the light UI. This avoids destructive white
+colour-key removal, preserving pale details. The icon's exterior corners are opaque
+navy, not a transparent cutout; this must be assessed in Explorer and on the taskbar.
 Low-quality interim results are not shipped. Resizing and ICO packing are deterministic
 format preparation. No automatic SVG tracing is used; no editable vector master is claimed.
 

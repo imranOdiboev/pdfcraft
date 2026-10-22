@@ -42,9 +42,10 @@ No exclusive AI copyright or trademark registration is asserted.
 
 Windows ICO contains PNG-compressed 16, 32, 48, 64, 128 and 256 px entries; standalone
 PNGs also include 512 and 1024 px. No vector master is claimed. Generative cutouts
-showed edge artefacts; final visual acceptance, particularly pale details and small
-icons, must be checked in the rendered application. The light logo preserves the
-original raster; the dark logo uses a navy matte and pale letters for contrast.
+showed edge artefacts and were rejected. Clean opaque navy mattes are used for the
+icon and dark logo; the icon's exterior corners are navy, not transparent. Final
+visual acceptance, particularly taskbar/Explorer backgrounds and small icons, still
+requires the owner. The light logo preserves the original raster on a light UI.
 
 The `unbranded` desktop feature excludes ODIBO image includes. CI checks a build
 with `assets/odibo/` physically absent; it does not grant permission to distribute a
