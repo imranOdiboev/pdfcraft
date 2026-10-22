@@ -181,7 +181,7 @@ fn main() -> eframe::Result {
     let integrated = cfg!(target_os = "macos");
     // GNOME on Wayland leaves the window frame to the app (src/decorations.rs).
     let window_controls = if cfg!(any(target_os = "macos", target_os = "windows")) { None } else { decorations::app_drawn() };
-    // ODIBO PDF never migrates or moves ODIBO PDF/PrintCraft data.
+    // ODIBO PDF never migrates or moves upstream PdfCraft/PrintCraft data.
     // The log file stays in the data folder; opened after the arguments (so `--version` leaves
     // no file behind) in the independent ODIBO PDF data directory.
     // Records logged until now are written to it first.
