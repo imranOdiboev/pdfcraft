@@ -4902,7 +4902,7 @@ fn organize_toolbar(view: &mut DocView, info: &DocInfo, editable: bool, dirty: b
     });
     // Keys act on the selection unless a text field or a dialog has them (Delete under
     // Preferences deleted the selected pages).
-    if editable && unobstructed && !ui.ctx().egui_wants_keyboard_input() {
+    if editable && unobstructed && !ui.ctx().egui_wants_keyboard_input() && !view.organize_range.owns_keyboard(ui.ctx()) {
         use egui::{Key, Modifiers};
         let (del, esc) = ui.input_mut(|i| {
             (
@@ -6238,6 +6238,7 @@ trailer << /Root 1 0 R >>
 
     #[test]
     fn real_shell_pages_organizer_and_print_only_collect_current_thumbnail_consumers() {
+        use egui_kittest::kittest::Queryable;
         let mut h = egui_kittest::Harness::builder().with_size(vec2(1400.0, 900.0)).build_eframe(|_cc| {
             let mut app = PdfCraftApp::new();
             let bytes = app.session.create_blank(612.0, 792.0, 10_000).unwrap();
@@ -6252,6 +6253,12 @@ trailer << /Root 1 0 R >>
         h.run_steps(2);
         assert!((1..50).contains(&h.state().views[0].thumb_demand.len()));
         h.state_mut().views[0].organize = false;
+        h.run_steps(2);
+        // The new left navigation is another real consumer. Close it before
+        // measuring a print-only request, just as the legacy inspector above.
+        let close = format!("{}: {}", crate::i18n::t("Page navigation"), crate::i18n::t("Close"));
+        h.get_by_label(&close).click();
+        h.run_steps(2);
         h.state_mut().dialog = Some(crate::Dialog::Print);
         h.state_mut().print_draft.sheet = 9999;
         h.run_steps(2);

@@ -8,6 +8,7 @@ pub(crate) struct PageSelectionInput {
     text: String,
     selection: BTreeSet<usize>,
     error: Option<String>,
+    id: Option<egui::Id>,
 }
 
 /// Blank clears the explicit selection. Repeated/reversed ranges become a sorted set.
@@ -58,6 +59,12 @@ fn formatted(pages: &BTreeSet<usize>) -> String {
 }
 
 impl PageSelectionInput {
+    /// A right-hand tool can be drawn after the canvas. Escape still belongs to
+    /// its text field even when egui surrendered focus at the start of this frame.
+    pub(crate) fn owns_keyboard(&self, ctx: &egui::Context) -> bool {
+        self.id.is_some_and(|id| ctx.memory(|memory| memory.has_focus(id) || memory.had_focus_last_frame(id)))
+    }
+
     /// The field, as Acrobat's Pages selected: typed pages apply on Enter or when the field loses
     /// focus, and the chevron opens `menu` (pages by kind), whose choice is returned the same way.
     /// With nothing selected it shows the current page (0-based `current`), which actions apply to.
@@ -76,6 +83,7 @@ impl PageSelectionInput {
         }
         let mut commit = false;
         let id = ui.make_persistent_id("organize-page-range");
+        self.id = Some(id);
         // Egui can surrender focus before this frame's widgets run on Escape.
         let cancel = ui.is_enabled()
             && ui.memory(|m| m.has_focus(id) || m.had_focus_last_frame(id))
