@@ -2073,7 +2073,7 @@ fn password_prompt_opens_and_security_tab_reports_the_details() {
 #[test]
 fn the_security_notice_wraps_beside_its_buttons_and_lines_up_with_them() {
     // Wide: one line. Narrower: wrapped. Narrowest: cut short (the full text is on hover).
-    for (width, wraps) in [(1700.0, false), (1250.0, true), (900.0, false)] {
+    for (width, wraps) in [(1700.0, false), (1400.0, true), (900.0, false)] {
         let mut h = Harness::builder().with_size(egui::vec2(width, 800.0)).build_eframe(|_cc| {
             let mut app = PdfCraftApp::new();
             app.set_option("language", "en").unwrap();

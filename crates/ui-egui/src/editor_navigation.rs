@@ -25,7 +25,7 @@ pub(crate) fn close_drawer(ctx: &egui::Context) {
 }
 
 pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
-    if app.active.is_none() {
+    if app.active.and_then(|index| app.views.get(index)).is_none_or(|view| view.organize) {
         return;
     }
     let id = egui::Id::new("odibo-editor-navigation");
@@ -73,7 +73,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             if body {
                 ui.data_mut(|data| data.insert_temp(id.with("body"), ui.max_rect()));
             }
-            if body && panels::panel_body(app, ui, state.panel, &close_label) {
+            if body && panels::panel_body(app, ui, state.panel, &close_label, true) {
                 state.expanded = false;
             }
         });
@@ -88,7 +88,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             .fixed_size(egui::vec2(240.0, height))
             .collapsible(false)
             .show(&ctx, |ui| {
-                if panels::panel_body(app, ui, state.panel, &close_label) {
+                if panels::panel_body(app, ui, state.panel, &close_label, true) {
                     state.drawer = false;
                 }
             });

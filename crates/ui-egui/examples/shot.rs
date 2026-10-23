@@ -3,9 +3,9 @@
 //! ```text
 //! cargo run -p pdfcraft-ui-egui --example shot -- out.png [file.pdf] [--size 1440x900] [--scale 2] [--page 3 --panel pages …]
 //! ```
-//! `--width N` downscales the image to N pixels wide (README screenshots). Any other
+//! `--width N` downscales the image to N pixels wide (README screenshots).
 //! `--click LABEL` activates a real egui control after initial layout, before capture.
-//! `--key value` pair is passed to `PdfCraftApp::set_option`
+//! Any other `--key value` pair is passed to `PdfCraftApp::set_option`
 //! (the same verbs as the desktop app's command-line flags and the future control channel).
 
 use std::time::{Duration, Instant};

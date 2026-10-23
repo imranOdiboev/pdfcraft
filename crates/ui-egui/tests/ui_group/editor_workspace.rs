@@ -39,10 +39,10 @@ fn fresh_editor_places_navigation_left_and_tools_right() {
 #[test]
 fn left_thumbnails_navigate_by_pointer_and_keyboard_without_editing() {
     let mut h = harness(egui::vec2(1440.0, 900.0), "en", "dark", 1.0, None);
-    h.get_by_role_and_label(egui::accesskit::Role::Button, "Page 2").click();
+    h.get_by_role_and_label(egui::accesskit::Role::Button, "Page navigation: Page 2").click();
     h.run_steps(3);
     assert_eq!(h.state().views[0].current, 1);
-    h.get_by_role_and_label(egui::accesskit::Role::Button, "Page 3").focus();
+    h.get_by_role_and_label(egui::accesskit::Role::Button, "Page navigation: Page 3").focus();
     h.run_steps(2);
     h.key_press(egui::Key::Enter);
     h.run_steps(3);
@@ -122,6 +122,9 @@ fn compact_editor_preserves_document_width_and_exposes_navigation_in_all_variant
                 h.key_press(egui::Key::Enter);
                 h.run_steps(3);
                 let page = pdfcraft_ui_egui::i18n::fmt(pdfcraft_ui_egui::i18n::tr(lang, "Page {label}"), &[("label", "2")]);
+                let page = format!("{}: {page}", pdfcraft_ui_egui::i18n::tr(lang, "Page navigation"));
+                h.get_by_role_and_label(egui::accesskit::Role::Button, &page).scroll_to_me();
+                h.run_steps(4);
                 h.get_by_role_and_label(egui::accesskit::Role::Button, &page).click();
                 h.run_steps(3);
                 assert_eq!(h.state().views[0].current, 1);

@@ -1145,7 +1145,8 @@ fn arrow_and_page_keys_move_through_a_scrolling_document() {
     use egui::Key;
     use pdfcraft_ui_egui::canvas::{Fit, PageLayout};
     let mut h = harness();
-    h.state_mut().active = Some(0);
+    // Keep each fit-width page taller than the viewport with the new navigation pane.
+    h.state_mut().open_bytes("tall.pdf", None, sized_fixture(&[(200, 600); 5])).unwrap();
     h.state_mut().views[0].fit = Fit::Width;
     h.run_steps(4);
     assert_eq!(h.state().views[0].layout, PageLayout::Single);

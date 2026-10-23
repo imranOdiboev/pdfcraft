@@ -559,6 +559,9 @@ impl PdfCraftApp {
                 self.left = crate::LeftPanel::Tool("form");
                 self.reveal_tools();
                 self.choose_right_panel(Some(RightPanel::Fields));
+                // Preparing fields needs its tool controls immediately; the Fields
+                // inspector remains available in the adjacent tab.
+                self.reveal_tools();
                 // Like Acrobat, a document without fields gets them detected on the way in.
                 if let Some((_, id)) = self.active_ids()
                     && self.session.get(id).is_some_and(|d| d.form.is_empty() && d.editable())

@@ -2712,7 +2712,11 @@ pub fn document_area(app: &mut PdfCraftApp, index: usize, ui: &mut egui::Ui) {
         // quick-action bar as the layout does.
         let (x, w) = (view.last_scroll.x, avail.width());
         let (left, right) = (r.left() - SIDE, r.right() + SIDE);
-        let target = if right - left <= w { if left >= x && right <= x + w { x } else { r.center().x - w / 2.0 } } else { x.clamp(left, right - w) };
+        let target = if r.width() <= w {
+            if left >= x && right <= x + w { x } else { r.center().x - w / 2.0 }
+        } else {
+            x.clamp(left, right - w)
+        };
         if (target - x).abs() > 0.5 {
             scroll = scroll.horizontal_scroll_offset(target.clamp(0.0, (content_w - w).max(0.0)));
         }
