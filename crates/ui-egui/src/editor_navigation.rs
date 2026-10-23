@@ -115,8 +115,11 @@ pub fn read_inspector(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
         return;
     }
     if ui.available_width() >= 940.0 {
-        egui::Panel::right("read_right_panel").resizable(true).default_size(330.0)
-            .size_range(260.0..=520.0).frame(egui::Frame::NONE)
+        egui::Panel::right("read_right_panel")
+            .resizable(true)
+            .default_size(330.0)
+            .size_range(260.0..=520.0)
+            .frame(egui::Frame::NONE)
             .show(ui, |ui| panels::right_panel(app, ui));
         ui.data_mut(|data| data.insert_temp(visible_id, app.right.is_some()));
         return;
@@ -133,19 +136,26 @@ pub fn read_inspector(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     egui::Panel::top("odibo-read-inspector-controls").frame(egui::Frame::NONE).show(ui, |ui| {
         if widgets::ghost_button(ui, "panel-right", crate::i18n::t("Inspector")).clicked() {
             open = !open;
-            if open { close_drawer(ui.ctx()); }
+            if open {
+                close_drawer(ui.ctx());
+            }
         }
     });
     let was_open = open;
     if open {
         let ctx = ui.ctx().clone();
         let height = (ctx.content_rect().height() - 160.0).max(120.0);
-        egui::Window::new(crate::i18n::t("Inspector")).id(id.with("window"))
-            .open(&mut open).anchor(egui::Align2::RIGHT_TOP, egui::vec2(-72.0, 120.0))
-            .fixed_size(egui::vec2(320.0, height)).collapsible(false)
+        egui::Window::new(crate::i18n::t("Inspector"))
+            .id(id.with("window"))
+            .open(&mut open)
+            .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-72.0, 120.0))
+            .fixed_size(egui::vec2(320.0, height))
+            .collapsible(false)
             .show(&ctx, |ui| panels::right_panel(app, ui));
     }
-    if was_open && !open { app.choose_right_panel(None); }
+    if was_open && !open {
+        app.choose_right_panel(None);
+    }
     ui.data_mut(|data| {
         data.insert_temp(id, open && app.right.is_some());
         data.insert_temp(visible_id, open && app.right.is_some());

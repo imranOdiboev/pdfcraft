@@ -545,6 +545,7 @@ pub(crate) enum Nav {
 
 pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     let Some(panel) = app.right else { return };
+    ui.data_mut(|data| data.insert_temp(egui::Id::new("pdfcraft-inspector-body"), ui.max_rect()));
     if panel_body(app, ui, panel, tl!("Close")) {
         app.choose_right_panel(None);
     }

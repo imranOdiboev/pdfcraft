@@ -51,7 +51,9 @@ jobs:
       - name: Clippy
         run: cargo clippy --locked -p pdfcraft-ui-egui --all-targets -- -D warnings
       - name: UI tests
-        run: cargo test --locked -p pdfcraft-ui-egui --lib --test ui_group --test commands --test ui --test control --test dialog_chrome --test accessibility --test actions --test editing --test javascript --test signing --test pickers --test folders --no-fail-fast
+        run: |
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group --no-fail-fast
+          cargo test --locked -p pdfcraft-ui-egui --lib --test commands --test ui --test control --test dialog_chrome --test accessibility --test actions --test editing --test javascript --test signing --test pickers --test folders --no-fail-fast
       - name: Prove navigation regression without the new navigation view
         run: |
           cp crates/ui-egui/src/lib.rs "$RUNNER_TEMP/editor-lib-fixed.rs"

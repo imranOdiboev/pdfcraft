@@ -675,13 +675,14 @@ pub fn right_rail(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                     ui.spacing_mut().item_spacing.y = 4.0;
                     let mut rail_button = |ui: &mut egui::Ui, panel: RightPanel, icon: &str, tip: &str, has: bool| {
                         let exposed = if app.mode == Mode::Read {
-                    ui.data(|data| data.get_temp::<bool>(egui::Id::new("odibo-read-inspector").with("visible"))).unwrap_or(true)
-                } else if ui.data(|data| data.get_temp::<bool>(egui::Id::new("odibo-compact-editor"))).unwrap_or(false) {
-                    ui.data(|data| data.get_temp::<crate::docking::Panel>(egui::Id::new("odibo-editor-context-drawer"))) == Some(crate::docking::Panel::Inspector)
-                } else {
-                    app.docking.exposed(crate::docking::Panel::Inspector)
-                };
-                let selected = app.right == Some(panel) && exposed;
+                            ui.data(|data| data.get_temp::<bool>(egui::Id::new("odibo-read-inspector").with("visible"))).unwrap_or(true)
+                        } else if ui.data(|data| data.get_temp::<bool>(egui::Id::new("odibo-compact-editor"))).unwrap_or(false) {
+                            ui.data(|data| data.get_temp::<crate::docking::Panel>(egui::Id::new("odibo-editor-context-drawer")))
+                                == Some(crate::docking::Panel::Inspector)
+                        } else {
+                            app.docking.exposed(crate::docking::Panel::Inspector)
+                        };
+                        let selected = app.right == Some(panel) && exposed;
                         let r = icons::button(ui, icon, 34.0, selected, tl!(tip));
                         if has && !selected {
                             let c = r.rect.right_top() + vec2(-8.0, 8.0);
