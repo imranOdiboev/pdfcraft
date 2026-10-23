@@ -688,7 +688,11 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     }
     let selected: Vec<bool> = ids.iter().map(|id| app.combine_tab.selected.contains(id)).collect();
     let count = selected.iter().filter(|s| **s).count();
-    let blocker = blocker(&app.combine_draft, &checks);
+    let blocker = if app.combine_pending() {
+        Some(tl!("The previous PDF step is still finishing. You can keep working; try Combine again shortly.").to_string())
+    } else {
+        blocker(&app.combine_draft, &checks)
+    };
     let grid = app.combine_view == CombineView::Grid;
     let columns = grid.then_some(app.combine_tab.grid_columns);
     // The keyboard is the list's unless a text field, the password box or the size slider has it.
@@ -732,6 +736,9 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
         };
         ui.label(egui::RichText::new(hint).color(t.text_muted));
         ui.label(egui::RichText::new(tl!("Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.")).color(t.text_muted));
+        if app.combine_pending() {
+            ui.horizontal(|ui| { ui.spinner(); ui.label(tl!("The previous PDF step is still finishing. You can keep working; try Combine again shortly.")); });
+        }
         ui.add_space(12.0);
 
         // Toolbar: on two lines when the window is narrow.
@@ -1961,13 +1968,17 @@ impl PdfCraftApp {
             }
             Err(std::sync::mpsc::TryRecvError::Empty) => {}
         }
-        let modal = egui::Modal::new(egui::Id::new("odibo-combine-progress")).show(ctx, |ui| {
+        if run.cancelled {
+            ctx.request_repaint_after(std::time::Duration::from_millis(50));
+            return;
+        }
+        let modal = widgets::show_modal(ctx, "odibo-combine-progress", |ui| {
+            ui.set_max_width((ctx.content_rect().width() - 80.0).clamp(180.0, 440.0));
             ui.horizontal(|ui| { ui.spinner(); ui.label(tl!("Combining PDFs…")); });
             ui.label(tl!("Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish."));
             if !run.cancelled && widgets::pill_button(ui, tl!("Cancel"), false).clicked() {
                 run.cancelled = true;
             }
-            if run.cancelled { ui.label(tl!("Cancelled. Waiting for the current PDF step to finish…")); }
         });
         if modal.should_close() { run.cancelled = true; }
         ctx.request_repaint_after(std::time::Duration::from_millis(50));

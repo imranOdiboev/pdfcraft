@@ -2372,3 +2372,5 @@ animation effects	Off	Выкл
 	Move selected pages earlier	Переместить выбранные страницы раньше
 	Move selected pages later	Переместить выбранные страницы позже
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Не удалось записать {name}: {e}. Готовых файлов в папке {dir}: {n}; исходные файлы не заменены.
+
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Предыдущий шаг PDF ещё выполняется. Можно продолжать работу; повторите объединение чуть позже.
