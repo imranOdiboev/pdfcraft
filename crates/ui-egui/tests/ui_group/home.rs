@@ -1,6 +1,6 @@
 //! Home cards drive existing asynchronous pickers and guarded commands, not mock actions.
 use egui_kittest::Harness;
-use egui_kittest::kittest::{NodeT, Queryable};
+use egui_kittest::kittest::Queryable;
 use pdfcraft_ui_egui::{Dialog, PdfCraftApp, QuickTool, RecentFile};
 
 const PDF: &[u8] = b"%PDF-1.7\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF";
@@ -80,7 +80,8 @@ fn home_recent_opens_a_real_file_from_disk() {
     h.get_by_label("recent-synthetic.pdf").click();
     super::support::wait_until(&mut h, "recent PDF", |app| app.views.len() == 1);
     assert_eq!(h.state().active, Some(0));
-    assert_eq!(h.state().views[0].page_count(), 1);
+    let doc = h.state().session.get(h.state().views[0].id).unwrap();
+    assert_eq!(pdfcraft_render::PageRenderer::new(doc.bytes.clone(), Default::default()).page_count(), 1);
     assert_eq!(std::fs::read(&path).unwrap(), PDF);
     std::fs::remove_dir_all(dir).unwrap();
 }
