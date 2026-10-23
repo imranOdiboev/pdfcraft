@@ -13,7 +13,7 @@ const ACTIONS: [(&str, &str, &str); 7] = [
     ("page.combine", "Combine files", "files"),
     ("page.split", "Split", "scissors"),
     ("edit.edit_text", "Edit text & images", "text-cursor-input"),
-    ("comment.note", "Comment", "message-square"),
+    ("comment.note", "Add comments", "message-square"),
     ("sign.fill.signature", "Fill & Sign", "signature"),
     ("page.organize", "Organize pages", "layout-grid"),
 ];

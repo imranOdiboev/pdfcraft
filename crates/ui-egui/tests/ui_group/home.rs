@@ -23,7 +23,7 @@ fn home_cards_open_a_pdf_then_run_the_real_action() {
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("synthetic.pdf");
     std::fs::write(&path, PDF).unwrap();
-    for label in ["Open file", "Split", "Edit text & images", "Comment", "Fill & Sign", "Organize pages"] {
+    for label in ["Open file", "Split", "Edit text & images", "Add comments", "Fill & Sign", "Organize pages"] {
         let mut h = harness(egui::vec2(1400.0, 1000.0), "en", "light", 1.0);
         h.state_mut().pick_override = Some(vec![path.to_string_lossy().into_owned()]);
         // The catalogue can contain the same label; Home cards are in the central area.
@@ -35,7 +35,7 @@ fn home_cards_open_a_pdf_then_run_the_real_action() {
         match label {
             "Split" => assert!(matches!(h.state().dialog, Some(Dialog::Split))),
             "Edit text & images" => assert_eq!(h.state().quick_tool, QuickTool::EditText),
-            "Comment" => assert!(matches!(h.state().quick_tool, QuickTool::Comment(_))),
+            "Add comments" => assert!(matches!(h.state().quick_tool, QuickTool::Comment(_))),
             "Fill & Sign" => assert!(matches!(h.state().dialog, Some(Dialog::Signature))),
             "Organize pages" => assert!(h.state().views[0].organize),
             _ => {}
@@ -49,7 +49,7 @@ fn home_cards_open_a_pdf_then_run_the_real_action() {
 
 #[test]
 fn home_card_cancel_does_not_run_or_change_documents() {
-    for label in ["Open file", "Split", "Edit text & images", "Comment", "Fill & Sign", "Organize pages"] {
+    for label in ["Open file", "Split", "Edit text & images", "Add comments", "Fill & Sign", "Organize pages"] {
         let mut h = harness(egui::vec2(1400.0, 1000.0), "en", "dark", 1.0);
         h.state_mut().pick_override = Some(vec![]);
         h.query_all_by_label(label).find(|n| n.rect().left() > 260.0).unwrap().click();
@@ -83,7 +83,7 @@ fn home_recent_reuses_open_tab_and_missing_file_keeps_it_safe() {
     h.state_mut().set_option("home", "true").unwrap();
     h.run_steps(4);
     h.get_by_label("missing.pdf").click();
-    h.run_steps(6);
+    super::support::wait_until(&mut h, "missing recent error", |app| app.toast.is_some());
     assert_eq!(h.state().views.len(), 1);
     assert!(h.state().toast.is_some());
     assert!(!h.state().session.get(h.state().views[0].id).unwrap().dirty);
@@ -96,7 +96,7 @@ fn home_cards_fit_minimum_window_in_both_languages_themes_and_scales() {
         for theme in ["light", "dark"] {
             for scale in [1.0, 1.5, 2.0] {
                 let mut h = harness(egui::vec2(820.0, 520.0), language, theme, scale);
-                let labels = ["Open file", "Combine files", "Split", "Edit text & images", "Comment", "Fill & Sign", "Organize pages"];
+                let labels = ["Open file", "Combine files", "Split", "Edit text & images", "Add comments", "Fill & Sign", "Organize pages"];
                 for label in labels {
                     let label = pdfcraft_ui_egui::i18n::tr(lang, label);
                     let node = h.query_all_by_label(label).find(|n| n.rect().left() > 250.0).unwrap();
