@@ -259,11 +259,15 @@ fn double_clicking_a_field_in_the_panel_opens_its_individual_properties() {
     let mut h = harness();
     // Form controls open first; the existing field list is in the adjacent inspector tab.
     h.get_by_role_and_label(egui::accesskit::Role::Tab, "Inspector").click();
+    h.run_steps(30); // The preceding tab click must not join the field double-click.
+    let row = h.get_by_label("beta").rect();
+    h.get_by_label("beta").click();
     h.run_steps(4);
-    for _ in 0..2 {
-        h.get_by_label("beta").click();
-        h.run_steps(4);
-    }
+    assert_eq!(h.state().views[0].prepare.names(), ["beta"]);
+    let selected_row = h.get_by_label("beta").rect();
+    assert!((selected_row.center() - row.center()).length() < 0.5, "selection keeps the row in place: {row:?} -> {selected_row:?}");
+    h.get_by_label("beta").click();
+    h.run_steps(4);
     h.run_steps(4);
     h.get_by_label("Text Field Properties");
     assert_eq!(h.state().field_props.as_ref().unwrap().field, "beta");
