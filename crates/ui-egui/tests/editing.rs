@@ -2077,8 +2077,11 @@ fn the_security_notice_wraps_beside_its_buttons_and_lines_up_with_them() {
         let mut h = Harness::builder().with_size(egui::vec2(width, 800.0)).build_eframe(|_cc| {
             let mut app = PdfCraftApp::new();
             app.set_option("language", "en").unwrap();
-            // Exercise wrapping with both independently docked side panes, then compact projection.
-            app.set_option("tools-side", "left").unwrap();
+            // Exercise the fixed-width legacy layout and its compact projection.
+            // Moving a panel explicitly creates a different split geometry.
+            let mut saved: serde_json::Value = serde_json::from_str(&app.persist()).unwrap();
+            saved.as_object_mut().unwrap().remove("editor_workspace_pending");
+            app.restore(&saved.to_string());
             app.open_bytes("locked.pdf", None, protected("", "owner", 0b0100)).unwrap();
             app.set_option("panel", "bookmarks").unwrap();
             app
