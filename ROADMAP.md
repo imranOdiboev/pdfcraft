@@ -597,3 +597,7 @@ Newest first: the date, what moved, and the new overall estimate.
 - **2026-10-18 (M8, #1350):** Published the history-preserving integration; simplified the inherited-form resource guard for Rust 1.96 Clippy. Formatting, 64 redaction tests, scoped Clippy, layering, assets and the scoped wasm check pass locally. CI remains pending; estimates unchanged.
 
 - 2026-10-22: ODIBO Windows rebranding verified in Actions run 39810140502: independent identity/storage, separate brand terms, x64 release ZIP, PDF acceptance and light/dark GUI screenshots. PR #2 awaits owner review; unsigned test build, manual hardware/visual acceptance remains. Parity/maturity estimates unchanged.
+
+- 2026-10-23: ODIBO stage 3.1 UI/UX planning on feature/odibo-uiux from merged PR #2 (23af123): architecture audit, action mapping, migration risks and seven design-only mockups. App implementation awaits owner approval; image-reference comparison pending because the attachment was unavailable. Parity/maturity unchanged.
+
+- 2026-10-23: ODIBO stage 3.2 candidate in PR #3: readable secondary/tool text, structural selected/focus states and responsive mode/search/Save chrome. Existing PDF commands and persisted docking/preferences retained. CI evidence and real egui screenshots are tracked in PR #3; stages 3.3–3.7 remain deferred. Parity/maturity unchanged.

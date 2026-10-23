@@ -4,7 +4,7 @@ use egui::{Align, Align2, Color32, CornerRadius, Layout, Rect, Sense, Stroke, ve
 
 use crate::canvas::{DocView, Fit, PageLayout};
 use crate::theme::{self, ThemePreference, Tokens};
-use crate::{Dialog, Mode, PdfCraftApp, PropsTab, RightPanel, icons, widgets, window_controls};
+use crate::{Dialog, Mode, PdfCraftApp, RightPanel, icons, widgets, window_controls};
 
 /// Height of the tab strip when it doubles as the macOS title bar (#789). AppKit draws the traffic
 /// lights itself, centred in the standard 28 pt title-bar band at the top of the window, and moving
@@ -503,32 +503,47 @@ pub fn mode_bar(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 ui.add_space(6.0);
                 ui.painter().vline(ui.cursor().left(), ui.max_rect().y_range().shrink(12.0), Stroke::new(1.0, t.divider));
                 ui.add_space(10.0);
-                for (mode, label) in
-                    [(Mode::AllTools, "All tools"), (Mode::Read, "Read"), (Mode::Edit, "Edit"), (Mode::Convert, "Convert"), (Mode::Sign, "E-Sign")]
-                {
-                    if widgets::mode_tab(ui, tl!(label), app.mode == mode).clicked() {
-                        app.switch_mode(mode, true);
+                let modes =
+                    [(Mode::AllTools, "All tools"), (Mode::Read, "Read"), (Mode::Edit, "Edit"), (Mode::Convert, "Convert"), (Mode::Sign, "E-Sign")];
+                // Measure translated labels, not the window's physical pixels. Reserve space
+                // for Save and the palette before choosing the presentation of the modes.
+                let mode_width: f32 =
+                    modes.iter().map(|(_, label)| widgets::text_width(ui, tl!(label), &theme::semibold(theme::CONTROL_LABEL)) + 24.0).sum();
+                let save_width = widgets::text_width(ui, tl!("Save"), &theme::semibold(theme::CONTROL_LABEL)) + 24.0;
+                let compact = ui.available_width() < mode_width + save_width + 64.0;
+                if compact {
+                    let label = modes.iter().find(|(mode, _)| *mode == app.mode).map_or("All tools", |(_, label)| *label);
+                    let response = widgets::mode_menu(ui, tl!(label));
+                    egui::Popup::menu(&response).show(|ui| {
+                        for (mode, label) in modes {
+                            if ui.selectable_label(app.mode == mode, tl!(label)).clicked() {
+                                app.switch_mode(mode, true);
+                                ui.close();
+                            }
+                        }
+                    });
+                } else {
+                    for (mode, label) in modes {
+                        if widgets::mode_tab(ui, tl!(label), app.mode == mode).clicked() {
+                            app.switch_mode(mode, true);
+                        }
                     }
                 }
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    ui.spacing_mut().item_spacing.x = 4.0;
-                    let has_doc = app.active.is_some();
-                    ui.add_enabled_ui(has_doc, |ui| {
-                        let tip = crate::commands::command_tip(ui.ctx(), tl!("Print ({key})"), "print.dialog");
-                        if icons::button(ui, "printer", 32.0, false, &tip).clicked() {
-                            app.run_command("print.dialog");
+                    ui.spacing_mut().item_spacing.x = 8.0;
+                    let enabled = pdfcraft_engine::commands::command("file.save").is_some_and(|spec| app.command_enabled(spec));
+                    let tip = crate::commands::command_tip(ui.ctx(), tl!("Save ({key})"), "file.save");
+                    if ui.add_enabled_ui(enabled, |ui| widgets::primary_button(ui, tl!("Save"), &tip)).inner.on_hover_text(tip).clicked() {
+                        app.run_command("file.save");
+                    }
+                    // Print and document properties remain in Menu > File and retain their
+                    // existing shortcuts. Avoid three competing icon-only document actions.
+                    let width = ui.available_width();
+                    if width >= 200.0 {
+                        if widgets::search_box(ui, tl!("Find tools and commands"), width.min(260.0)).clicked() {
+                            app.palette_open = true;
                         }
-                        let tip = crate::commands::command_tip(ui.ctx(), tl!("Save ({key})"), "file.save");
-                        if icons::button(ui, "save", 32.0, false, &tip).clicked() {
-                            app.run_command("file.save");
-                        }
-                        let tip = crate::commands::command_tip(ui.ctx(), tl!("Document properties ({key})"), "file.properties");
-                        if icons::button(ui, "info", 32.0, false, &tip).clicked() {
-                            app.dialog = Some(Dialog::Properties(PropsTab::Description));
-                        }
-                    });
-                    ui.add_space(8.0);
-                    if widgets::search_box(ui, tl!("Find tools and commands"), 260.0).clicked() {
+                    } else if icons::button(ui, "search", 32.0, false, tl!("Find tools and commands")).clicked() {
                         app.palette_open = true;
                     }
                 });
@@ -858,6 +873,35 @@ fn rail_view_menu(ui: &mut egui::Ui, view: &mut DocView) -> Option<&'static str>
         ui.close();
     }
     picked
+}
+
+#[cfg(test)]
+mod design_system_tests {
+    use super::*;
+
+    #[test]
+    fn responsive_toolbar_preserves_saved_preferences_and_docking() {
+        let mut app = PdfCraftApp::new();
+        app.set_option("language", "ru").unwrap();
+        app.set_option("theme", "dark").unwrap();
+        let before: serde_json::Value = serde_json::from_str(&app.persist()).unwrap();
+        let ctx = egui::Context::default();
+        ctx.set_fonts(theme::font_definitions());
+        egui_extras::install_image_loaders(&ctx);
+        // Exercise just the toolbar: Home's existing inspector-availability normalization
+        // is deliberately outside this component and must not be confused with a migration.
+        for kind in [theme::ThemeKind::Light, theme::ThemeKind::Dark] {
+            theme::apply(&ctx, kind);
+            for width in [640.0, 960.0, 1440.0] {
+                for _ in 0..3 {
+                    let input = egui::RawInput { screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, vec2(width, 800.0))), ..Default::default() };
+                    ctx.run_ui(input, |ui| mode_bar(&mut app, ui)).drop_without_applying_deltas();
+                }
+                let after: serde_json::Value = serde_json::from_str(&app.persist()).unwrap();
+                assert_eq!(before, after, "toolbar presentation must not rewrite saved preferences or docking");
+            }
+        }
+    }
 }
 
 #[cfg(test)]

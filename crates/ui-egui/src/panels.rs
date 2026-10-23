@@ -10,6 +10,28 @@ use crate::{LeftPanel, PdfCraftApp, RightPanel, icons, widgets};
 
 const COLLAPSED_TOOLS: usize = 14;
 
+/// Derive selection from the existing tool state, never from a second persisted UI value.
+fn selected_command(app: &PdfCraftApp, command: &str) -> bool {
+    use crate::QuickTool;
+    match app.quick_tool {
+        QuickTool::Comment(tool) => tool.command() == command,
+        QuickTool::Field(tool) => tool.command() == command,
+        QuickTool::Fill(tool) => tool.command() == command,
+        QuickTool::Measure(tool) => command.strip_prefix("measure.") == Some(tool.name()),
+        QuickTool::Crop => command == "page.crop",
+        QuickTool::EnhanceCamera => command == "ocr.enhance_camera",
+        QuickTool::EditText => command == "edit.edit_text",
+        QuickTool::AddText => command == "edit.text",
+        QuickTool::Link => command == "edit.link",
+        QuickTool::Redact => command == "redact.mark",
+        QuickTool::SignArea { certify } => command == if certify { "sign.certify" } else { "sign.digital" },
+        QuickTool::MarqueeZoom => command == "view.marquee_zoom",
+        QuickTool::Snapshot => command == "edit.snapshot",
+        QuickTool::ColumnSelect => command == "edit.column_select",
+        _ => false,
+    }
+}
+
 fn hue(g: &ToolGroup) -> Color32 {
     Color32::from_rgb(g.hue[0], g.hue[1], g.hue[2])
 }
@@ -104,21 +126,27 @@ fn tool_row(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup) -> egui::Response {
     let body = rect.translate(press.offset());
     icons::paint(ui, Rect::from_min_size(body.min + vec2(6.0, 7.0), vec2(20.0, 20.0)), g.icon, 19.0, hue(g));
     let right_reserved = match (g.badge, g.availability) {
-        (Some(b), _) => ui.fonts_mut(|f| f.layout_no_wrap(tl!(b).to_owned(), theme::semibold(9.5), Color32::WHITE).size().x) + 26.0,
+        (Some(b), _) => ui.fonts_mut(|f| f.layout_no_wrap(tl!(b).to_owned(), theme::semibold(theme::SECONDARY), Color32::WHITE).size().x) + 26.0,
         (None, Availability::Planned(m)) if resp.hovered() => {
             let hint = format!("{} · {m}", tl!("Planned"));
-            ui.fonts_mut(|f| f.layout_no_wrap(hint, theme::medium(10.5), t.text_faint).size().x) + 18.0
+            ui.fonts_mut(|f| f.layout_no_wrap(hint, theme::medium(theme::SECONDARY), t.text_faint).size().x) + 18.0
         }
         _ => 8.0,
     };
-    let clipped =
-        row_label(ui, tl!(g.label), theme::regular(13.5), t.text, body.left_center() + vec2(36.0, 0.0), rect.width() - 36.0 - right_reserved);
+    let clipped = row_label(
+        ui,
+        tl!(g.label),
+        theme::regular(theme::TOOL_LABEL),
+        t.text,
+        body.left_center() + vec2(36.0, 0.0),
+        rect.width() - 36.0 - right_reserved,
+    );
     match (g.badge, g.availability) {
         (Some(b), _) => {
-            let font = theme::semibold(9.5);
+            let font = theme::semibold(theme::SECONDARY);
             let badge = tl!(b);
             let w = ui.fonts_mut(|f| f.layout_no_wrap(badge.to_string(), font.clone(), Color32::WHITE).size().x);
-            let r = Rect::from_center_size(body.right_center() - vec2(w / 2.0 + 10.0, 0.0), vec2(w + 10.0, 16.0));
+            let r = Rect::from_center_size(body.right_center() - vec2(w / 2.0 + 10.0, 0.0), vec2(w + 10.0, 20.0));
             ui.painter().rect_filled(r, CornerRadius::same(4), t.badge_new);
             ui.painter().text(r.center(), Align2::CENTER_CENTER, badge, font, Color32::WHITE);
         }
@@ -128,7 +156,7 @@ fn tool_row(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup) -> egui::Response {
                 body.right_center() - vec2(10.0, 0.0),
                 Align2::RIGHT_CENTER,
                 format!("{} · {m}", tl!("Planned")),
-                theme::medium(10.5),
+                theme::medium(theme::SECONDARY),
                 t.text_faint,
             );
         }
@@ -140,6 +168,7 @@ fn tool_row(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup) -> egui::Response {
         Availability::Provider => tl!("Optional: needs an AI provider you configure").into(),
     };
     let tip = if clipped { format!("{} — {tip}", tl!(g.label)) } else { tip };
+    widgets::focus_ring(ui, &resp);
     theme::hand(resp).on_hover_text(tip)
 }
 
@@ -212,10 +241,16 @@ fn tool_detail(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static
                     continue;
                 }
                 let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 34.0), Sense::click());
-                resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, tl!(item.label)));
+                let selected = selected_command(app, item.command);
+                resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, ui.is_enabled(), selected, tl!(item.label)));
                 let ready = item.availability == Availability::Ready;
                 let press = theme::Press::track(ui, &resp);
-                press.wash(ui, rect, 6, false);
+                press.wash(ui, rect, 6, selected);
+                if selected {
+                    // A physical edge and outline remain visible in grayscale and high contrast.
+                    ui.painter().rect_stroke(rect.shrink(0.5), 6, Stroke::new(1.0, t.text_muted), egui::StrokeKind::Inside);
+                    ui.painter().rect_filled(Rect::from_min_size(rect.min, vec2(3.0, rect.height())), 2, t.text);
+                }
                 let body = rect.translate(press.offset());
                 let fg = if ready { t.text } else { t.text_muted };
                 icons::paint(
@@ -230,13 +265,21 @@ fn tool_detail(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static
                     Availability::Planned(m) => (m, t.pressed, t.text_muted),
                     Availability::Provider => ("AI", t.pressed, t.text_muted),
                 };
-                let font = theme::semibold(9.5);
+                let font = theme::semibold(theme::SECONDARY);
                 let chip_label = tl!(chip).to_string();
                 let w = crate::widgets::text_width(ui, &chip_label, &font);
-                let r = Rect::from_center_size(body.right_center() - vec2(w / 2.0 + 10.0, 0.0), vec2(w + 10.0, 16.0));
-                row_label(ui, tl!(item.label), theme::regular(13.0), fg, body.left_center() + vec2(34.0, 0.0), r.left() - body.left() - 42.0);
+                let r = Rect::from_center_size(body.right_center() - vec2(w / 2.0 + 10.0, 0.0), vec2(w + 10.0, 20.0));
+                row_label(
+                    ui,
+                    tl!(item.label),
+                    theme::regular(theme::TOOL_LABEL),
+                    fg,
+                    body.left_center() + vec2(34.0, 0.0),
+                    r.left() - body.left() - 42.0,
+                );
                 ui.painter().rect_filled(r, CornerRadius::same(4), fill);
                 ui.painter().text(r.center(), Align2::CENTER_CENTER, chip_label, font, cfg);
+                widgets::focus_ring(ui, &resp);
                 let resp = theme::hand(resp).on_hover_text(format!("{} — {}", tl!(item.label), item.command));
                 if item.actions.is_empty() {
                     if resp.clicked() {

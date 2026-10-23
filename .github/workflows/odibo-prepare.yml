@@ -2,7 +2,7 @@ name: ODIBO isolated source preparation
 
 on:
   push:
-    branches: [feature/odibo-rebranding]
+    branches: [feature/odibo-rebranding, feature/odibo-uiux]
   workflow_dispatch:
 
 permissions:

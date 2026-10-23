@@ -1,0 +1,31 @@
+name: ODIBO UIUX design previews
+
+on:
+  push:
+    branches: [feature/odibo-uiux]
+    paths: ['docs/uiux/**', '.github/workflows/odibo-uiux-preview.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Render design-only mockups with preinstalled Chrome
+        run: |
+          python3 docs/uiux/generate_mockups.py
+          git diff --exit-code -- docs/uiux
+          python3 docs/uiux/render_preview.py
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: odibo-uiux-design-${{ github.sha }}
+          path: dist/uiux-preview
+          retention-days: 7
+          if-no-files-found: error

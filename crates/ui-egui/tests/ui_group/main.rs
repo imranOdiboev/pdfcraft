@@ -9,6 +9,7 @@ mod support;
 mod animate;
 mod bulk_fields;
 mod column_select;
+mod design_system;
 mod identity;
 mod layer_actions;
 mod links;
