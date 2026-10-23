@@ -10,6 +10,7 @@
 use std::time::{Duration, Instant};
 
 use egui_kittest::Harness;
+use egui_kittest::kittest::Queryable;
 use pdfcraft_ui_egui::PdfCraftApp;
 
 fn main() -> Result<(), String> {
@@ -31,6 +32,8 @@ fn main() -> Result<(), String> {
             None => file = Some(a),
         }
     }
+    let click = opts.iter().find(|(key, _)| key == "click").map(|(_, label)| label.clone());
+    opts.retain(|(key, _)| key != "click");
     let mut harness = Harness::builder().with_size(size).with_pixels_per_point(scale).build_eframe(move |_cc| {
         let mut app = PdfCraftApp::new();
         if let Some(f) = &file {
@@ -50,6 +53,11 @@ fn main() -> Result<(), String> {
     // Let fonts install, layout settle and background renders arrive.
     let start = Instant::now();
     harness.run_steps(4);
+    if let Some(label) = click {
+        let Some(node) = harness.query_by_label(&label) else { return Err(format!("shot: clickable UI label not found: {label}")) };
+        node.click();
+        harness.run_steps(4);
+    }
     while start.elapsed() < Duration::from_secs(20) {
         harness.run_steps(2);
         if !harness.state().render_pending() {

@@ -72,6 +72,17 @@ fn contextual_tools_and_inspector_reuse_existing_commands() {
 }
 
 #[test]
+fn compact_read_inspector_does_not_reduce_the_document_width() {
+    let mut h = harness(egui::vec2(820.0, 520.0), "en", "light", 1.0, None);
+    h.state_mut().execute("view.read_mode");
+    h.run_steps(3);
+    h.state_mut().choose_right_panel(Some(RightPanel::Bookmarks));
+    h.run_steps(4);
+    h.get_by_label("This document has no bookmarks.");
+    assert!(document(&h).width() >= 600.0);
+}
+
+#[test]
 fn restored_panel_layout_survives_compact_projection_and_restart() {
     let mut app = PdfCraftApp::new();
     // Simulate an existing stage 3.3 settings file, which has no new pending-default key.

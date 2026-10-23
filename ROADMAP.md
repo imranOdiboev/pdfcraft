@@ -603,3 +603,5 @@ Newest first: the date, what moved, and the new overall estimate.
 - 2026-10-23: ODIBO stage 3.2 candidate in PR #3: readable secondary/tool text, structural selected/focus states and responsive mode/search/Save chrome. Existing PDF commands and persisted docking/preferences retained. CI evidence and real egui screenshots are tracked in PR #3; stages 3.3–3.7 remain deferred. Parity/maturity unchanged.
 
 - 2026-10-23: ODIBO stage 3.3 candidate in PR #4: responsive Home action cards use existing open-then-run commands; recents precede pinned folders and project links. Owner re-enabled fork workflows; final cloud verification and artifact evidence are tracked in PR #4. Editor work deferred, parity/maturity unchanged.
+
+- 2026-10-23: ODIBO stage 3.4 candidate in PR #5: existing page/bookmark navigation reused on the left; fresh editor Tools/Inspector on the right, restored layouts retained, compact drawers preserve document width and short rails scroll. New RustSec-2026-0385 fixed by ctutils 0.4.4; cloud checks and artifacts tracked in PR #5. Later stages deferred; parity/maturity unchanged.

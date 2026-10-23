@@ -101,6 +101,10 @@ jobs:
           done
           cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/editor-qa/editor-minimum-light.png dist/editor-qa/fixture.pdf --size 820x520 --scale 1.5 --language ru --theme light --mode edit
           cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/editor-qa/editor-minimum-dark.png dist/editor-qa/fixture.pdf --size 820x520 --scale 2 --language ru --theme dark --mode edit
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/editor-qa/navigation-minimum-light.png dist/editor-qa/fixture.pdf --size 820x520 --scale 1.5 --language ru --theme light --mode edit --click 'Навигация по страницам: Страницы'
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/editor-qa/navigation-minimum-dark.png dist/editor-qa/fixture.pdf --size 820x520 --scale 2 --language ru --theme dark --mode edit --click 'Навигация по страницам: Страницы'
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/editor-qa/read-minimum-light.png dist/editor-qa/fixture.pdf --size 820x520 --scale 1.5 --language ru --theme light --mode read --panel comments
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/editor-qa/read-minimum-dark.png dist/editor-qa/fixture.pdf --size 820x520 --scale 2 --language ru --theme dark --mode read --panel comments
           cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/editor-qa/
           cp LICENSE-MIT LICENSE-APACHE NOTICE dist/editor-qa/
           cp assets/fonts/OFL-Inter.txt assets/fonts/OFL-JetBrainsMono.txt assets/icons/LICENSE-lucide.txt dist/editor-qa/

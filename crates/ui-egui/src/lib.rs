@@ -3176,19 +3176,15 @@ impl eframe::App for PdfCraftApp {
             // Read mode hides the tools, not the navigation panes: the rail stays visible
             // there, so its buttons (Bookmarks, Page thumbnails, ...) must open their panels.
             // Outside Read mode the docking workspace draws the inspector.
-            if self.mode == Mode::Read && self.right.is_some() {
-                egui::Panel::right("read_right_panel")
-                    .resizable(true)
-                    .default_size(330.0)
-                    .size_range(260.0..=520.0)
-                    .frame(egui::Frame::NONE)
-                    .show(ui, |ui| panels::right_panel(self, ui));
+            if self.mode == Mode::Read {
+                editor_navigation::read_inspector(self, ui);
             }
         }
         let t = theme::Tokens::get(&ctx);
         let background = if self.active.is_none() { t.panel } else { t.pasteboard };
         egui::CentralPanel::default().frame(egui::Frame::NONE.fill(background)).show(ui, |ui| {
             if self.mode == Mode::Read {
+                ui.data_mut(|data| data.insert_temp(egui::Id::new("odibo-editor-document-body"), ui.max_rect()));
                 match self.active {
                     None if self.combine_showing() => combine_ui::page(self, ui),
                     None => home::show(self, ui),
