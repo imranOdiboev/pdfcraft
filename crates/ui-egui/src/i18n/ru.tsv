@@ -2368,3 +2368,7 @@ animation effects	Off	Выкл
 	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Исходные файлы не изменяются. Отмена удаляет результат; завершение текущего шага может занять время.
 	Cancelled. Waiting for the current PDF step to finish…	Отменено. Ожидание завершения текущего шага…
 	Couldn't combine files: the PDF worker stopped	Не удалось объединить файлы: обработчик PDF остановился
+
+	Move selected pages earlier	Переместить выбранные страницы раньше
+	Move selected pages later	Переместить выбранные страницы позже
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Не удалось записать {name}: {e}. Готовых файлов в папке {dir}: {n}; исходные файлы не заменены.

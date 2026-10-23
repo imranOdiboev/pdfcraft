@@ -18,3 +18,8 @@ parts, but never replaces originals. Multi-file output is not an all-or-nothing 
 
 Validation pending: cloud formatting/assets, Rust/Clippy, UI/functional tests, negative control,
 security/licences, actual egui screenshots and Windows package. No local Rust or EXE execution.
+
+Native Combine runs the existing engine method on one bounded worker, guarded against panic.
+The UI remains responsive and cancellation discards the result. Its non-interruptible engine
+step drains before retry, without writing any file. The synchronous automation method remains.
+Split errors report how many completed outputs remain; retry should use a separate empty folder.

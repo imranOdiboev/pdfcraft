@@ -727,14 +727,18 @@ impl PdfCraftApp {
                     app.notify_fmt("{name} already exists. Choose another folder; no files were written.", &[("name", name)]);
                     return;
                 }
-                for (name, bytes) in &named {
+                for (written, (name, bytes)) in named.iter().enumerate() {
                     let result = if new_only {
                         write_new_pdf(&dir.join(name), bytes)
                     } else {
                         crate::editing::write_atomically(&dir.join(name).to_string_lossy(), bytes)
                     };
                     if let Err(e) = result {
-                        app.notify_fmt("Couldn't write {name}: {e}", &[("name", name), ("e", &e.to_string())]);
+                        if new_only {
+                            app.notify_fmt("Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.", &[("name", name), ("e", &e.to_string()), ("n", &written.to_string()), ("dir", &dir.display().to_string())]);
+                        } else {
+                            app.notify_fmt("Couldn't write {name}: {e}", &[("name", name), ("e", &e.to_string())]);
+                        }
                         return;
                     }
                 }

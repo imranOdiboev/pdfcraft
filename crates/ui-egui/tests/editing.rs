@@ -2047,6 +2047,24 @@ fn explicit_ranges_split_in_order_and_preserve_the_source() {
     std::fs::remove_dir_all(dir).unwrap();
 }
 
+#[test]
+fn labelled_organize_move_preserves_selection_order_and_undo_redo() {
+    let mut h = organize(4);
+    h.state_mut().views[0].select_pages(&[1, 2]);
+    h.run_steps(3);
+    h.get_by_label("Move selected pages earlier").focus();
+    h.run_steps(1);
+    h.key_press(Key::Enter);
+    h.run_steps(4);
+    assert_eq!(texts_of(h.state(), 0), ["Page 2", "Page 3", "Page 1", "Page 4"]);
+    h.state_mut().run_command("edit.undo");
+    h.run_steps(3);
+    assert_eq!(texts_of(h.state(), 0), ["Page 1", "Page 2", "Page 3", "Page 4"]);
+    h.state_mut().run_command("edit.redo");
+    h.run_steps(3);
+    assert_eq!(texts_of(h.state(), 0), ["Page 2", "Page 3", "Page 1", "Page 4"]);
+}
+
 // ── Encrypted documents ───────────────────────────────────────────────────────────────────────
 
 fn protected(user: &str, owner: &str, permissions: i32) -> Vec<u8> {

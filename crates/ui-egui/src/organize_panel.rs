@@ -98,11 +98,11 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         ui.label(egui::RichText::new(tl!("Changes can be undone until you close the document. Save As keeps the original file.")).color(t.text_muted));
         ui.add_enabled_ui(editable, |ui| {
             let first = targets.first().copied().unwrap_or(0);
-            ui.horizontal_wrapped(|ui| {
-                if ui.add_enabled_ui(first > 0, |ui| widgets::icon_pill(ui, "chevron-left", tl!("Move earlier"), false)).inner.clicked() {
+            ui.vertical(|ui| {
+                if ui.add_enabled_ui(first > 0, |ui| row(ui, t, "chevron-left", tl!("Move selected pages earlier"), Availability::Ready, false)).inner.clicked() {
                     act = Some(Act::Edit(Box::new(Edit::MovePages { pages: targets.clone(), to: first - 1 })));
                 }
-                if ui.add_enabled_ui(last + 1 < n, |ui| widgets::icon_pill(ui, "chevron-right", tl!("Move later"), false)).inner.clicked() {
+                if ui.add_enabled_ui(last + 1 < n, |ui| row(ui, t, "chevron-right", tl!("Move selected pages later"), Availability::Ready, false)).inner.clicked() {
                     act = Some(Act::Edit(Box::new(Edit::MovePages { pages: targets.clone(), to: first + 1 })));
                 }
             });
