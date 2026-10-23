@@ -69,6 +69,23 @@ fn home_combine_card_opens_existing_combine_workspace() {
 }
 
 #[test]
+fn home_recent_opens_a_real_file_from_disk() {
+    let dir = std::env::temp_dir().join(format!("odibo-home-recent-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("recent-synthetic.pdf");
+    std::fs::write(&path, PDF).unwrap();
+    let mut h = harness(egui::vec2(1400.0, 1100.0), "en", "dark", 1.0);
+    h.state_mut().recent.push(RecentFile { name: "recent-synthetic.pdf".into(), path: path.to_string_lossy().into_owned(), pages: 1, size: PDF.len() });
+    h.run_steps(3);
+    h.get_by_label("recent-synthetic.pdf").click();
+    super::support::wait_until(&mut h, "recent PDF", |app| app.views.len() == 1);
+    assert_eq!(h.state().active, Some(0));
+    assert_eq!(h.state().views[0].page_count(), 1);
+    assert_eq!(std::fs::read(&path).unwrap(), PDF);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
 fn home_recent_reuses_open_tab_and_missing_file_keeps_it_safe() {
     let mut h = harness(egui::vec2(1400.0, 1100.0), "en", "light", 1.0);
     let path = "/odibo-synthetic/already-open.pdf";

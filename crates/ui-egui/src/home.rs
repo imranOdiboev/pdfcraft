@@ -1,4 +1,4 @@
-//! Home tab: recommended tools, open card, pinned folders and recent files (local only, never
+//! Home tab: real quick actions, recent files and pinned folders (local only, never
 //! another app's list).
 
 use egui::{Align2, CornerRadius, Rect, Sense, Stroke, vec2};
@@ -42,7 +42,7 @@ fn quick_actions(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
     ui.label(egui::RichText::new(tl!("Choose a tool, then select your PDF.")).font(theme::regular(theme::SECONDARY)).color(t.text_muted));
     ui.add_space(12.0);
     let gap = 12.0;
-    let columns = ((ui.available_width() + gap) / 202.0).floor().clamp(1.0, 4.0) as usize;
+    let columns = (((ui.available_width() + gap) / 202.0).floor() as usize).clamp(1, 4);
     let width = ((ui.available_width() - gap * columns.saturating_sub(1) as f32) / columns as f32).max(1.0);
     for row in ACTIONS.chunks(columns) {
         ui.horizontal(|ui| {
