@@ -108,18 +108,18 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
             });
             ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
-                if widgets::icon_pill(ui, "rotate-ccw", tl!("Rotate counterclockwise"), false).clicked() {
+                if row(ui, t, "rotate-ccw", tl!("Rotate counterclockwise"), Availability::Ready, false).clicked() {
                     act = Some(Act::Edit(Box::new(Edit::RotatePages { pages: targets.clone(), degrees: -90 })));
                 }
-                if widgets::icon_pill(ui, "rotate-cw", tl!("Rotate clockwise"), false).clicked() {
+                if row(ui, t, "rotate-cw", tl!("Rotate clockwise"), Availability::Ready, false).clicked() {
                     act = Some(Act::Edit(Box::new(Edit::RotatePages { pages: targets.clone(), degrees: 90 })));
                 }
                 // A document keeps at least one page.
                 let can_delete = targets.len() < n;
-                if ui.add_enabled_ui(can_delete, |ui| widgets::icon_pill(ui, "trash-2", tl!("Delete pages (Delete)"), false)).inner.clicked() {
+                if ui.add_enabled_ui(can_delete, |ui| row(ui, t, "trash-2", tl!("Delete pages (Delete)"), Availability::Ready, false)).inner.clicked() {
                     act = Some(Act::Edit(Box::new(Edit::DeletePages { pages: targets.clone() })));
                 }
-                if widgets::icon_pill(ui, "file-output", tl!("Extract pages to a new document"), false).clicked() {
+                if row(ui, t, "file-output", tl!("Extract pages to a new document"), Availability::Ready, false).clicked() {
                     act = Some(Act::View(ViewAction::Extract));
                 }
             });
@@ -204,8 +204,9 @@ fn row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability: Ava
     let icon_rect = Rect::from_min_size(body.min + vec2(6.0, 8.0), vec2(18.0, 18.0));
     icons::paint(ui, icon_rect, icon, 17.0, fg);
     let font = theme::regular(13.5);
-    let width = crate::widgets::text_width(ui, label, &font);
-    ui.painter().text(body.left_center() + vec2(34.0, 0.0), Align2::LEFT_CENTER, label, font, fg);
+    let shown = widgets::fit_line(label, (body.width() - 52.0).max(1.0), |s| widgets::text_width(ui, s, &font));
+    let width = crate::widgets::text_width(ui, &shown, &font);
+    ui.painter().text(body.left_center() + vec2(34.0, 0.0), Align2::LEFT_CENTER, shown, font, fg);
     if menu {
         // The small corner triangle Acrobat puts after a label that opens a menu.
         let tip = body.left_center() + vec2(34.0 + width + 6.0, 6.0);
@@ -213,7 +214,7 @@ fn row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability: Ava
         ui.painter().add(egui::Shape::convex_polygon(tri, fg, Stroke::NONE));
     }
     match availability {
-        Availability::Ready => theme::hand(resp),
+        Availability::Ready => theme::hand(resp).on_hover_text(label),
     }
 }
 

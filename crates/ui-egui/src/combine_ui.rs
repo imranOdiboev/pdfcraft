@@ -1072,7 +1072,9 @@ fn tool(ui: &mut egui::Ui, enabled: bool, icon: &str, label: &str, disabled_why:
     ui.add_enabled_ui(enabled, |ui| {
         if matches!(icon, "chevron-up" | "chevron-down" | "trash-2") {
             let caption = if icon == "trash-2" { tl!("Remove") } else { label };
-            widgets::icon_pill(ui, icon, caption, false).on_hover_text(label)
+            let response = widgets::icon_pill(ui, icon, caption, false).on_hover_text(label);
+            response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, label));
+            response
         } else {
             icons::button(ui, icon, 30.0, false, label)
         }

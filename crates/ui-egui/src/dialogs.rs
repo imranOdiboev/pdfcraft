@@ -411,6 +411,7 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
             }
             Dialog::Split => {
                 ui.label(egui::RichText::new(tl!("Split document")).font(theme::semibold(18.0)));
+                egui::ScrollArea::vertical().id_salt("split-options").max_height((ctx.content_rect().height() - 170.0).max(100.0)).show(ui, |ui| {
                 ui.add_space(8.0);
                 let Some((vi, id)) = app.active_ids() else { return };
                 let n = app.session.get(id).map(|d| d.info.pages.len()).unwrap_or(0);
@@ -495,6 +496,7 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                 if files.is_none_or(|f| f > 1) && (draft.mode != M::Ranges || explicit.is_ok()) {
                     split_ready = Some(plan);
                 }
+                });
             }
             Dialog::ReplacePages => {
                 let count = app.active_ids().and_then(|(_, id)| app.session.get(id)).map(|d| d.info.pages.len()).unwrap_or(1).max(1);
