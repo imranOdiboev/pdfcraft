@@ -37,6 +37,21 @@ fn fresh_editor_places_navigation_left_and_tools_right() {
 }
 
 #[test]
+fn explicit_tools_side_before_the_first_editor_frame_is_respected() {
+    let mut h = Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_eframe(|_| {
+        let mut app = PdfCraftApp::new();
+        app.set_option("tools-side", "left").unwrap();
+        app.open_bytes("navigation.pdf", None, PDF.to_vec()).unwrap();
+        app
+    });
+    h.run_steps(5);
+    assert!(!h.state().docking.tools_on_right(), "an explicit choice wins over the fresh default");
+    let saved = h.state().persist();
+    let restored = harness(egui::vec2(1440.0, 900.0), "en", "light", 1.0, Some(saved));
+    assert!(!restored.state().docking.tools_on_right());
+}
+
+#[test]
 fn left_thumbnails_navigate_by_pointer_and_keyboard_without_editing() {
     let mut h = harness(egui::vec2(1440.0, 900.0), "en", "dark", 1.0, None);
     h.get_by_role_and_label(egui::accesskit::Role::Button, "Page navigation: Page 2").click();

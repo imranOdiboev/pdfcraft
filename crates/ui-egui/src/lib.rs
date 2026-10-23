@@ -2627,11 +2627,14 @@ impl PdfCraftApp {
                 self.view_defaults =
                     self.view_defaults.with_zoom(value).ok_or("default-zoom must be fit-width, fit-page or a percentage from 8 to 6400")?;
             }
-            ("tools-side", _) => self.docking.set_tools_on_right(match value {
-                "left" => false,
-                "right" => true,
-                _ => return Err("tools-side must be left or right".into()),
-            })?,
+            ("tools-side", _) => {
+                self.docking.set_tools_on_right(match value {
+                    "left" => false,
+                    "right" => true,
+                    _ => return Err("tools-side must be left or right".into()),
+                })?;
+                self.editor_workspace_pending = false;
+            }
             ("organize", Some(v)) => {
                 if value == "off" {
                     v.organize = false;
