@@ -2,12 +2,61 @@
 //! another app's list).
 
 use egui::{Align2, CornerRadius, Rect, Sense, Stroke, vec2};
-use pdfcraft_engine::catalog;
 
 use crate::theme::{self, Tokens};
 use crate::{PdfCraftApp, icons, panels::human_size, widgets};
 
-const RECOMMENDED: [&str; 5] = ["organize", "comment", "form", "edit", "protect"];
+/// Only existing catalogue commands: document actions use the same asynchronous
+/// open-then-run path as the tool panel, including cancellation and permission checks.
+const ACTIONS: [(&str, &str, &str); 7] = [
+    ("file.open", "Open file", "folder-open"),
+    ("page.combine", "Combine files", "files"),
+    ("page.split", "Split", "scissors"),
+    ("edit.edit_text", "Edit text & images", "text-cursor-input"),
+    ("comment.note", "Comment", "message-square"),
+    ("sign.fill.signature", "Fill & Sign", "signature"),
+    ("page.organize", "Organize pages", "layout-grid"),
+];
+
+fn action_card(ui: &mut egui::Ui, t: &Tokens, width: f32, command: &str, label: &str, icon: &str) -> egui::Response {
+    let (rect, response) = ui.allocate_exact_size(vec2(width, 104.0), Sense::click());
+    let label = tl!(label);
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
+    let press = theme::Press::track(ui, &response);
+    card_lift(ui, t, rect, press);
+    let primary = command == "file.open";
+    ui.painter().rect(rect, CornerRadius::same(10), press.fill(t.card, t.hover, t.pressed),
+        Stroke::new(if primary { 2.0 } else { 1.0 }, if primary { t.accent_text } else { t.border }), egui::StrokeKind::Inside);
+    let body = rect.translate(press.offset());
+    icons::paint(ui, Rect::from_min_size(body.min + vec2(14.0, 14.0), vec2(24.0, 24.0)), icon, 22.0, t.accent_text);
+    let mut job = egui::text::LayoutJob::simple(label.to_owned(), theme::semibold(theme::TOOL_LABEL), t.text, body.width() - 28.0);
+    job.wrap.max_rows = 2;
+    let galley = ui.fonts_mut(|f| f.layout_job(job));
+    ui.painter().galley(body.min + vec2(14.0, 48.0), galley, t.text);
+    widgets::focus_ring(ui, &response);
+    theme::hand(response).on_hover_text(label)
+}
+
+fn quick_actions(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
+    ui.label(egui::RichText::new(tl!("Quick actions")).font(theme::semibold(17.0)));
+    ui.label(egui::RichText::new(tl!("Choose a tool, then select your PDF.")).font(theme::regular(theme::SECONDARY)).color(t.text_muted));
+    ui.add_space(12.0);
+    let gap = 12.0;
+    let columns = ((ui.available_width() + gap) / 202.0).floor().clamp(1.0, 4.0) as usize;
+    let width = ((ui.available_width() - gap * columns.saturating_sub(1) as f32) / columns as f32).max(1.0);
+    for row in ACTIONS.chunks(columns) {
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = gap;
+            for &(command, label, icon) in row {
+                // Commands are dispatched after painting through the existing guarded path.
+                if action_card(ui, t, width, command, label, icon).clicked() {
+                    app.run_command(command);
+                }
+            }
+        });
+        ui.add_space(gap);
+    }
+}
 
 /// A soft shadow that rises on hover and settles when the card is pressed.
 fn card_lift(ui: &egui::Ui, t: &Tokens, rect: Rect, press: theme::Press) {
@@ -21,7 +70,7 @@ fn card_lift(ui: &egui::Ui, t: &Tokens, rect: Rect, press: theme::Press) {
 pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
-        egui::Frame::NONE.inner_margin(egui::Margin { left: 36, right: 36, top: 28, bottom: 28 }).show(ui, |ui| {
+        egui::Frame::NONE.inner_margin(egui::Margin { left: 24, right: 24, top: 20, bottom: 24 }).show(ui, |ui| {
             #[cfg(not(feature = "unbranded"))]
             widgets::odibo_logo(ui, 96.0);
             ui.label(egui::RichText::new(tl!("Welcome to ODIBO PDF")).font(theme::semibold(24.0)));
@@ -30,107 +79,8 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                     .color(t.text_muted)
                     .font(theme::regular(14.0)),
             );
-            ui.add_space(14.0);
-            egui::Frame::NONE
-                .fill(t.card)
-                .stroke(Stroke::new(1.0, t.border))
-                .corner_radius(CornerRadius::same(12))
-                .inner_margin(egui::Margin::same(14))
-                .show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-                    ui.horizontal(|ui| {
-                        #[cfg(not(feature = "unbranded"))]
-                        widgets::odibo_mark(ui, 28.0);
-                        ui.vertical(|ui| {
-                            let heading = "ODIBO PDF project";
-                            ui.label(egui::RichText::new(tl!(heading)).font(theme::semibold(15.0)));
-                            ui.label(egui::RichText::new(tl!("Get help, report issues and follow development on GitHub.")).color(t.text_muted));
-                        });
-                    });
-                    ui.add_space(8.0);
-                    if let Some(cmd) = widgets::community_links(ui) {
-                        app.execute(cmd);
-                    }
-                });
-            ui.add_space(22.0);
-
-            egui::Frame::NONE
-                .fill(t.card)
-                .stroke(Stroke::new(1.0, t.border))
-                .corner_radius(CornerRadius::same(12))
-                .inner_margin(egui::Margin::same(18))
-                .show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-                    ui.label(egui::RichText::new(tl!("Recommended tools")).font(theme::semibold(15.0)));
-                    ui.add_space(10.0);
-                    ui.horizontal_wrapped(|ui| {
-                        ui.spacing_mut().item_spacing = vec2(14.0, 14.0);
-                        for id in RECOMMENDED {
-                            let Some(g) = catalog::group(id) else { continue };
-                            let (rect, resp) = ui.allocate_exact_size(vec2(190.0, 104.0), Sense::click());
-                            resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, tl!(g.label)));
-                            let press = theme::Press::track(ui, &resp);
-                            card_lift(ui, &t, rect, press);
-                            let fill = press.fill(t.card, t.hover, t.pressed);
-                            ui.painter().rect(rect, CornerRadius::same(10), fill, Stroke::new(1.0, t.divider), egui::StrokeKind::Inside);
-                            let body = rect.translate(press.offset());
-                            let color = egui::Color32::from_rgb(g.hue[0], g.hue[1], g.hue[2]);
-                            icons::paint(ui, Rect::from_min_size(body.min + vec2(14.0, 14.0), vec2(22.0, 22.0)), g.icon, 21.0, color);
-                            let mut title_job = egui::text::LayoutJob::simple_singleline(tl!(g.label).to_owned(), theme::semibold(13.5), t.text);
-                            title_job.wrap =
-                                egui::text::TextWrapping { max_width: body.width() - 58.0, max_rows: 1, break_anywhere: true, ..Default::default() };
-                            let title = ui.fonts_mut(|f| f.layout_job(title_job));
-                            let title_elided = title.elided;
-                            ui.painter().galley(body.min + vec2(44.0, 25.0 - title.size().y * 0.5), title, t.text);
-                            let blurb = g
-                                .sections
-                                .first()
-                                .map(|s| s.items.iter().take(3).map(|i| tl!(i.label)).collect::<Vec<_>>().join(" · "))
-                                .unwrap_or_default();
-                            // Fixed-height cards must leave room for their action in every language.
-                            let mut job = egui::text::LayoutJob::simple(blurb.clone(), theme::regular(11.5), t.text_muted, body.width() - 28.0);
-                            job.wrap.max_rows = 2;
-                            let galley = ui.fonts_mut(|f| f.layout_job(job));
-                            let blurb_elided = galley.elided;
-                            ui.painter().galley(body.min + vec2(14.0, 46.0), galley, t.text_muted);
-                            ui.painter().text(
-                                body.left_bottom() + vec2(14.0, -14.0),
-                                Align2::LEFT_CENTER,
-                                tl!("Use now"),
-                                theme::medium(12.0),
-                                t.accent_text,
-                            );
-                            let resp = if title_elided || blurb_elided { resp.on_hover_text(format!("{}\n{blurb}", tl!(g.label))) } else { resp };
-                            if theme::hand(resp).clicked() {
-                                app.select_tool(g.id);
-                            }
-                        }
-                        let (rect, resp) = ui.allocate_exact_size(vec2(170.0, 104.0), Sense::click());
-                        resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, tl!("Open file")));
-                        let press = theme::Press::track(ui, &resp);
-                        card_lift(ui, &t, rect, press);
-                        ui.painter().rect(
-                            rect,
-                            CornerRadius::same(10),
-                            press.fill(t.pasteboard, t.hover, t.pressed),
-                            Stroke::new(1.0, t.divider),
-                            egui::StrokeKind::Inside,
-                        );
-                        let body = rect.translate(press.offset());
-                        icons::paint(ui, Rect::from_center_size(body.center() - vec2(0.0, 16.0), vec2(28.0, 28.0)), "folder-open", 26.0, t.icon);
-                        ui.painter().text(body.center() + vec2(0.0, 22.0), Align2::CENTER_CENTER, tl!("Open file"), theme::semibold(13.0), t.text);
-                        if theme::hand(resp).clicked() {
-                            app.open_dialog();
-                        }
-                    });
-                });
-
-            #[cfg(not(target_arch = "wasm32"))]
-            {
-                ui.add_space(26.0);
-                crate::folders_ui::section(app, ui);
-            }
-
+            ui.add_space(20.0);
+            quick_actions(app, ui, &t);
             ui.add_space(26.0);
             let mut clear = false;
             ui.horizontal(|ui| {
@@ -161,7 +111,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 } else {
                     press.wash(ui, rect, 8, false);
                 }
-                if hovered {
+                if hovered || resp.has_focus() || ui.memory(|m| m.has_focus(ui.id().with(("remove-recent", &r.path)))) {
                     // Remove just this file from the list (#430); the file itself is untouched.
                     let x_rect = Rect::from_center_size(rect.right_center() - vec2(26.0, 0.0), vec2(28.0, 28.0));
                     let x = ui.interact(x_rect, ui.id().with(("remove-recent", &r.path)), Sense::click());
@@ -171,6 +121,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                         ui.painter().rect_filled(x_rect, CornerRadius::same(6), t.pressed);
                     }
                     icons::paint(ui, x_rect.shrink(6.0), "x", 16.0, t.icon);
+                    widgets::focus_ring(ui, &x);
                     if x.on_hover_text(tl!("Remove from Recent")).clicked() {
                         remove = Some(r.path.clone());
                     }
@@ -194,7 +145,8 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 // The name and path stop short of the page count; hovering shows the whole path.
                 let width = detail.left() - 16.0 - (body.left() + 46.0);
                 widgets::row_text(ui, body.min + vec2(46.0, 15.0), crate::bidi::visual(&r.name), theme::medium(13.5), t.text, width);
-                widgets::row_text(ui, body.min + vec2(46.0, 32.0), crate::bidi::visual(&r.path), theme::regular(11.0), t.text_faint, width);
+                widgets::row_text(ui, body.min + vec2(46.0, 32.0), crate::bidi::visual(&r.path), theme::regular(theme::SECONDARY), t.text_muted, width);
+                widgets::focus_ring(ui, &resp);
                 if theme::hand(resp).on_hover_text(&r.path).clicked() {
                     open = Some(r.path.clone());
                 }
@@ -207,6 +159,16 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             }
             if clear {
                 app.execute("file.clear_recent");
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                ui.add_space(24.0);
+                crate::folders_ui::section(app, ui);
+            }
+            ui.add_space(24.0);
+            widgets::section_title(ui, tl!("ODIBO PDF project"));
+            if let Some(command) = widgets::community_links(ui) {
+                app.execute(command);
             }
             ui.add_space(20.0);
             widgets::section_title(ui, tl!("Privacy"));
@@ -223,40 +185,31 @@ mod tests {
     use super::*;
 
     #[test]
-    fn translated_card_description_leaves_room_for_the_action() {
-        let de = crate::i18n::Lang::from_code("de").unwrap();
-        crate::i18n::set_current(de);
-        let ctx = egui::Context::default();
-        ctx.set_fonts(theme::font_definitions());
-        let mut app = PdfCraftApp::new();
-        let blurb = catalog::group("form")
-            .unwrap()
-            .sections
-            .first()
-            .unwrap()
-            .items
-            .iter()
-            .take(3)
-            .map(|item| crate::i18n::tr(de, item.label))
-            .collect::<Vec<_>>()
-            .join(" · ");
-        let output = ctx
-            .run_ui(egui::RawInput { screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, vec2(1440.0, 900.0))), ..Default::default() }, |ui| {
-                show(&mut app, ui)
+    fn home_actions_are_ready_catalogue_commands() {
+        for (id, _, _) in ACTIONS {
+            assert!(pdfcraft_engine::commands::command(id).is_some(), "missing command {id}");
+            if id != "file.open" {
+                assert!(pdfcraft_engine::catalog::TOOL_GROUPS.iter().flat_map(|g| g.sections.iter()).flat_map(|s| s.items.iter())
+                    .any(|item| item.command == id && item.availability == pdfcraft_engine::catalog::Availability::Ready));
+            }
+        }
+    }
+
+    #[test]
+    fn translated_cards_fit_two_rows_without_clipping() {
+        for lang in crate::i18n::Lang::all() {
+            crate::i18n::set_current(lang);
+            let ctx = egui::Context::default();
+            ctx.set_fonts(theme::font_definitions());
+            let output = ctx.run_ui(egui::RawInput::default(), |ui| {
+                let t = Tokens::get(ui.ctx());
+                for &(command, label, icon) in &ACTIONS { action_card(ui, &t, 190.0, command, label, icon); }
             });
+            let fits = output.shapes.iter().filter_map(|s| match &s.shape { egui::Shape::Text(t) => Some(t), _ => None })
+                .all(|t| !t.galley.elided && t.galley.rows.len() <= 2);
+            output.drop_without_applying_deltas();
+            assert!(fits, "card label clipped for {lang:?}");
+        }
         crate::i18n::set_current(crate::i18n::Lang::EN);
-        let text_shapes: Vec<_> =
-            output.shapes.iter().filter_map(|shape| if let egui::Shape::Text(text) = &shape.shape { Some(text) } else { None }).collect();
-        let description = text_shapes.iter().find(|text| text.galley.job.text == blurb).unwrap();
-        let action = text_shapes
-            .iter()
-            .find(|text| text.galley.job.text == crate::i18n::tr(de, "Use now") && (text.pos.x - description.pos.x).abs() < 0.1)
-            .unwrap();
-        assert!(description.galley.rows.len() <= 2);
-        assert!(
-            description.pos.y + description.galley.size().y + 4.0 <= action.pos.y,
-            "the translated description must leave a visible gap before its action"
-        );
-        output.drop_without_applying_deltas();
     }
 }
