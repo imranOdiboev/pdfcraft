@@ -199,6 +199,9 @@ fn row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability: Ava
     if ready {
         press.wash(ui, rect, 6, false);
     }
+    if resp.has_focus() {
+        ui.painter().rect_stroke(rect.shrink(1.0), 6, Stroke::new(2.0, t.accent), egui::StrokeKind::Inside);
+    }
     let body = rect.translate(press.offset());
     let fg = if ready { t.text } else { t.text_faint };
     let icon_rect = Rect::from_min_size(body.min + vec2(6.0, 8.0), vec2(18.0, 18.0));

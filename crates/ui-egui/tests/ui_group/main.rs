@@ -9,6 +9,7 @@ mod support;
 mod animate;
 mod bulk_fields;
 mod column_select;
+mod core_tools;
 mod design_system;
 mod editor_workspace;
 mod home;
