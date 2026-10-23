@@ -14,6 +14,16 @@ impl Default for Navigation {
     }
 }
 
+pub(crate) fn close_drawer(ctx: &egui::Context) {
+    let id = egui::Id::new("odibo-editor-navigation");
+    ctx.data_mut(|data| {
+        if let Some(mut state) = data.get_temp::<Navigation>(id) {
+            state.drawer = false;
+            data.insert_temp(id, state);
+        }
+    });
+}
+
 pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     if app.active.is_none() {
         return;
@@ -43,11 +53,17 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                     widgets::focus_ring(ui, &response);
                     if response.clicked() {
                         if legacy {
+                            let closed = app.right_panel_closed;
                             app.choose_right_panel(None);
+                            // Moving navigation is not a request to suppress future inspectors.
+                            app.right_panel_closed = closed;
                         }
                         state.expanded = true;
                         state.drawer = !selected;
                         state.panel = panel;
+                        if compact && state.drawer {
+                            ui.data_mut(|data| data.remove::<crate::docking::Panel>(egui::Id::new("odibo-editor-context-drawer")));
+                        }
                     }
                 }
             });

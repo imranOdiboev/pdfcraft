@@ -398,6 +398,9 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
         if workspace.layout == baseline.layout && workspace.hidden == baseline.hidden {
             workspace = Workspace::editor_default();
             let _ = sync(&mut workspace, app);
+            if app.right.is_some() {
+                let _ = workspace.apply(Action::Activate { panel: Panel::Inspector });
+            }
         }
     }
     let compact = app.active.is_some() && ui.available_width() < 940.0;
@@ -407,14 +410,17 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
     if compact {
         if let Some(panel) = requested.filter(|panel| *panel != Panel::Canvas) {
             drawer = Some(panel);
+            crate::editor_navigation::close_drawer(ui.ctx());
         }
         ui.horizontal(|ui| {
             if crate::widgets::ghost_button(ui, "wrench", crate::i18n::t("Tools")).clicked() {
                 app.left_open = true;
                 drawer = if drawer == Some(Panel::Tools) { None } else { Some(Panel::Tools) };
+                if drawer.is_some() { crate::editor_navigation::close_drawer(ui.ctx()); }
             }
             if app.right.is_some() && crate::widgets::ghost_button(ui, "panel-right", crate::i18n::t("Inspector")).clicked() {
                 drawer = if drawer == Some(Panel::Inspector) { None } else { Some(Panel::Inspector) };
+                if drawer.is_some() { crate::editor_navigation::close_drawer(ui.ctx()); }
             }
         });
     }
@@ -478,9 +484,7 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
     drain_reveals(&mut workspace, app);
     publish_visibility(app, &workspace);
     app.docking = workspace;
-    if compact
-        && let Some(panel) = drawer
-    {
+    if compact && let Some(panel) = drawer {
         let ctx = ui.ctx().clone();
         let mut open = true;
         let size = ctx.content_rect().size();

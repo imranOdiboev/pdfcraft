@@ -56,6 +56,22 @@ fn left_thumbnails_navigate_by_pointer_and_keyboard_without_editing() {
 }
 
 #[test]
+fn contextual_tools_and_inspector_reuse_existing_commands() {
+    let mut h = harness(egui::vec2(1440.0, 900.0), "en", "light", 1.0, None);
+    h.state_mut().run_command("comment.note");
+    h.run_steps(3);
+    assert_eq!(h.state().right, Some(RightPanel::Comments));
+    assert!(matches!(h.state().quick_tool, pdfcraft_ui_egui::QuickTool::Comment(_)));
+    h.get_by_role_and_label(egui::accesskit::Role::Tab, "Tools").click();
+    h.run_steps(3);
+    h.get_by_label("Edit").click();
+    h.run_steps(3);
+    assert_eq!(h.state().quick_tool, pdfcraft_ui_egui::QuickTool::EditText);
+    assert_eq!(h.state().right, Some(RightPanel::Comments));
+    assert!(!h.state().session.get(h.state().views[0].id).unwrap().dirty);
+}
+
+#[test]
 fn restored_panel_layout_survives_compact_projection_and_restart() {
     let mut app = PdfCraftApp::new();
     // Simulate an existing stage 3.3 settings file, which has no new pending-default key.
@@ -71,6 +87,10 @@ fn restored_panel_layout_survives_compact_projection_and_restart() {
     h.get_by_role_and_label(egui::accesskit::Role::Button, "Tools").click();
     h.run_steps(3);
     h.get_by_label("Edit a PDF");
+    assert_eq!(serde_json::to_value(&h.state().docking).unwrap(), before);
+    h.get_by_label("Page navigation: Pages").click();
+    h.run_steps(3);
+    assert!(h.query_by_label("Edit a PDF").is_none(), "only one temporary drawer should cover the document");
     assert_eq!(serde_json::to_value(&h.state().docking).unwrap(), before);
     let saved = h.state().persist();
     let restored = harness(egui::vec2(1440.0, 900.0), "en", "light", 1.0, Some(saved));
