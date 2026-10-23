@@ -33,6 +33,7 @@ mod actions_ui;
 mod appearance;
 pub mod canvas;
 mod chrome;
+mod editor_navigation;
 mod combine_grid;
 mod image_pick;
 mod tags_ui;
@@ -485,6 +486,7 @@ pub struct RecentFile {
 
 pub struct PdfCraftApp {
     pub docking: docking::Workspace,
+    pub(crate) editor_workspace_pending: bool,
     pub(crate) pending_panel_reveals: Vec<docking::Panel>,
     pub session: Session,
     pub views: Vec<DocView>,
@@ -902,6 +904,7 @@ impl PdfCraftApp {
             mode_override: None,
             left: LeftPanel::AllTools,
             docking: docking::Workspace::default(),
+            editor_workspace_pending: true,
             pending_panel_reveals: Vec::new(),
             left_open: true,
             right: None,
@@ -2306,6 +2309,7 @@ impl PdfCraftApp {
             "right_panel_closed": self.right_panel_closed,
         });
         // Set apart: one more key inside the macro above passes serde_json's recursion limit.
+        v["editor_workspace_pending"] = serde_json::Value::Bool(self.editor_workspace_pending);
         v["redact_prefs"] = self.redact_defaults.to_json();
         // Set outside json! above, which is at serde_json's macro recursion limit.
         v["hide_empty_highlight_hover"] = serde_json::Value::Bool(self.comment_prefs.hide_empty_highlight_hover);
@@ -2320,6 +2324,7 @@ impl PdfCraftApp {
             && workspace.validate().is_ok()
         {
             self.docking = workspace;
+            self.editor_workspace_pending = v.get("editor_workspace_pending").and_then(serde_json::Value::as_bool).unwrap_or(false);
             self.left_open =
                 v.get("docking_left_open").and_then(serde_json::Value::as_bool).unwrap_or(self.docking.layout.contains(&docking::Panel::Tools));
             self.right = v.get("docking_right").and_then(|value| serde_json::from_value(value.clone()).ok()).flatten();
@@ -3167,6 +3172,7 @@ impl eframe::App for PdfCraftApp {
         chrome::mode_bar(self, ui);
         if self.active.is_some() {
             chrome::right_rail(self, ui);
+            editor_navigation::show(self, ui);
             // Read mode hides the tools, not the navigation panes: the rail stays visible
             // there, so its buttons (Bookmarks, Page thumbnails, ...) must open their panels.
             // Outside Read mode the docking workspace draws the inspector.

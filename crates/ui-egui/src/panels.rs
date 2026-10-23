@@ -544,9 +544,17 @@ pub(crate) enum Nav {
 }
 
 pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
-    let t = Tokens::get(ui.ctx());
-    let Some((index, id)) = app.active_ids() else { return };
     let Some(panel) = app.right else { return };
+    if panel_body(app, ui, panel) {
+        app.choose_right_panel(None);
+    }
+}
+
+/// The same navigation/context body can be docked or displayed in a temporary drawer.
+/// Returns a close request; the caller owns the visibility of its pane.
+pub(crate) fn panel_body(app: &mut PdfCraftApp, ui: &mut egui::Ui, panel: RightPanel) -> bool {
+    let t = Tokens::get(ui.ctx());
+    let Some((index, id)) = app.active_ids() else { return false };
     let mut nav: Option<Nav> = None;
     let mut close = false;
     let mut toggle_layer: Option<(usize, bool)> = None;
@@ -564,7 +572,7 @@ pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     // Prepare a form is open: the Fields panel orders tabs.
     let preparing = app.is_preparing();
     {
-        let Some(doc) = app.session.get(id) else { return };
+        let Some(doc) = app.session.get(id) else { return false };
         let info = &doc.info;
         let view = &mut app.views[index];
         let prefs = &app.comment_prefs;
@@ -804,9 +812,6 @@ pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 });
             });
     }
-    if close {
-        app.choose_right_panel(None);
-    }
     if let Some(e) = panel_edit {
         app.apply_edit(e);
     }
@@ -874,6 +879,7 @@ pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
         }
         None => {}
     }
+    close
 }
 
 fn empty(ui: &mut egui::Ui, t: &Tokens, icon: &str, text: &str) {
@@ -1163,6 +1169,11 @@ fn pages(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, view: &mut crate::DocVie
             }));
             if follow && selected {
                 ui.scroll_to_rect(rect.union(label.rect), None);
+            }
+            widgets::focus_ring(ui, &resp);
+            if selected {
+                let mark = Rect::from_min_size(rect.left_top() + vec2(1.0, 8.0), vec2(3.0, rect.height() - 16.0));
+                ui.painter().rect_filled(mark, 1.0, t.text);
             }
             let resp = theme::hand(resp);
             if resp.clicked() {

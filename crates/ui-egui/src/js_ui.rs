@@ -311,15 +311,11 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tok
     ui.horizontal(|ui| {
         ui.label(tl!("Tools panel side"));
         let right = app.docking.tools_on_right();
-        if ui.selectable_label(!right, tl!("Left")).clicked()
-            && let Err(error) = app.docking.set_tools_on_right(false)
-        {
-            app.notify(error);
-        }
-        if ui.selectable_label(right, tl!("Right")).clicked()
-            && let Err(error) = app.docking.set_tools_on_right(true)
-        {
-            app.notify(error);
+        for (on_right, label) in [(false, "Left"), (true, "Right")] {
+            if ui.selectable_label(right == on_right, tl!(label)).clicked() {
+                app.editor_workspace_pending = false;
+                if let Err(error) = app.docking.set_tools_on_right(on_right) { app.notify(error); }
+            }
         }
     });
     ui.add_space(8.0);

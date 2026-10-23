@@ -663,11 +663,15 @@ pub fn right_rail(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     );
     let page_count = doc.info.pages.len();
     let labels: Vec<String> = doc.info.pages.iter().map(|p| p.label.clone()).collect();
+    let short = ui.available_height() < 760.0;
     egui::Panel::right("rail")
         .resizable(false)
-        .exact_size(48.0)
+        .exact_size(if short { 64.0 } else { 48.0 })
         .frame(egui::Frame::NONE.fill(t.chrome).inner_margin(egui::Margin::symmetric(6, 8)).stroke(Stroke::new(1.0, t.divider)))
         .show(ui, |ui| {
+            let height = ui.available_height().max(760.0);
+            egui::ScrollArea::vertical().id_salt("odibo-document-rail-scroll").show(ui, |ui| {
+                ui.allocate_ui(vec2(ui.available_width(), height), |ui| {
             ui.spacing_mut().item_spacing.y = 4.0;
             let mut rail_button = |ui: &mut egui::Ui, panel: RightPanel, icon: &str, tip: &str, has: bool| {
                 let selected = app.right == Some(panel) && (app.mode == Mode::Read || app.docking.exposed(crate::docking::Panel::Inspector));
@@ -810,6 +814,8 @@ pub fn right_rail(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             if let Some(id) = page_display {
                 app.execute(id);
             }
+                });
+            });
         });
 }
 
