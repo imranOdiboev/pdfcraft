@@ -404,6 +404,7 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
         if let Some(panel) = requested.filter(|panel| *panel != Panel::Canvas) { drawer = Some(panel); }
         ui.horizontal(|ui| {
             if crate::widgets::ghost_button(ui, "wrench", crate::i18n::t("Tools")).clicked() {
+                app.left_open = true;
                 drawer = if drawer == Some(Panel::Tools) { None } else { Some(Panel::Tools) };
             }
             if app.right.is_some() && crate::widgets::ghost_button(ui, "panel-right", crate::i18n::t("Inspector")).clicked() {

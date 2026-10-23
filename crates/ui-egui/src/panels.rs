@@ -545,14 +545,14 @@ pub(crate) enum Nav {
 
 pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     let Some(panel) = app.right else { return };
-    if panel_body(app, ui, panel) {
+    if panel_body(app, ui, panel, tl!("Close")) {
         app.choose_right_panel(None);
     }
 }
 
 /// The same navigation/context body can be docked or displayed in a temporary drawer.
 /// Returns a close request; the caller owns the visibility of its pane.
-pub(crate) fn panel_body(app: &mut PdfCraftApp, ui: &mut egui::Ui, panel: RightPanel) -> bool {
+pub(crate) fn panel_body(app: &mut PdfCraftApp, ui: &mut egui::Ui, panel: RightPanel, close_label: &str) -> bool {
     let t = Tokens::get(ui.ctx());
     let Some((index, id)) = app.active_ids() else { return false };
     let mut nav: Option<Nav> = None;
@@ -612,7 +612,7 @@ pub(crate) fn panel_body(app: &mut PdfCraftApp, ui: &mut egui::Ui, panel: RightP
                         ui.label(egui::RichText::new(picked).font(theme::medium(12.0)).color(t.accent_text));
                     }
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if icons::button(ui, "x", 26.0, false, tl!("Close")).clicked() {
+                        if icons::button(ui, "x", 26.0, false, close_label).clicked() {
                             close = true;
                         }
                         // Right to left: close, "…", filter, search (Acrobat's order left to right).

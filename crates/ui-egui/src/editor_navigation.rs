@@ -22,6 +22,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     // The left controls can explicitly move back to the new navigation view.
     let legacy = matches!(app.right, Some(RightPanel::Pages | RightPanel::Bookmarks));
     let compact = ui.available_width() < 1100.0;
+    let close_label = format!("{}: {}", crate::i18n::t("Page navigation"), crate::i18n::t("Close"));
     let t = theme::Tokens::get(ui.ctx());
     let body = !compact && state.expanded && !legacy;
     egui::Panel::left(if body { "odibo-navigation-pane" } else { "odibo-navigation-rail" }).resizable(body)
@@ -47,7 +48,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 }
             });
             if body { ui.data_mut(|data| data.insert_temp(id.with("body"), ui.max_rect())); }
-            if body && panels::panel_body(app, ui, state.panel) {
+            if body && panels::panel_body(app, ui, state.panel, &close_label) {
                 state.expanded = false;
             }
         });
@@ -58,7 +59,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
         egui::Window::new(crate::i18n::t("Page navigation")).id(id.with("drawer"))
             .open(&mut open).anchor(egui::Align2::LEFT_TOP, egui::vec2(52.0, 94.0))
             .fixed_size(egui::vec2(240.0, height)).collapsible(false)
-            .show(&ctx, |ui| { if panels::panel_body(app, ui, state.panel) { state.drawer = false; } });
+            .show(&ctx, |ui| { if panels::panel_body(app, ui, state.panel, &close_label) { state.drawer = false; } });
         if !open { state.drawer = false; }
     }
     ui.data_mut(|data| data.insert_temp(id, state));
