@@ -177,12 +177,12 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 crate::folders_ui::section(app, ui);
             }
             ui.add_space(24.0);
-            widgets::section_title(ui, tl!("ODIBO PDF project"));
+            ui.label(egui::RichText::new(tl!("ODIBO PDF project")).font(theme::semibold(15.0)));
             if let Some(command) = widgets::community_links(ui) {
                 app.execute(command);
             }
             ui.add_space(20.0);
-            widgets::section_title(ui, tl!("Privacy"));
+            ui.label(egui::RichText::new(tl!("Privacy")).font(theme::semibold(theme::SECONDARY)).color(t.text_muted));
             ui.label(
                 egui::RichText::new(tl!("ODIBO PDF works offline. No telemetry, no account, and no cloud processing unless you add a provider."))
                     .color(t.text_muted),
