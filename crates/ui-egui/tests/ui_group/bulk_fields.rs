@@ -236,6 +236,9 @@ fn select_all_in_prepare_a_form_selects_only_the_current_pages_fields() {
 #[test]
 fn fields_panel_selects_multiple_fields_and_opens_their_shared_properties() {
     let mut h = harness();
+    // Form controls open first; the existing field list is in the adjacent inspector tab.
+    h.get_by_role_and_label(egui::accesskit::Role::Tab, "Inspector").click();
+    h.run_steps(4);
     h.get_by_label("alpha").click();
     h.run_steps(4);
     h.get_by_label("beta").click_modifiers(egui::Modifiers::SHIFT);
@@ -254,6 +257,9 @@ fn fields_panel_selects_multiple_fields_and_opens_their_shared_properties() {
 #[test]
 fn double_clicking_a_field_in_the_panel_opens_its_individual_properties() {
     let mut h = harness();
+    // Form controls open first; the existing field list is in the adjacent inspector tab.
+    h.get_by_role_and_label(egui::accesskit::Role::Tab, "Inspector").click();
+    h.run_steps(4);
     for _ in 0..2 {
         h.get_by_label("beta").click();
         h.run_steps(4);

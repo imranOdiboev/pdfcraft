@@ -1096,7 +1096,16 @@ fn outline_item(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, item: &OutlineIte
 /// offers Extract, Cut, Copy and Paste on the selection, or on the page clicked; dragging
 /// moves the selection, or the page grabbed, to the gap it is dropped on.
 #[allow(clippy::too_many_arguments)] // Shared legacy inspector and left navigation preserve the same page actions.
-fn pages(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, view: &mut crate::DocView, modal: bool, editable: bool, nav: &mut Option<Nav>, navigation: bool) {
+fn pages(
+    ui: &mut egui::Ui,
+    t: &Tokens,
+    info: &DocInfo,
+    view: &mut crate::DocView,
+    modal: bool,
+    editable: bool,
+    nav: &mut Option<Nav>,
+    navigation: bool,
+) {
     // Escape drops the selection while the pointer is over the panel and nothing else wants the key.
     if !modal
         && !view.selected.is_empty()
