@@ -16,6 +16,13 @@ use pdfcraft_engine::SourceProblem;
 use crate::theme::{self, Tokens};
 use crate::{PdfCraftApp, icons, widgets};
 
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) struct CombineRun {
+    receiver: std::sync::mpsc::Receiver<Result<Arc<Vec<u8>>, String>>,
+    count: usize,
+    cancelled: bool,
+}
+
 /// Same reds and ambers as the signature status (`sign_ui`).
 pub(crate) const ERROR: Color32 = Color32::from_rgb(0xD7, 0x37, 0x3F);
 pub(crate) const WARNING: Color32 = Color32::from_rgb(0xE6, 0x86, 0x19);
@@ -901,7 +908,7 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
         if app.combine_draft.iter().any(CombineFile::unreadable) {
             app.combine_tab.confirm_skip = true;
         } else {
-            app.combine_staged();
+            app.start_combine();
         }
     }
     skip_prompt(app, ui.ctx());
@@ -957,7 +964,7 @@ fn skip_prompt(app: &mut PdfCraftApp, ctx: &egui::Context) {
     if let Some(go) = choice {
         app.combine_tab.confirm_skip = false;
         if go {
-            app.combine_staged();
+            app.start_combine();
         }
     }
 }
@@ -1888,6 +1895,82 @@ fn utc_stamp(time: SystemTime) -> String {
 }
 
 impl PdfCraftApp {
+    /// The native Combine UI uses a bounded worker; automation's synchronous command remains
+    /// unchanged. Cancellation discards the result and never writes a file. The engine has no
+    /// interrupt hook: keep the worker slot until it finishes rather than spawn unbounded jobs.
+    fn start_combine(&mut self) {
+        #[cfg(target_arch = "wasm32")]
+        self.combine_staged();
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            if self.combine_run.is_some() { return; }
+            let files: Vec<_> = self.combine_draft.iter().filter(|f| !f.unreadable()).cloned().collect();
+            if files.is_empty() { return; }
+            let count = files.iter().map(|f| f.group).collect::<BTreeSet<_>>().len();
+            let (sender, receiver) = std::sync::mpsc::channel();
+            let repaint = self.ctx.clone();
+            match std::thread::Builder::new().name("odibo-combine".into()).spawn(move || {
+                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    let sources: Vec<_> = files.iter().map(|f| (title_of(&f.name).to_string(), f.bytes.clone(), Some(f.range.clone()).filter(|r| !r.trim().is_empty()))).collect();
+                    let groups: Vec<_> = files.iter().map(|f| f.group).collect();
+                    let passwords: Vec<_> = files.iter().map(CombineFile::password).collect();
+                    pdfcraft_engine::Session::new().combine_grouped(&sources, &groups, &passwords).map_err(|e| e.to_string())
+                })).unwrap_or_else(|_| Err("the PDF worker stopped; your originals are unchanged".into()));
+                let _ = sender.send(result);
+                if let Some(ctx) = repaint { ctx.request_repaint(); }
+            }) {
+                Ok(_) => self.combine_run = Some(CombineRun { receiver, count, cancelled: false }),
+                Err(e) => self.notify_fmt("Couldn't combine files: {e}", &[("e", &e.to_string())]),
+            }
+        }
+    }
+
+    /// Whether a native Combine is still computing (including a cancelled result being drained).
+    pub fn combine_pending(&self) -> bool {
+        #[cfg(not(target_arch = "wasm32"))]
+        { self.combine_run.is_some() }
+        #[cfg(target_arch = "wasm32")]
+        { false }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn poll_combine(&mut self, ctx: &egui::Context) {
+        let Some(run) = &mut self.combine_run else { return };
+        match run.receiver.try_recv() {
+            Ok(result) => {
+                let (count, cancelled) = (run.count, run.cancelled);
+                self.combine_run = None;
+                if !cancelled {
+                    match result {
+                        Ok(bytes) => {
+                            self.close_combine_tab();
+                            let message = crate::i18n::fmt(tl!("Combined {n} files"), &[("n", &count.to_string())]);
+                            self.open_created("Combined.pdf", bytes, &message);
+                        }
+                        Err(error) => self.notify_fmt("Couldn't combine files: {e}", &[("e", &error)]),
+                    }
+                }
+                return;
+            }
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                self.combine_run = None;
+                self.notify_tr("Couldn't combine files: the PDF worker stopped");
+                return;
+            }
+            Err(std::sync::mpsc::TryRecvError::Empty) => {}
+        }
+        let modal = egui::Modal::new(egui::Id::new("odibo-combine-progress")).show(ctx, |ui| {
+            ui.horizontal(|ui| { ui.spinner(); ui.label(tl!("Combining PDFs…")); });
+            ui.label(tl!("Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish."));
+            if !run.cancelled && widgets::pill_button(ui, tl!("Cancel"), false).clicked() {
+                run.cancelled = true;
+            }
+            if run.cancelled { ui.label(tl!("Cancelled. Waiting for the current PDF step to finish…")); }
+        });
+        if modal.should_close() { run.cancelled = true; }
+        ctx.request_repaint_after(std::time::Duration::from_millis(50));
+    }
+
     /// Show the Combine files tab (File ▸ Combine files…), opening it if needed.
     pub fn open_combine_tab(&mut self) {
         self.combine_tab.open = true;
@@ -2603,6 +2686,30 @@ impl PdfCraftApp {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn cancelling_a_pending_combine_discards_its_result_and_keeps_the_list() {
+        use egui_kittest::kittest::Queryable;
+        let (sender, receiver) = std::sync::mpsc::channel();
+        let mut h = egui_kittest::Harness::builder().with_size(vec2(1100.0, 800.0)).build_eframe(move |_| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_combine_tab();
+            app.combine_run = Some(CombineRun { receiver, count: 2, cancelled: false });
+            app
+        });
+        h.run_steps(3);
+        h.get_by_label("Cancel").click();
+        h.run_steps(2);
+        assert!(h.state().combine_run.as_ref().unwrap().cancelled);
+        // Even an invalid result must be discarded without opening a tab or touching files.
+        sender.send(Ok(Arc::new(b"discard me".to_vec()))).unwrap();
+        h.run_steps(3);
+        assert!(!h.state().combine_pending());
+        assert!(h.state().views.is_empty());
+        assert!(h.state().combine_showing());
+    }
 
     /// A one-page PDF that opens with "pw".
     fn locked() -> Vec<u8> {

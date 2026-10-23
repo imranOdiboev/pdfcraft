@@ -2362,3 +2362,9 @@ animation effects	Off	Выкл
 	{name} already exists. Choose another folder; no files were written.	Файл {name} уже существует. Выберите другую папку; файлы не записаны.
 	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Будет создан новый PDF. Исходные файлы останутся без изменений. Выберите «Сохранить как», чтобы сохранить результат.
 	Changes can be undone until you close the document. Save As keeps the original file.	Изменения можно отменить до закрытия документа. «Сохранить как» позволяет сохранить исходный файл.
+
+	Page ranges	Диапазоны страниц
+	Combining PDFs…	Объединение PDF…
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Исходные файлы не изменяются. Отмена удаляет результат; завершение текущего шага может занять время.
+	Cancelled. Waiting for the current PDF step to finish…	Отменено. Ожидание завершения текущего шага…
+	Couldn't combine files: the PDF worker stopped	Не удалось объединить файлы: обработчик PDF остановился
