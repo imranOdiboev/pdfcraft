@@ -95,21 +95,31 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         let targets = view.target_pages();
         let last = targets.last().copied().unwrap_or(0);
         widgets::section_title(ui, tl!("Page options"));
+        ui.label(egui::RichText::new(tl!("Changes can be undone until you close the document. Save As keeps the original file.")).color(t.text_muted));
         ui.add_enabled_ui(editable, |ui| {
-            ui.horizontal(|ui| {
+            let first = targets.first().copied().unwrap_or(0);
+            ui.horizontal_wrapped(|ui| {
+                if ui.add_enabled_ui(first > 0, |ui| widgets::icon_pill(ui, "chevron-left", tl!("Move earlier"), false)).inner.clicked() {
+                    act = Some(Act::Edit(Box::new(Edit::MovePages { pages: targets.clone(), to: first - 1 })));
+                }
+                if ui.add_enabled_ui(last + 1 < n, |ui| widgets::icon_pill(ui, "chevron-right", tl!("Move later"), false)).inner.clicked() {
+                    act = Some(Act::Edit(Box::new(Edit::MovePages { pages: targets.clone(), to: first + 1 })));
+                }
+            });
+            ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
-                if icons::button(ui, "rotate-ccw", 34.0, false, tl!("Rotate counterclockwise")).clicked() {
+                if widgets::icon_pill(ui, "rotate-ccw", tl!("Rotate counterclockwise"), false).clicked() {
                     act = Some(Act::Edit(Box::new(Edit::RotatePages { pages: targets.clone(), degrees: -90 })));
                 }
-                if icons::button(ui, "rotate-cw", 34.0, false, tl!("Rotate clockwise")).clicked() {
+                if widgets::icon_pill(ui, "rotate-cw", tl!("Rotate clockwise"), false).clicked() {
                     act = Some(Act::Edit(Box::new(Edit::RotatePages { pages: targets.clone(), degrees: 90 })));
                 }
                 // A document keeps at least one page.
                 let can_delete = targets.len() < n;
-                if ui.add_enabled_ui(can_delete, |ui| icons::button(ui, "trash-2", 34.0, false, tl!("Delete pages (Delete)"))).inner.clicked() {
+                if ui.add_enabled_ui(can_delete, |ui| widgets::icon_pill(ui, "trash-2", tl!("Delete pages (Delete)"), false)).inner.clicked() {
                     act = Some(Act::Edit(Box::new(Edit::DeletePages { pages: targets.clone() })));
                 }
-                if icons::button(ui, "file-output", 34.0, false, tl!("Extract pages to a new document")).clicked() {
+                if widgets::icon_pill(ui, "file-output", tl!("Extract pages to a new document"), false).clicked() {
                     act = Some(Act::View(ViewAction::Extract));
                 }
             });
@@ -143,8 +153,6 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         for (icon, label, availability, command) in [
             ("square-dashed-mouse-pointer", "Set page boxes", Availability::Ready, Some("page.boxes")),
             ("crop", "Crop pages", Availability::Ready, Some("page.crop")),
-            ("presentation", "Page transitions", Availability::Later, Some("page.transitions")),
-            ("file-text", "Page templates", Availability::Later, None),
             ("printer", "Print pages", Availability::Ready, Some("print.dialog")),
         ] {
             if row(ui, t, icon, tl!(label), availability, false).clicked()
@@ -157,7 +165,6 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         if row(ui, t, "tag", tl!("Page labels"), Availability::Ready, false).clicked() {
             act = Some(Act::Command("page.number"));
         }
-        row(ui, t, "info", tl!("Page properties"), Availability::Later, false);
     });
 
     if close {
@@ -180,8 +187,6 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Availability {
     Ready,
-    /// Not in ODIBO PDF yet: shown muted, as Acrobat lists it, and says it is planned when hovered.
-    Later,
 }
 
 /// One row of the panel: a monochrome icon and the label, as Acrobat draws them, with a corner
@@ -209,7 +214,6 @@ fn row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability: Ava
     }
     match availability {
         Availability::Ready => theme::hand(resp),
-        Availability::Later => resp.on_hover_text(tl!("Planned")),
     }
 }
 

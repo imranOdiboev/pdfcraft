@@ -2017,6 +2017,29 @@ fn split_before_selected_pages() {
     let _ = std::fs::remove_dir_all(dir);
 }
 
+#[test]
+fn explicit_ranges_split_in_order_and_preserve_the_source() {
+    let dir = temp_path("split-explicit-ranges");
+    std::fs::create_dir_all(&dir).unwrap();
+    let mut h = organize(4);
+    let before = h.state().session.get(h.state().views[0].id).unwrap().bytes.clone();
+    h.state_mut().export_dir_override = Some(dir.to_string_lossy().into_owned());
+    h.state_mut().split_draft.mode = pdfcraft_ui_egui::SplitMode::Ranges;
+    h.state_mut().split_draft.ranges = "1-2, 3-4".into();
+    h.state_mut().run_command("page.split");
+    h.run_steps(3);
+    h.get_by_label_contains("Creates 2 files from 4 pages");
+    h.get_all_by_label("Split").last().unwrap().click();
+    h.run_steps(4);
+    for (name, expected) in [("doc (pages 1-2).pdf", vec!["Page 1", "Page 2"]), ("doc (pages 3-4).pdf", vec!["Page 3", "Page 4"])] {
+        let mut app = PdfCraftApp::new();
+        app.open_bytes(name, None, std::fs::read(dir.join(name)).unwrap()).unwrap();
+        assert_eq!(texts_of(&app, 0), expected);
+    }
+    assert_eq!(h.state().session.get(h.state().views[0].id).unwrap().bytes, before);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
 // ── Encrypted documents ───────────────────────────────────────────────────────────────────────
 
 fn protected(user: &str, owner: &str, permissions: i32) -> Vec<u8> {

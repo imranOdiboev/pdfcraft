@@ -723,7 +723,8 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
         } else {
             tl!("Files are combined from top to bottom. Leave Pages empty to take every page.")
         };
-        ui.label(egui::RichText::new(hint).color(t.text_faint));
+        ui.label(egui::RichText::new(hint).color(t.text_muted));
+        ui.label(egui::RichText::new(tl!("Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.")).color(t.text_muted));
         ui.add_space(12.0);
 
         // Toolbar: on two lines when the window is narrow.
@@ -1061,7 +1062,14 @@ fn group(ui: &mut egui::Ui, t: &Tokens, edge: f32, width: f32) {
 
 /// A toolbar icon button, disabled with a reason.
 fn tool(ui: &mut egui::Ui, enabled: bool, icon: &str, label: &str, disabled_why: &str) -> egui::Response {
-    ui.add_enabled_ui(enabled, |ui| icons::button(ui, icon, 30.0, false, label)).inner.on_disabled_hover_text(disabled_why)
+    ui.add_enabled_ui(enabled, |ui| {
+        if matches!(icon, "chevron-up" | "chevron-down" | "trash-2") {
+            let caption = if icon == "trash-2" { tl!("Remove") } else { label };
+            widgets::icon_pill(ui, icon, caption, false).on_hover_text(label)
+        } else {
+            icons::button(ui, icon, 30.0, false, label)
+        }
+    }).inner.on_disabled_hover_text(disabled_why)
 }
 
 /// Whether a file can be shown as its pages: readable, unlocked, and adding more than one.
@@ -1216,7 +1224,7 @@ fn empty_state(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, files_hover
         ui.add_space(10.0);
         ui.label(egui::RichText::new(tl!("Add the files to combine")).font(theme::medium(15.0)));
         ui.add_space(4.0);
-        ui.label(egui::RichText::new(tl!("Drop PDFs, images, text files or folders here, or choose them.")).color(t.text_faint));
+        ui.label(egui::RichText::new(tl!("Drop PDFs, images, text files or folders here, or choose them.")).color(t.text_muted));
         ui.add_space(12.0);
         let folders = cfg!(not(target_arch = "wasm32"));
         // Centre the buttons: measure them first.

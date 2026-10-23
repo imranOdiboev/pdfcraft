@@ -418,6 +418,12 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                 let marks = app.session.bookmark_splits(id);
                 let draft = &mut app.split_draft;
                 use crate::SplitMode as M;
+                widgets::radio_value(ui, &mut draft.mode, M::Ranges, tl!("Page ranges"));
+                if draft.mode == M::Ranges {
+                    ui.add(egui::TextEdit::singleline(&mut draft.ranges).hint_text("1-3, 4-6").desired_width(f32::INFINITY))
+                        .widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::TextEdit, true, tl!("Page ranges")));
+                }
+                let explicit = crate::files::split_range_plan(&draft.ranges, n);
                 if selected.is_empty() && draft.mode == M::Selection {
                     draft.mode = M::Pages;
                 }
@@ -453,6 +459,7 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                     M::Selection => crate::SplitPlan::By(pdfcraft_engine::SplitBy::Before(selected)),
                     M::Size => crate::SplitPlan::Size((draft.size_mb * 1_048_576.0) as usize),
                     M::Bookmarks => crate::SplitPlan::Bookmarks,
+                    M::Ranges => crate::SplitPlan::By(explicit.clone().unwrap_or(pdfcraft_engine::SplitBy::PageCount(n.max(1)))),
                 };
                 let files = match &plan {
                     crate::SplitPlan::By(by) => Some(pdfcraft_engine::split_ranges(n, by).len()),
@@ -473,7 +480,19 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                     None => crate::i18n::fmt(tl!("Each file holds as many of the {n} pages as fit."), &[("n", &n.to_string())]),
                 };
                 ui.label(egui::RichText::new(text).color(t.text_muted));
-                if files.is_none_or(|f| f > 1) {
+                if draft.mode == M::Ranges && let Err(error) = &explicit {
+                    ui.colored_label(crate::combine_ui::ERROR, error);
+                }
+                if let crate::SplitPlan::By(by) = &plan {
+                    let ranges = pdfcraft_engine::split_ranges(n, by);
+                    egui::ScrollArea::vertical().id_salt("split-preview").max_height(88.0).show(ui, |ui| {
+                        for (index, range) in ranges.iter().take(100).enumerate() {
+                            ui.label(format!("{}. {}–{}", index + 1, range.start + 1, range.end));
+                        }
+                    });
+                }
+                ui.label(tl!("Choose an output folder next. Originals stay unchanged; existing files will not be replaced."));
+                if files.is_none_or(|f| f > 1) && (draft.mode != M::Ranges || explicit.is_ok()) {
                     split_ready = Some(plan);
                 }
             }

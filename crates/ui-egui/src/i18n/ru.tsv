@@ -2356,3 +2356,9 @@ animation effects	Off	Выкл
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Открытый код: MIT OR Apache-2.0. Для фирменных материалов ODIBO действуют отдельные условия.
 	ODIBO PDF project	Проект ODIBO PDF
 	Feedback	Обратная связь
+
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Введите последовательные диапазоны без пропусков, например 1-3, 4-6.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Далее выберите папку. Исходный документ останется без изменений; существующие файлы не будут заменены.
+	{name} already exists. Choose another folder; no files were written.	Файл {name} уже существует. Выберите другую папку; файлы не записаны.
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Будет создан новый PDF. Исходные файлы останутся без изменений. Выберите «Сохранить как», чтобы сохранить результат.
+	Changes can be undone until you close the document. Save As keeps the original file.	Изменения можно отменить до закрытия документа. «Сохранить как» позволяет сохранить исходный файл.
