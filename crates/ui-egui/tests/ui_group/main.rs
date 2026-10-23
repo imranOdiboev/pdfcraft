@@ -10,6 +10,7 @@ mod animate;
 mod bulk_fields;
 mod column_select;
 mod design_system;
+mod home;
 mod identity;
 mod layer_actions;
 mod links;

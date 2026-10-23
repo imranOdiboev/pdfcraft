@@ -1,15 +1,15 @@
-name: ODIBO egui components
+name: ODIBO Home acceptance
 
 on:
   push:
-    branches: [feature/odibo-uiux]
+    branches: [feature/odibo-home]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: odibo-uiux-components-${{ github.ref }}
+  group: odibo-home-qa-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -45,41 +45,29 @@ jobs:
           cache-on-failure: true
       - name: Prepare formatting patch without local Rust installation
         run: |
-          mkdir -p dist/uiux-components
+          mkdir -p dist/home-qa
           cargo fmt --all
-          git diff --binary -- '*.rs' > dist/uiux-components/format.patch
+          git diff --binary -- '*.rs' > dist/home-qa/format.patch
       - name: Clippy
         run: cargo clippy --locked -p pdfcraft-ui-egui --all-targets -- -D warnings
       - name: UI tests
-        run: cargo test --locked -p pdfcraft-ui-egui --lib --test ui_group --test commands --test ui --test control --test dialog_chrome --test accessibility --test actions --test editing --test javascript --test signing --no-fail-fast
-      - name: Prove selection-outline regression against previous widget
-        if: ${{ !cancelled() }}
+        run: cargo test --locked -p pdfcraft-ui-egui --lib --test ui_group --test commands --test ui --test control --test dialog_chrome --test accessibility --test actions --test editing --test javascript --test signing --test pickers --test folders --no-fail-fast
+      - name: Prove Home regression against merged stage 3.2
         run: |
-          git fetch --no-tags --depth=1 origin 23af123ae3ed5be1dd36fe09e76bc4b411e1b7eb
-          cp crates/ui-egui/src/widgets.rs "$RUNNER_TEMP/widgets-fixed.rs"
-          trap 'cp "$RUNNER_TEMP/widgets-fixed.rs" crates/ui-egui/src/widgets.rs' EXIT
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('crates/ui-egui/src/widgets.rs')
-          s = p.read_text()
-          start = s.index('pub fn mode_tab(')
-          end = s.index('\n}\n', start) + 2
-          import subprocess
-          old = subprocess.check_output(['git', 'show', '23af123ae3ed5be1dd36fe09e76bc4b411e1b7eb:crates/ui-egui/src/widgets.rs'], text=True)
-          a = old.index('pub fn mode_tab(')
-          b = old.index('\n}\n', a) + 2
-          p.write_text(s[:start] + old[a:b] + s[end:])
-          PY
+          git fetch --no-tags --depth=1 origin 15b62cfd88693129f75ec9d6308f4ab147a8d241
+          cp crates/ui-egui/src/home.rs "$RUNNER_TEMP/home-fixed.rs"
+          trap 'cp "$RUNNER_TEMP/home-fixed.rs" crates/ui-egui/src/home.rs' EXIT
+          git show 15b62cfd88693129f75ec9d6308f4ab147a8d241:crates/ui-egui/src/home.rs > crates/ui-egui/src/home.rs
           set +e
-          cargo test --locked -p pdfcraft-ui-egui --lib selected_mode_has_a_structural_outline_in_both_themes > dist/uiux-components/negative-control.log 2>&1
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group home_combine_card_opens_existing_combine_workspace > dist/home-qa/negative-control.log 2>&1
           status=$?
           set -e
-          cp "$RUNNER_TEMP/widgets-fixed.rs" crates/ui-egui/src/widgets.rs
+          cp "$RUNNER_TEMP/home-fixed.rs" crates/ui-egui/src/home.rs
           trap - EXIT
           test "$status" -ne 0
-          grep -F 'widgets::tests::selected_mode_has_a_structural_outline_in_both_themes ... FAILED' dist/uiux-components/negative-control.log
-          cargo test --locked -p pdfcraft-ui-egui --lib selected_mode_has_a_structural_outline_in_both_themes
-      - name: Real egui editor screenshots with synthetic document
+          grep -F 'home::home_combine_card_opens_existing_combine_workspace ... FAILED' dist/home-qa/negative-control.log
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group home_combine_card_opens_existing_combine_workspace
+      - name: Real egui Home screenshots with empty and synthetic recent states
         if: ${{ !cancelled() }}
         env:
           PDFCRAFT_SYSTEM_FONTS: '0'
@@ -97,21 +85,22 @@ jobs:
           out.extend(f'xref\n0 {len(objects)+1}\n0000000000 65535 f \n'.encode())
           for offset in offsets: out.extend(f'{offset:010d} 00000 n \n'.encode())
           out.extend(f'trailer\n<< /Size {len(objects)+1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n'.encode())
-          Path('dist/uiux-components/fixture.pdf').write_bytes(out)
+          Path('dist/home-qa/fixture.pdf').write_bytes(out)
           PY
           for language in en ru; do
             for theme in light dark; do
-              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/uiux-components/editor-$language-$theme.png dist/uiux-components/fixture.pdf --scale 1 --language $language --theme $theme --mode edit --tool edit --quick edit-text
+              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/home-qa/home-$language-$theme.png --scale 1 --language $language --theme $theme
+              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/home-qa/recent-$language-$theme.png dist/home-qa/fixture.pdf --home true --scale 1 --language $language --theme $theme
             done
           done
-          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/uiux-components/editor-compact.png dist/uiux-components/fixture.pdf --size 720x800 --scale 1.5 --language ru --theme dark --mode edit --tool edit --quick edit-text
-          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/uiux-components/editor-minimum-window.png dist/uiux-components/fixture.pdf --size 820x600 --scale 1.5 --language ru --theme light --mode edit --tool edit --quick edit-text
-          cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/uiux-components/
-          cp LICENSE-MIT LICENSE-APACHE NOTICE dist/uiux-components/
-          cp assets/fonts/OFL-Inter.txt assets/fonts/OFL-JetBrainsMono.txt assets/icons/LICENSE-lucide.txt dist/uiux-components/
-          echo 'Own egui screenshots and synthetic vector PDF: MIT OR Apache-2.0; ODIBO marks: LicenseRef-ODIBO-Brand. UI fonts: Inter/OFL; icons: Lucide/ISC. Source:' > dist/uiux-components/PROVENANCE.txt
-          echo "$GITHUB_SHA" >> dist/uiux-components/PROVENANCE.txt
-          sha256sum dist/uiux-components/*.png dist/uiux-components/fixture.pdf > dist/uiux-components/SHA256SUMS.txt
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/home-qa/home-minimum-light.png --size 820x520 --scale 1.5 --language ru --theme light
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/home-qa/home-minimum-dark.png --size 820x520 --scale 2 --language ru --theme dark
+          cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/home-qa/
+          cp LICENSE-MIT LICENSE-APACHE NOTICE dist/home-qa/
+          cp assets/fonts/OFL-Inter.txt assets/fonts/OFL-JetBrainsMono.txt assets/icons/LICENSE-lucide.txt dist/home-qa/
+          echo 'Own egui screenshots and synthetic vector PDF: MIT OR Apache-2.0; ODIBO marks: LicenseRef-ODIBO-Brand. UI fonts: Inter/OFL; icons: Lucide/ISC. Source:' > dist/home-qa/PROVENANCE.txt
+          echo "$GITHUB_SHA" >> dist/home-qa/PROVENANCE.txt
+          sha256sum dist/home-qa/*.png dist/home-qa/fixture.pdf > dist/home-qa/SHA256SUMS.txt
       - name: Layering and assets
         if: ${{ !cancelled() }}
         run: |
@@ -120,11 +109,11 @@ jobs:
           cargo xtask parity
       - name: Require formatting patch to be applied to the branch
         if: ${{ !cancelled() }}
-        run: test ! -s dist/uiux-components/format.patch
+        run: test ! -s dist/home-qa/format.patch
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
-          name: odibo-egui-components-${{ github.sha }}
-          path: dist/uiux-components
+          name: odibo-home-${{ github.sha }}
+          path: dist/home-qa
           retention-days: 7
           if-no-files-found: error
