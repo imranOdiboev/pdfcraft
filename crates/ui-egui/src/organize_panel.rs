@@ -95,14 +95,24 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         let targets = view.target_pages();
         let last = targets.last().copied().unwrap_or(0);
         widgets::section_title(ui, tl!("Page options"));
-        ui.label(egui::RichText::new(tl!("Changes can be undone until you close the document. Save As keeps the original file.")).color(t.text_muted));
+        ui.label(
+            egui::RichText::new(tl!("Changes can be undone until you close the document. Save As keeps the original file.")).color(t.text_muted),
+        );
         ui.add_enabled_ui(editable, |ui| {
             let first = targets.first().copied().unwrap_or(0);
             ui.vertical(|ui| {
-                if ui.add_enabled_ui(first > 0, |ui| row(ui, t, "chevron-left", tl!("Move selected pages earlier"), Availability::Ready, false)).inner.clicked() {
+                if ui
+                    .add_enabled_ui(first > 0, |ui| row(ui, t, "chevron-left", tl!("Move selected pages earlier"), Availability::Ready, false))
+                    .inner
+                    .clicked()
+                {
                     act = Some(Act::Edit(Box::new(Edit::MovePages { pages: targets.clone(), to: first - 1 })));
                 }
-                if ui.add_enabled_ui(last + 1 < n, |ui| row(ui, t, "chevron-right", tl!("Move selected pages later"), Availability::Ready, false)).inner.clicked() {
+                if ui
+                    .add_enabled_ui(last + 1 < n, |ui| row(ui, t, "chevron-right", tl!("Move selected pages later"), Availability::Ready, false))
+                    .inner
+                    .clicked()
+                {
                     act = Some(Act::Edit(Box::new(Edit::MovePages { pages: targets.clone(), to: first + 1 })));
                 }
             });
@@ -116,7 +126,8 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
                 }
                 // A document keeps at least one page.
                 let can_delete = targets.len() < n;
-                if ui.add_enabled_ui(can_delete, |ui| row(ui, t, "trash-2", tl!("Delete pages (Delete)"), Availability::Ready, false)).inner.clicked() {
+                if ui.add_enabled_ui(can_delete, |ui| row(ui, t, "trash-2", tl!("Delete pages (Delete)"), Availability::Ready, false)).inner.clicked()
+                {
                     act = Some(Act::Edit(Box::new(Edit::DeletePages { pages: targets.clone() })));
                 }
                 if row(ui, t, "file-output", tl!("Extract pages to a new document"), Availability::Ready, false).clicked() {

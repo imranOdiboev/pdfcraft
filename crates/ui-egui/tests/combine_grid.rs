@@ -1845,12 +1845,13 @@ fn open_documents_already_in_the_list_are_not_added_again() {
     assert_eq!(names(&h), ["a.pdf", "report.pdf", "report.pdf", "b.pdf"]);
 }
 
-
 /// Pump real frames while the bounded native PDF worker finishes.
 fn wait_for_combine(h: &mut Harness<'static, PdfCraftApp>) {
     h.run_steps(3);
     for _ in 0..600 {
-        if !h.state().combine_pending() { return; }
+        if !h.state().combine_pending() {
+            return;
+        }
         std::thread::sleep(std::time::Duration::from_millis(10));
         h.run_steps(1);
     }

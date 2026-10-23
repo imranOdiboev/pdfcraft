@@ -735,9 +735,15 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             tl!("Files are combined from top to bottom. Leave Pages empty to take every page.")
         };
         ui.label(egui::RichText::new(hint).color(t.text_muted));
-        ui.label(egui::RichText::new(tl!("Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.")).color(t.text_muted));
+        ui.label(
+            egui::RichText::new(tl!("Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result."))
+                .color(t.text_muted),
+        );
         if app.combine_pending() {
-            ui.horizontal(|ui| { ui.spinner(); ui.label(tl!("The previous PDF step is still finishing. You can keep working; try Combine again shortly.")); });
+            ui.horizontal(|ui| {
+                ui.spinner();
+                ui.label(tl!("The previous PDF step is still finishing. You can keep working; try Combine again shortly."));
+            });
         }
         ui.add_space(12.0);
 
@@ -1085,7 +1091,9 @@ fn tool(ui: &mut egui::Ui, enabled: bool, icon: &str, label: &str, disabled_why:
         } else {
             icons::button(ui, icon, 30.0, false, label)
         }
-    }).inner.on_disabled_hover_text(disabled_why)
+    })
+    .inner
+    .on_disabled_hover_text(disabled_why)
 }
 
 /// Whether a file can be shown as its pages: readable, unlocked, and adding more than one.
@@ -1912,21 +1920,31 @@ impl PdfCraftApp {
         self.combine_staged();
         #[cfg(not(target_arch = "wasm32"))]
         {
-            if self.combine_run.is_some() { return; }
+            if self.combine_run.is_some() {
+                return;
+            }
             let files: Vec<_> = self.combine_draft.iter().filter(|f| !f.unreadable()).cloned().collect();
-            if files.is_empty() { return; }
+            if files.is_empty() {
+                return;
+            }
             let count = files.iter().map(|f| f.group).collect::<BTreeSet<_>>().len();
             let (sender, receiver) = std::sync::mpsc::channel();
             let repaint = self.ctx.clone();
             match std::thread::Builder::new().name("odibo-combine".into()).spawn(move || {
                 let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    let sources: Vec<_> = files.iter().map(|f| (title_of(&f.name).to_string(), f.bytes.clone(), Some(f.range.clone()).filter(|r| !r.trim().is_empty()))).collect();
+                    let sources: Vec<_> = files
+                        .iter()
+                        .map(|f| (title_of(&f.name).to_string(), f.bytes.clone(), Some(f.range.clone()).filter(|r| !r.trim().is_empty())))
+                        .collect();
                     let groups: Vec<_> = files.iter().map(|f| f.group).collect();
                     let passwords: Vec<_> = files.iter().map(CombineFile::password).collect();
                     pdfcraft_engine::Session::new().combine_grouped(&sources, &groups, &passwords).map_err(|e| e.to_string())
-                })).unwrap_or_else(|_| Err("the PDF worker stopped; your originals are unchanged".into()));
+                }))
+                .unwrap_or_else(|_| Err("the PDF worker stopped; your originals are unchanged".into()));
                 let _ = sender.send(result);
-                if let Some(ctx) = repaint { ctx.request_repaint(); }
+                if let Some(ctx) = repaint {
+                    ctx.request_repaint();
+                }
             }) {
                 Ok(_) => self.combine_run = Some(CombineRun { receiver, count, cancelled: false }),
                 Err(e) => self.notify_fmt("Couldn't combine files: {e}", &[("e", &e.to_string())]),
@@ -1937,9 +1955,13 @@ impl PdfCraftApp {
     /// Whether a native Combine is still computing (including a cancelled result being drained).
     pub fn combine_pending(&self) -> bool {
         #[cfg(not(target_arch = "wasm32"))]
-        { self.combine_run.is_some() }
+        {
+            self.combine_run.is_some()
+        }
         #[cfg(target_arch = "wasm32")]
-        { false }
+        {
+            false
+        }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -1974,13 +1996,18 @@ impl PdfCraftApp {
         }
         let modal = widgets::show_modal(ctx, "odibo-combine-progress", |ui| {
             ui.set_max_width((ctx.content_rect().width() - 80.0).clamp(180.0, 440.0));
-            ui.horizontal(|ui| { ui.spinner(); ui.label(tl!("Combining PDFs…")); });
+            ui.horizontal(|ui| {
+                ui.spinner();
+                ui.label(tl!("Combining PDFs…"));
+            });
             ui.label(tl!("Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish."));
             if !run.cancelled && widgets::pill_button(ui, tl!("Cancel"), false).clicked() {
                 run.cancelled = true;
             }
         });
-        if modal.should_close() { run.cancelled = true; }
+        if modal.should_close() {
+            run.cancelled = true;
+        }
         ctx.request_repaint_after(std::time::Duration::from_millis(50));
     }
 

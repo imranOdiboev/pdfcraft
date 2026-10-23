@@ -156,16 +156,24 @@ pub(crate) fn split_range_plan(input: &str, count: usize) -> Result<SplitBy, Str
     let invalid = || tl!("Enter consecutive ranges covering every page, for example 1-3, 4-6.").to_string();
     let mut next = 1usize;
     let mut cuts = Vec::new();
-    if count == 0 || input.len() > 16_384 { return Err(invalid()); }
+    if count == 0 || input.len() > 16_384 {
+        return Err(invalid());
+    }
     for part in input.split(',') {
         let part = part.trim();
         let (a, b) = part.split_once('-').map_or((part, part), |(a, b)| (a.trim(), b.trim()));
         let (a, b) = (a.parse::<usize>().map_err(|_| invalid())?, b.parse::<usize>().map_err(|_| invalid())?);
-        if a != next || b < a || b > count { return Err(invalid()); }
-        if a > 1 { cuts.push(a - 1); }
+        if a != next || b < a || b > count {
+            return Err(invalid());
+        }
+        if a > 1 {
+            cuts.push(a - 1);
+        }
         next = b.checked_add(1).ok_or_else(invalid)?;
     }
-    if next.checked_sub(1) != Some(count) { return Err(invalid()); }
+    if next.checked_sub(1) != Some(count) {
+        return Err(invalid());
+    }
     Ok(SplitBy::Before(cuts))
 }
 
@@ -715,7 +723,13 @@ impl PdfCraftApp {
         self.write_files_policy(named, title, false, after);
     }
 
-    fn write_files_policy(&mut self, named: Vec<(String, Arc<Vec<u8>>)>, title: &str, new_only: bool, after: impl FnOnce(&mut Self) + Send + 'static) {
+    fn write_files_policy(
+        &mut self,
+        named: Vec<(String, Arc<Vec<u8>>)>,
+        title: &str,
+        new_only: bool,
+        after: impl FnOnce(&mut Self) + Send + 'static,
+    ) {
         if let Some((name, _)) = named.iter().find(|(name, _)| !is_plain_file_name(name)) {
             self.notify_fmt("Couldn't write {name}: {e}", &[("name", name), ("e", tl!("the name is not a plain file name"))]);
             return;
@@ -735,7 +749,10 @@ impl PdfCraftApp {
                     };
                     if let Err(e) = result {
                         if new_only {
-                            app.notify_fmt("Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.", &[("name", name), ("e", &e.to_string()), ("n", &written.to_string()), ("dir", &dir.display().to_string())]);
+                            app.notify_fmt(
+                                "Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.",
+                                &[("name", name), ("e", &e.to_string()), ("n", &written.to_string()), ("dir", &dir.display().to_string())],
+                            );
                         } else {
                             app.notify_fmt("Couldn't write {name}: {e}", &[("name", name), ("e", &e.to_string())]);
                         }
@@ -873,8 +890,8 @@ pub(crate) fn strip_pdf(name: &str) -> &str {
 /// rename-over or opening the destination for writing. Normal Save/Save As remain unchanged.
 #[cfg(not(target_arch = "wasm32"))]
 fn write_new_pdf(path: &std::path::Path, bytes: &[u8]) -> std::io::Result<()> {
-    use std::io::Write as _;
     use pdfcraft_platform::staging::{StagingName, create_staging, staging_suffixes};
+    use std::io::Write as _;
     let dir = path.parent().unwrap_or(std::path::Path::new("."));
     let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("split");
     let (temporary, mut file) = create_staging(dir, name, StagingName::TagThenSuffix, staging_suffixes())?;
@@ -1180,7 +1197,9 @@ mod stem_tests {
         app.set_option("language", "en").unwrap();
         app.export_dir_override = Some(dir.to_string_lossy().into_owned());
         let bytes = Arc::new(b"result".to_vec());
-        app.write_files_policy(vec![("new.pdf".into(), bytes.clone()), ("existing.pdf".into(), bytes)], "split", true, |_| panic!("must not complete"));
+        app.write_files_policy(vec![("new.pdf".into(), bytes.clone()), ("existing.pdf".into(), bytes)], "split", true, |_| {
+            panic!("must not complete")
+        });
         assert!(!dir.join("new.pdf").exists());
         assert_eq!(std::fs::read(&existing).unwrap(), b"original");
         // The publish itself also refuses collisions, independently of preflight (TOCTOU).

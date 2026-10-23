@@ -412,90 +412,92 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
             Dialog::Split => {
                 ui.label(egui::RichText::new(tl!("Split document")).font(theme::semibold(18.0)));
                 egui::ScrollArea::vertical().id_salt("split-options").max_height((ctx.content_rect().height() - 170.0).max(100.0)).show(ui, |ui| {
-                ui.add_space(8.0);
-                let Some((vi, id)) = app.active_ids() else { return };
-                let n = app.session.get(id).map(|d| d.info.pages.len()).unwrap_or(0);
-                let selected: Vec<usize> = app.views[vi].selected.iter().copied().filter(|p| *p > 0).collect();
-                let marks = app.session.bookmark_splits(id);
-                let draft = &mut app.split_draft;
-                use crate::SplitMode as M;
-                widgets::radio_value(ui, &mut draft.mode, M::Ranges, tl!("Page ranges"));
-                if draft.mode == M::Ranges {
-                    ui.add(egui::TextEdit::singleline(&mut draft.ranges).hint_text("1-3, 4-6").desired_width(f32::INFINITY))
-                        .widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::TextEdit, true, tl!("Page ranges")));
-                }
-                let explicit = crate::files::split_range_plan(&draft.ranges, n);
-                if selected.is_empty() && draft.mode == M::Selection {
-                    draft.mode = M::Pages;
-                }
-                widgets::radio_value(ui, &mut draft.mode, M::Pages, tl!("Number of pages"));
-                ui.add_enabled_ui(draft.mode == M::Pages, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.add_space(24.0);
-                        ui.label(tl!("Pages per file"));
-                        ui.add(egui::DragValue::new(&mut draft.every).range(1..=n.max(1)));
-                    });
-                });
-                widgets::radio_value(ui, &mut draft.mode, M::Size, tl!("File size"));
-                ui.add_enabled_ui(draft.mode == M::Size, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.add_space(24.0);
-                        ui.label(tl!("At most"));
-                        ui.add(egui::DragValue::new(&mut draft.size_mb).range(0.05..=2000.0).speed(0.1).suffix(" MB"));
-                    });
-                });
-                ui.add_enabled_ui(!marks.is_empty(), |ui| {
-                    widgets::radio_value(
-                        ui,
-                        &mut draft.mode,
-                        M::Bookmarks,
-                        crate::i18n::fmt(tl!("Top-level bookmarks ({n})"), &[("n", &marks.len().to_string())]),
-                    )
-                });
-                ui.add_enabled_ui(!selected.is_empty(), |ui| {
-                    widgets::radio_value(ui, &mut draft.mode, M::Selection, tl!("Before each selected page (select pages in Organize)"))
-                });
-                let plan = match draft.mode {
-                    M::Pages => crate::SplitPlan::By(pdfcraft_engine::SplitBy::PageCount(draft.every)),
-                    M::Selection => crate::SplitPlan::By(pdfcraft_engine::SplitBy::Before(selected)),
-                    M::Size => crate::SplitPlan::Size((draft.size_mb * 1_048_576.0) as usize),
-                    M::Bookmarks => crate::SplitPlan::Bookmarks,
-                    M::Ranges => crate::SplitPlan::By(explicit.clone().unwrap_or(pdfcraft_engine::SplitBy::PageCount(n.max(1)))),
-                };
-                let files = match &plan {
-                    crate::SplitPlan::By(by) => Some(pdfcraft_engine::split_ranges(n, by).len()),
-                    crate::SplitPlan::Bookmarks => {
-                        Some(pdfcraft_engine::split_ranges(n, &pdfcraft_engine::SplitBy::Before(marks.iter().map(|m| m.0).collect())).len())
+                    ui.add_space(8.0);
+                    let Some((vi, id)) = app.active_ids() else { return };
+                    let n = app.session.get(id).map(|d| d.info.pages.len()).unwrap_or(0);
+                    let selected: Vec<usize> = app.views[vi].selected.iter().copied().filter(|p| *p > 0).collect();
+                    let marks = app.session.bookmark_splits(id);
+                    let draft = &mut app.split_draft;
+                    use crate::SplitMode as M;
+                    widgets::radio_value(ui, &mut draft.mode, M::Ranges, tl!("Page ranges"));
+                    if draft.mode == M::Ranges {
+                        ui.add(egui::TextEdit::singleline(&mut draft.ranges).hint_text("1-3, 4-6").desired_width(f32::INFINITY))
+                            .widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::TextEdit, true, tl!("Page ranges")));
                     }
-                    crate::SplitPlan::Size(_) => None,
-                };
-                ui.add_space(8.0);
-                let text = match files {
-                    Some(f) => {
-                        if f == 1 {
-                            crate::i18n::fmt(tl!("Creates 1 file from {n} pages."), &[("n", &n.to_string())])
-                        } else {
-                            crate::i18n::fmt(tl!("Creates {f} files from {n} pages."), &[("f", &f.to_string()), ("n", &n.to_string())])
-                        }
+                    let explicit = crate::files::split_range_plan(&draft.ranges, n);
+                    if selected.is_empty() && draft.mode == M::Selection {
+                        draft.mode = M::Pages;
                     }
-                    None => crate::i18n::fmt(tl!("Each file holds as many of the {n} pages as fit."), &[("n", &n.to_string())]),
-                };
-                ui.label(egui::RichText::new(text).color(t.text_muted));
-                if draft.mode == M::Ranges && let Err(error) = &explicit {
-                    ui.colored_label(crate::combine_ui::ERROR, error);
-                }
-                if let crate::SplitPlan::By(by) = &plan {
-                    let ranges = pdfcraft_engine::split_ranges(n, by);
-                    egui::ScrollArea::vertical().id_salt("split-preview").max_height(88.0).show(ui, |ui| {
-                        for (index, range) in ranges.iter().take(100).enumerate() {
-                            ui.label(format!("{}. {}–{}", index + 1, range.start + 1, range.end));
-                        }
+                    widgets::radio_value(ui, &mut draft.mode, M::Pages, tl!("Number of pages"));
+                    ui.add_enabled_ui(draft.mode == M::Pages, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.add_space(24.0);
+                            ui.label(tl!("Pages per file"));
+                            ui.add(egui::DragValue::new(&mut draft.every).range(1..=n.max(1)));
+                        });
                     });
-                }
-                ui.label(tl!("Choose an output folder next. Originals stay unchanged; existing files will not be replaced."));
-                if files.is_none_or(|f| f > 1) && (draft.mode != M::Ranges || explicit.is_ok()) {
-                    split_ready = Some(plan);
-                }
+                    widgets::radio_value(ui, &mut draft.mode, M::Size, tl!("File size"));
+                    ui.add_enabled_ui(draft.mode == M::Size, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.add_space(24.0);
+                            ui.label(tl!("At most"));
+                            ui.add(egui::DragValue::new(&mut draft.size_mb).range(0.05..=2000.0).speed(0.1).suffix(" MB"));
+                        });
+                    });
+                    ui.add_enabled_ui(!marks.is_empty(), |ui| {
+                        widgets::radio_value(
+                            ui,
+                            &mut draft.mode,
+                            M::Bookmarks,
+                            crate::i18n::fmt(tl!("Top-level bookmarks ({n})"), &[("n", &marks.len().to_string())]),
+                        )
+                    });
+                    ui.add_enabled_ui(!selected.is_empty(), |ui| {
+                        widgets::radio_value(ui, &mut draft.mode, M::Selection, tl!("Before each selected page (select pages in Organize)"))
+                    });
+                    let plan = match draft.mode {
+                        M::Pages => crate::SplitPlan::By(pdfcraft_engine::SplitBy::PageCount(draft.every)),
+                        M::Selection => crate::SplitPlan::By(pdfcraft_engine::SplitBy::Before(selected)),
+                        M::Size => crate::SplitPlan::Size((draft.size_mb * 1_048_576.0) as usize),
+                        M::Bookmarks => crate::SplitPlan::Bookmarks,
+                        M::Ranges => crate::SplitPlan::By(explicit.clone().unwrap_or(pdfcraft_engine::SplitBy::PageCount(n.max(1)))),
+                    };
+                    let files = match &plan {
+                        crate::SplitPlan::By(by) => Some(pdfcraft_engine::split_ranges(n, by).len()),
+                        crate::SplitPlan::Bookmarks => {
+                            Some(pdfcraft_engine::split_ranges(n, &pdfcraft_engine::SplitBy::Before(marks.iter().map(|m| m.0).collect())).len())
+                        }
+                        crate::SplitPlan::Size(_) => None,
+                    };
+                    ui.add_space(8.0);
+                    let text = match files {
+                        Some(f) => {
+                            if f == 1 {
+                                crate::i18n::fmt(tl!("Creates 1 file from {n} pages."), &[("n", &n.to_string())])
+                            } else {
+                                crate::i18n::fmt(tl!("Creates {f} files from {n} pages."), &[("f", &f.to_string()), ("n", &n.to_string())])
+                            }
+                        }
+                        None => crate::i18n::fmt(tl!("Each file holds as many of the {n} pages as fit."), &[("n", &n.to_string())]),
+                    };
+                    ui.label(egui::RichText::new(text).color(t.text_muted));
+                    if draft.mode == M::Ranges
+                        && let Err(error) = &explicit
+                    {
+                        ui.colored_label(crate::combine_ui::ERROR, error);
+                    }
+                    if let crate::SplitPlan::By(by) = &plan {
+                        let ranges = pdfcraft_engine::split_ranges(n, by);
+                        egui::ScrollArea::vertical().id_salt("split-preview").max_height(88.0).show(ui, |ui| {
+                            for (index, range) in ranges.iter().take(100).enumerate() {
+                                ui.label(format!("{}. {}–{}", index + 1, range.start + 1, range.end));
+                            }
+                        });
+                    }
+                    ui.label(tl!("Choose an output folder next. Originals stay unchanged; existing files will not be replaced."));
+                    if files.is_none_or(|f| f > 1) && (draft.mode != M::Ranges || explicit.is_ok()) {
+                        split_ready = Some(plan);
+                    }
                 });
             }
             Dialog::ReplacePages => {

@@ -4960,12 +4960,13 @@ fn read_mode_shortcut_applies_the_open_paragraph() {
     assert_eq!(s.session.get(s.views[0].id).unwrap().text_lines(0)[0].text, "Chapter One", "the edit is applied");
 }
 
-
 /// Pump real frames while the bounded native PDF worker finishes.
 fn wait_for_combine(h: &mut Harness<'static, PdfCraftApp>) {
     h.run_steps(3);
     for _ in 0..600 {
-        if !h.state().combine_pending() { return; }
+        if !h.state().combine_pending() {
+            return;
+        }
         std::thread::sleep(std::time::Duration::from_millis(10));
         h.run_steps(1);
     }
