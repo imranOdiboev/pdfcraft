@@ -273,4 +273,4 @@ M2 (renderer), M7 (content editing), M10 (OCR and Office), M11 (Preflight and st
 
 ODIBO Windows rebranding (2026-10-22): test ZIP and automated gates verified, PR #2 awaits owner review; see [report](ODIBO_REBRANDING_REPORT.md). Manual visual/hardware acceptance remains. No new parity or maturity claim.
 
-ODIBO Home stage 3.3 (2026-10-23): candidate in [PR #4](https://github.com/imranOdiboev/pdfcraft/pull/4), cloud verification blocked by disabled Actions. See [scope and verification report](uiux/STAGE_3_3_REPORT.md). No new maturity/parity claim.
+ODIBO Home stage 3.3 (2026-10-23): candidate in [PR #4](https://github.com/imranOdiboev/pdfcraft/pull/4); fork workflows re-enabled by owner, final cloud checks and artifacts tracked in that PR. See [scope and verification report](uiux/STAGE_3_3_REPORT.md). No new maturity/parity claim.

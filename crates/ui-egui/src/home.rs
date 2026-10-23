@@ -25,8 +25,13 @@ fn action_card(ui: &mut egui::Ui, t: &Tokens, width: f32, command: &str, label: 
     let press = theme::Press::track(ui, &response);
     card_lift(ui, t, rect, press);
     let primary = command == "file.open";
-    ui.painter().rect(rect, CornerRadius::same(10), press.fill(t.card, t.hover, t.pressed),
-        Stroke::new(if primary { 2.0 } else { 1.0 }, if primary { t.accent_text } else { t.border }), egui::StrokeKind::Inside);
+    ui.painter().rect(
+        rect,
+        CornerRadius::same(10),
+        press.fill(t.card, t.hover, t.pressed),
+        Stroke::new(if primary { 2.0 } else { 1.0 }, if primary { t.accent_text } else { t.border }),
+        egui::StrokeKind::Inside,
+    );
     let body = rect.translate(press.offset());
     icons::paint(ui, Rect::from_min_size(body.min + vec2(14.0, 14.0), vec2(24.0, 24.0)), icon, 22.0, t.accent_text);
     let mut job = egui::text::LayoutJob::simple(label.to_owned(), theme::semibold(theme::TOOL_LABEL), t.text, body.width() - 28.0);
@@ -38,8 +43,7 @@ fn action_card(ui: &mut egui::Ui, t: &Tokens, width: f32, command: &str, label: 
 }
 
 fn quick_actions(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
-    ui.label(egui::RichText::new(tl!("Quick actions")).font(theme::semibold(17.0)));
-    ui.label(egui::RichText::new(tl!("Choose a tool, then select your PDF.")).font(theme::regular(theme::SECONDARY)).color(t.text_muted));
+    ui.label(egui::RichText::new(tl!("Recommended tools")).font(theme::semibold(17.0)));
     ui.add_space(12.0);
     let gap = 12.0;
     let columns = (((ui.available_width() + gap) / 202.0).floor() as usize).clamp(1, 4);
@@ -145,7 +149,14 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 // The name and path stop short of the page count; hovering shows the whole path.
                 let width = detail.left() - 16.0 - (body.left() + 46.0);
                 widgets::row_text(ui, body.min + vec2(46.0, 15.0), crate::bidi::visual(&r.name), theme::medium(13.5), t.text, width);
-                widgets::row_text(ui, body.min + vec2(46.0, 32.0), crate::bidi::visual(&r.path), theme::regular(theme::SECONDARY), t.text_muted, width);
+                widgets::row_text(
+                    ui,
+                    body.min + vec2(46.0, 32.0),
+                    crate::bidi::visual(&r.path),
+                    theme::regular(theme::SECONDARY),
+                    t.text_muted,
+                    width,
+                );
                 widgets::focus_ring(ui, &resp);
                 if theme::hand(resp).on_hover_text(&r.path).clicked() {
                     open = Some(r.path.clone());
@@ -189,8 +200,13 @@ mod tests {
         for (id, _, _) in ACTIONS {
             assert!(pdfcraft_engine::commands::command(id).is_some(), "missing command {id}");
             if id != "file.open" {
-                assert!(pdfcraft_engine::catalog::TOOL_GROUPS.iter().flat_map(|g| g.sections.iter()).flat_map(|s| s.items.iter())
-                    .any(|item| item.command == id && item.availability == pdfcraft_engine::catalog::Availability::Ready));
+                assert!(
+                    pdfcraft_engine::catalog::TOOL_GROUPS
+                        .iter()
+                        .flat_map(|g| g.sections.iter())
+                        .flat_map(|s| s.items.iter())
+                        .any(|item| item.command == id && item.availability == pdfcraft_engine::catalog::Availability::Ready)
+                );
             }
         }
     }
@@ -203,9 +219,17 @@ mod tests {
             ctx.set_fonts(theme::font_definitions());
             let output = ctx.run_ui(egui::RawInput::default(), |ui| {
                 let t = Tokens::get(ui.ctx());
-                for &(command, label, icon) in &ACTIONS { action_card(ui, &t, 190.0, command, label, icon); }
+                for &(command, label, icon) in &ACTIONS {
+                    action_card(ui, &t, 190.0, command, label, icon);
+                }
             });
-            let fits = output.shapes.iter().filter_map(|s| match &s.shape { egui::Shape::Text(t) => Some(t), _ => None })
+            let fits = output
+                .shapes
+                .iter()
+                .filter_map(|s| match &s.shape {
+                    egui::Shape::Text(t) => Some(t),
+                    _ => None,
+                })
                 .all(|t| !t.galley.elided && t.galley.rows.len() <= 2);
             output.drop_without_applying_deltas();
             assert!(fits, "card label clipped for {lang:?}");

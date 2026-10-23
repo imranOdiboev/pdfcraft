@@ -602,4 +602,4 @@ Newest first: the date, what moved, and the new overall estimate.
 
 - 2026-10-23: ODIBO stage 3.2 candidate in PR #3: readable secondary/tool text, structural selected/focus states and responsive mode/search/Save chrome. Existing PDF commands and persisted docking/preferences retained. CI evidence and real egui screenshots are tracked in PR #3; stages 3.3–3.7 remain deferred. Parity/maturity unchanged.
 
-- 2026-10-23: ODIBO stage 3.3 candidate in PR #4: responsive Home action cards use existing open-then-run commands; recents precede pinned folders and project links. Cloud verification is blocked: GitHub reports Actions disabled for this repository. No test/build success claimed; editor work deferred, parity/maturity unchanged.
+- 2026-10-23: ODIBO stage 3.3 candidate in PR #4: responsive Home action cards use existing open-then-run commands; recents precede pinned folders and project links. Owner re-enabled fork workflows; final cloud verification and artifact evidence are tracked in PR #4. Editor work deferred, parity/maturity unchanged.

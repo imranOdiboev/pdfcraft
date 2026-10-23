@@ -75,7 +75,12 @@ fn home_recent_opens_a_real_file_from_disk() {
     let path = dir.join("recent-synthetic.pdf");
     std::fs::write(&path, PDF).unwrap();
     let mut h = harness(egui::vec2(1400.0, 1100.0), "en", "dark", 1.0);
-    h.state_mut().recent.push(RecentFile { name: "recent-synthetic.pdf".into(), path: path.to_string_lossy().into_owned(), pages: 1, size: PDF.len() });
+    h.state_mut().recent.push(RecentFile {
+        name: "recent-synthetic.pdf".into(),
+        path: path.to_string_lossy().into_owned(),
+        pages: 1,
+        size: PDF.len(),
+    });
     h.run_steps(3);
     h.get_by_label("recent-synthetic.pdf").click();
     super::support::wait_until(&mut h, "recent PDF", |app| app.views.len() == 1);
