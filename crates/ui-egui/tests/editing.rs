@@ -2072,11 +2072,17 @@ fn password_prompt_opens_and_security_tab_reports_the_details() {
 /// off the buttons' centre line.
 #[test]
 fn the_security_notice_wraps_beside_its_buttons_and_lines_up_with_them() {
-    // Wide: one line. Narrower: wrapped. Narrowest: cut short (the full text is on hover).
-    for (width, wraps) in [(1700.0, false), (1250.0, true), (900.0, false)] {
+    // Wide: one line. Narrower: wrapped. Compact drawers preserve enough document
+    // width for readable wrapping rather than the old sliver of truncated text.
+    for (width, wraps) in [(1700.0, false), (1250.0, true), (900.0, true)] {
         let mut h = Harness::builder().with_size(egui::vec2(width, 800.0)).build_eframe(|_cc| {
             let mut app = PdfCraftApp::new();
             app.set_option("language", "en").unwrap();
+            // Exercise the fixed-width legacy layout and its compact projection.
+            // Moving a panel explicitly creates a different split geometry.
+            let mut saved: serde_json::Value = serde_json::from_str(&app.persist()).unwrap();
+            saved.as_object_mut().unwrap().remove("editor_workspace_pending");
+            app.restore(&saved.to_string());
             app.open_bytes("locked.pdf", None, protected("", "owner", 0b0100)).unwrap();
             app.set_option("panel", "bookmarks").unwrap();
             app

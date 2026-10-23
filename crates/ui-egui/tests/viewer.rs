@@ -1144,8 +1144,13 @@ fn arrow_and_page_keys_move_through_a_scrolling_document() {
     // nothing without ⌘.
     use egui::Key;
     use pdfcraft_ui_egui::canvas::{Fit, PageLayout};
-    let mut h = harness();
-    h.state_mut().active = Some(0);
+    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_| {
+        let mut app = PdfCraftApp::new();
+        app.set_option("language", "en").unwrap();
+        // Keep fit-width pages taller than the viewport with document navigation open.
+        app.open_bytes("tall.pdf", None, sized_fixture(&[(200, 600); 5])).unwrap();
+        app
+    });
     h.state_mut().views[0].fit = Fit::Width;
     h.run_steps(4);
     assert_eq!(h.state().views[0].layout, PageLayout::Single);

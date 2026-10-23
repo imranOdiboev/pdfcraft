@@ -2,8 +2,13 @@ name: ODIBO isolated source preparation
 
 on:
   push:
-    branches: [feature/odibo-rebranding, feature/odibo-uiux, feature/odibo-home]
+    branches: [feature/odibo-rebranding, feature/odibo-uiux, feature/odibo-home, feature/odibo-editor-workspace]
   workflow_dispatch:
+    inputs:
+      prepare_security_patch:
+        description: Resolve targeted security updates on the disposable runner
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -25,13 +30,18 @@ jobs:
       - name: Prepare formatting and generated attribution on the disposable runner
         run: |
           mkdir -p dist/preparation
-          trap 'git diff --binary -- "*.rs" ATTRIBUTION.md > dist/preparation/preparation.patch' EXIT
+          trap 'git diff --binary -- "*.rs" ATTRIBUTION.md Cargo.lock > dist/preparation/preparation.patch' EXIT
+          if [ '${{ inputs.prepare_security_patch }}' = 'true' ]; then
+            test "$GITHUB_REF" = 'refs/heads/feature/odibo-editor-workspace'
+            cargo update -p ctutils --precise 0.4.4
+            cargo update -p clipboard-win
+          fi
           cargo fmt --all
           cargo xtask assets --write
           cargo test --locked -p xtask assets::tests
           cargo xtask parity
           mkdir -p dist/preparation
-          git diff --binary -- '*.rs' ATTRIBUTION.md > dist/preparation/preparation.patch
+          git diff --binary -- '*.rs' ATTRIBUTION.md Cargo.lock > dist/preparation/preparation.patch
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:

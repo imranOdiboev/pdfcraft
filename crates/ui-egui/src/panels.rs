@@ -544,9 +544,18 @@ pub(crate) enum Nav {
 }
 
 pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
-    let t = Tokens::get(ui.ctx());
-    let Some((index, id)) = app.active_ids() else { return };
     let Some(panel) = app.right else { return };
+    ui.data_mut(|data| data.insert_temp(egui::Id::new("pdfcraft-inspector-body"), ui.max_rect()));
+    if panel_body(app, ui, panel, tl!("Close"), false) {
+        app.choose_right_panel(None);
+    }
+}
+
+/// The same navigation/context body can be docked or displayed in a temporary drawer.
+/// Returns a close request; the caller owns the visibility of its pane.
+pub(crate) fn panel_body(app: &mut PdfCraftApp, ui: &mut egui::Ui, panel: RightPanel, close_label: &str, navigation: bool) -> bool {
+    let t = Tokens::get(ui.ctx());
+    let Some((index, id)) = app.active_ids() else { return false };
     let mut nav: Option<Nav> = None;
     let mut close = false;
     let mut toggle_layer: Option<(usize, bool)> = None;
@@ -564,7 +573,7 @@ pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     // Prepare a form is open: the Fields panel orders tabs.
     let preparing = app.is_preparing();
     {
-        let Some(doc) = app.session.get(id) else { return };
+        let Some(doc) = app.session.get(id) else { return false };
         let info = &doc.info;
         let view = &mut app.views[index];
         let prefs = &app.comment_prefs;
@@ -604,7 +613,7 @@ pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                         ui.label(egui::RichText::new(picked).font(theme::medium(12.0)).color(t.accent_text));
                     }
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if icons::button(ui, "x", 26.0, false, tl!("Close")).clicked() {
+                        if icons::button(ui, "x", 26.0, false, close_label).clicked() {
                             close = true;
                         }
                         // Right to left: close, "…", filter, search (Acrobat's order left to right).
@@ -713,7 +722,7 @@ pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                             ui.label(tl!("Some bookmarks are not shown here: the panel lists a limited number, nested a limited depth."));
                         }
                     }
-                    RightPanel::Pages => pages(ui, &t, info, view, modal, bm_editable, &mut nav),
+                    RightPanel::Pages => pages(ui, &t, info, view, modal, bm_editable, &mut nav, navigation),
                     RightPanel::Fields => field_properties = fields(ui, &t, info, &doc.form, preparing, &mut view.prepare, &mut nav, &mut panel_edit),
                     RightPanel::Layers => {
                         if info.layers.is_empty() {
@@ -804,9 +813,6 @@ pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 });
             });
     }
-    if close {
-        app.choose_right_panel(None);
-    }
     if let Some(e) = panel_edit {
         app.apply_edit(e);
     }
@@ -874,6 +880,7 @@ pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
         }
         None => {}
     }
+    close
 }
 
 fn empty(ui: &mut egui::Ui, t: &Tokens, icon: &str, text: &str) {
@@ -1088,7 +1095,17 @@ fn outline_item(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, item: &OutlineIte
 /// (the selection page commands and Print act on) without moving the document. Right-click
 /// offers Extract, Cut, Copy and Paste on the selection, or on the page clicked; dragging
 /// moves the selection, or the page grabbed, to the gap it is dropped on.
-fn pages(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, view: &mut crate::DocView, modal: bool, editable: bool, nav: &mut Option<Nav>) {
+#[allow(clippy::too_many_arguments)] // Shared legacy inspector and left navigation preserve the same page actions.
+fn pages(
+    ui: &mut egui::Ui,
+    t: &Tokens,
+    info: &DocInfo,
+    view: &mut crate::DocView,
+    modal: bool,
+    editable: bool,
+    nav: &mut Option<Nav>,
+    navigation: bool,
+) {
     // Escape drops the selection while the pointer is over the panel and nothing else wants the key.
     if !modal
         && !view.selected.is_empty()
@@ -1136,6 +1153,7 @@ fn pages(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, view: &mut crate::DocVie
                 dropped = true;
             }
             let info = crate::i18n::fmt(tl!("Page {label}"), &[("label", &p.label)]);
+            let info = if navigation { format!("{}: {info}", tl!("Page navigation")) } else { info };
             let picked = view.selected.contains(&i);
             resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, picked, info.clone()));
             // The current page keeps its heavier border; picked pages share its fill.
@@ -1163,6 +1181,11 @@ fn pages(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, view: &mut crate::DocVie
             }));
             if follow && selected {
                 ui.scroll_to_rect(rect.union(label.rect), None);
+            }
+            widgets::focus_ring(ui, &resp);
+            if selected {
+                let mark = Rect::from_min_size(rect.left_top() + vec2(1.0, 8.0), vec2(3.0, rect.height() - 16.0));
+                ui.painter().rect_filled(mark, 1.0, t.text);
             }
             let resp = theme::hand(resp);
             if resp.clicked() {

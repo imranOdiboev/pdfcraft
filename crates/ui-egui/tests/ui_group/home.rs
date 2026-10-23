@@ -98,7 +98,7 @@ fn home_recent_reuses_open_tab_and_missing_file_keeps_it_safe() {
     h.state_mut().open_bytes("already-open.pdf", Some(path.into()), PDF.to_vec()).unwrap();
     h.state_mut().set_option("home", "true").unwrap();
     h.run_steps(4);
-    h.query_all_by_label("already-open.pdf").find(|n| n.rect().left() > 260.0 && n.rect().top() > 200.0).unwrap().click();
+    h.get_by_role_and_label(egui::accesskit::Role::Button, "already-open.pdf").click();
     h.run_steps(4);
     assert_eq!(h.state().views.len(), 1);
     assert_eq!(h.state().active, Some(0));

@@ -3,13 +3,15 @@
 //! ```text
 //! cargo run -p pdfcraft-ui-egui --example shot -- out.png [file.pdf] [--size 1440x900] [--scale 2] [--page 3 --panel pages …]
 //! ```
-//! `--width N` downscales the image to N pixels wide (README screenshots). Any other
-//! `--key value` pair is passed to `PdfCraftApp::set_option`
+//! `--width N` downscales the image to N pixels wide (README screenshots).
+//! `--click LABEL` activates a real egui control after initial layout, before capture.
+//! Any other `--key value` pair is passed to `PdfCraftApp::set_option`
 //! (the same verbs as the desktop app's command-line flags and the future control channel).
 
 use std::time::{Duration, Instant};
 
 use egui_kittest::Harness;
+use egui_kittest::kittest::Queryable;
 use pdfcraft_ui_egui::PdfCraftApp;
 
 fn main() -> Result<(), String> {
@@ -31,6 +33,8 @@ fn main() -> Result<(), String> {
             None => file = Some(a),
         }
     }
+    let click = opts.iter().find(|(key, _)| key == "click").map(|(_, label)| label.clone());
+    opts.retain(|(key, _)| key != "click");
     let mut harness = Harness::builder().with_size(size).with_pixels_per_point(scale).build_eframe(move |_cc| {
         let mut app = PdfCraftApp::new();
         if let Some(f) = &file {
@@ -50,6 +54,11 @@ fn main() -> Result<(), String> {
     // Let fonts install, layout settle and background renders arrive.
     let start = Instant::now();
     harness.run_steps(4);
+    if let Some(label) = click {
+        let Some(node) = harness.query_by_label(&label) else { return Err(format!("shot: clickable UI label not found: {label}")) };
+        node.click();
+        harness.run_steps(4);
+    }
     while start.elapsed() < Duration::from_secs(20) {
         harness.run_steps(2);
         if !harness.state().render_pending() {

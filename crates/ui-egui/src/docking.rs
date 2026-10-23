@@ -80,6 +80,22 @@ impl Default for Workspace {
 }
 
 impl Workspace {
+    /// New editor layout; restored layouts are never rewritten to this arrangement.
+    fn editor_default() -> Self {
+        Self {
+            layout: Layout {
+                root: Some(split(
+                    SplitAxis::Horizontal,
+                    SplitSize::FixedSecond(320.0),
+                    tabs(Panel::Canvas),
+                    Node::Tabs { panels: vec![Panel::Tools, Panel::Inspector], active: 0 },
+                )),
+                floating: Vec::new(),
+            },
+            hidden: Vec::new(),
+        }
+    }
+
     /// Side of the Tools panel, including its saved position while closed.
     pub fn tools_on_right(&self) -> bool {
         let location = self
@@ -321,12 +337,13 @@ fn publish_visibility(app: &mut crate::PdfCraftApp, workspace: &Workspace) {
 pub fn command(app: &mut crate::PdfCraftApp, reset: bool, params: &Value) -> Result<Value, String> {
     let mut workspace = app.docking.clone();
     if reset {
-        workspace = Workspace::default();
+        workspace = if app.active.is_some() { Workspace::editor_default() } else { Workspace::default() };
         workspace.set_visible(Panel::Inspector, app.right.is_some())?;
     } else {
         sync(&mut workspace, app)?;
         workspace.command(params)?;
     }
+    app.editor_workspace_pending = false;
     publish_visibility(app, &workspace);
     app.docking = workspace;
     Ok(json!({"docking": app.docking}))
@@ -374,6 +391,44 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
         workspace = Workspace::default();
         let _ = sync(&mut workspace, app);
     }
+    if app.active.is_some() && app.editor_workspace_pending {
+        app.editor_workspace_pending = false;
+        let mut baseline = Workspace::default();
+        let _ = sync(&mut baseline, app);
+        if workspace.layout == baseline.layout && workspace.hidden == baseline.hidden {
+            workspace = Workspace::editor_default();
+            let _ = sync(&mut workspace, app);
+            if app.right.is_some() {
+                let _ = workspace.apply(Action::Activate { panel: Panel::Inspector });
+            }
+        }
+    }
+    let compact = app.active.is_some() && ui.available_width() < 940.0;
+    ui.data_mut(|data| data.insert_temp(egui::Id::new("odibo-compact-editor"), compact));
+    let requested = app.pending_panel_reveals.last().copied();
+    let drawer_id = egui::Id::new("odibo-editor-context-drawer");
+    let mut drawer = ui.data(|data| data.get_temp::<Panel>(drawer_id));
+    if compact {
+        if let Some(panel) = requested.filter(|panel| *panel != Panel::Canvas) {
+            drawer = Some(panel);
+            crate::editor_navigation::close_drawer(ui.ctx());
+        }
+        ui.horizontal(|ui| {
+            if crate::widgets::ghost_button(ui, "wrench", crate::i18n::t("Tools")).clicked() {
+                app.left_open = true;
+                drawer = if drawer == Some(Panel::Tools) { None } else { Some(Panel::Tools) };
+                if drawer.is_some() {
+                    crate::editor_navigation::close_drawer(ui.ctx());
+                }
+            }
+            if app.right.is_some() && crate::widgets::ghost_button(ui, "panel-right", crate::i18n::t("Inspector")).clicked() {
+                drawer = if drawer == Some(Panel::Inspector) { None } else { Some(Panel::Inspector) };
+                if drawer.is_some() {
+                    crate::editor_navigation::close_drawer(ui.ctx());
+                }
+            }
+        });
+    }
     let mut style = DockStyle::from_ui(ui);
     style.min_pane = 96.0;
     style.float_label = crate::i18n::t("Float panel").into();
@@ -392,6 +447,13 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
     style.font = crate::theme::medium(12.0);
     drain_reveals(&mut workspace, app);
     let mut rendered = workspace.layout.clone();
+    if compact {
+        for panel in [Panel::Tools, Panel::Inspector] {
+            if rendered.contains(&panel) {
+                let _ = rendered.apply(Action::Close { panel });
+            }
+        }
+    }
     if app.active.is_none() && rendered.contains(&Panel::Inspector) {
         // Availability is a render projection: the saved group, selection and width survive Home.
         let _ = rendered.apply(Action::Close { panel: Panel::Inspector });
@@ -405,6 +467,7 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
         panel_limits,
         |ui, panel| match panel {
             Panel::Canvas => {
+                ui.data_mut(|data| data.insert_temp(egui::Id::new("odibo-editor-document-body"), ui.max_rect()));
                 ui.painter().rect_filled(ui.max_rect(), 0.0, t.pasteboard);
                 match app.active {
                     None if app.combine_showing() => crate::combine_ui::page(app, ui),
@@ -415,7 +478,10 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
                     },
                 }
             }
-            Panel::Tools => crate::panels::left_panel(app, ui),
+            Panel::Tools => {
+                ui.data_mut(|data| data.insert_temp(egui::Id::new("odibo-editor-tools-body"), ui.max_rect()));
+                crate::panels::left_panel(app, ui);
+            }
             Panel::Inspector => {
                 ui.data_mut(|data| data.insert_temp(egui::Id::new("pdfcraft-inspector-body"), ui.max_rect()));
                 crate::panels::right_panel(app, ui);
@@ -426,7 +492,36 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
     drain_reveals(&mut workspace, app);
     publish_visibility(app, &workspace);
     app.docking = workspace;
+    if compact && let Some(panel) = drawer {
+        let ctx = ui.ctx().clone();
+        let mut open = true;
+        let size = ctx.content_rect().size();
+        egui::Window::new(crate::i18n::t(panel.label()))
+            .id(drawer_id)
+            .open(&mut open)
+            .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-72.0, 120.0))
+            .fixed_size(egui::vec2(320.0, (size.y - 160.0).max(120.0)))
+            .collapsible(false)
+            .show(&ctx, |ui| match panel {
+                Panel::Tools => crate::panels::left_panel(app, ui),
+                Panel::Inspector => crate::panels::right_panel(app, ui),
+                Panel::Canvas => {}
+            });
+        if !open || (panel == Panel::Tools && !app.left_open) || (panel == Panel::Inspector && app.right.is_none()) {
+            drawer = None;
+        }
+    }
+    ui.data_mut(|data| {
+        if let Some(panel) = drawer {
+            data.insert_temp(drawer_id, panel);
+        } else {
+            data.remove::<Panel>(drawer_id);
+        }
+    });
     for mut action in output.actions {
+        if compact && matches!(action, Action::ResizeSplit { .. }) {
+            continue;
+        }
         if app.active.is_none()
             && let Action::ResizeSplit { path, .. } = &mut action
         {
