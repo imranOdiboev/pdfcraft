@@ -8,7 +8,9 @@ const PDF: &[u8] = b"%PDF-1.7\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\
 fn harness(size: egui::Vec2, language: &'static str, theme: &'static str, scale: f32, saved: Option<String>) -> Harness<'static, PdfCraftApp> {
     let mut h = Harness::builder().with_size(size).with_pixels_per_point(scale).build_eframe(move |_cc| {
         let mut app = PdfCraftApp::new();
-        if let Some(saved) = saved { app.restore(&saved); }
+        if let Some(saved) = saved {
+            app.restore(&saved);
+        }
         app.set_option("language", language).unwrap();
         app.set_option("theme", theme).unwrap();
         app.open_bytes("navigation.pdf", None, PDF.to_vec()).unwrap();

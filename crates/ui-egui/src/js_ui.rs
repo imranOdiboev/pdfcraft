@@ -314,7 +314,9 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tok
         for (on_right, label) in [(false, "Left"), (true, "Right")] {
             if ui.selectable_label(right == on_right, tl!(label)).clicked() {
                 app.editor_workspace_pending = false;
-                if let Err(error) = app.docking.set_tools_on_right(on_right) { app.notify(error); }
+                if let Err(error) = app.docking.set_tools_on_right(on_right) {
+                    app.notify(error);
+                }
             }
         }
     });

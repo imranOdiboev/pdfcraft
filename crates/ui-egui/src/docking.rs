@@ -84,8 +84,12 @@ impl Workspace {
     fn editor_default() -> Self {
         Self {
             layout: Layout {
-                root: Some(split(SplitAxis::Horizontal, SplitSize::FixedSecond(320.0), tabs(Panel::Canvas),
-                    Node::Tabs { panels: vec![Panel::Tools, Panel::Inspector], active: 0 })),
+                root: Some(split(
+                    SplitAxis::Horizontal,
+                    SplitSize::FixedSecond(320.0),
+                    tabs(Panel::Canvas),
+                    Node::Tabs { panels: vec![Panel::Tools, Panel::Inspector], active: 0 },
+                )),
                 floating: Vec::new(),
             },
             hidden: Vec::new(),
@@ -401,7 +405,9 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
     let drawer_id = egui::Id::new("odibo-editor-context-drawer");
     let mut drawer = ui.data(|data| data.get_temp::<Panel>(drawer_id));
     if compact {
-        if let Some(panel) = requested.filter(|panel| *panel != Panel::Canvas) { drawer = Some(panel); }
+        if let Some(panel) = requested.filter(|panel| *panel != Panel::Canvas) {
+            drawer = Some(panel);
+        }
         ui.horizontal(|ui| {
             if crate::widgets::ghost_button(ui, "wrench", crate::i18n::t("Tools")).clicked() {
                 app.left_open = true;
@@ -432,7 +438,9 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
     let mut rendered = workspace.layout.clone();
     if compact {
         for panel in [Panel::Tools, Panel::Inspector] {
-            if rendered.contains(&panel) { let _ = rendered.apply(Action::Close { panel }); }
+            if rendered.contains(&panel) {
+                let _ = rendered.apply(Action::Close { panel });
+            }
         }
     }
     if app.active.is_none() && rendered.contains(&Panel::Inspector) {
@@ -470,28 +478,38 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
     drain_reveals(&mut workspace, app);
     publish_visibility(app, &workspace);
     app.docking = workspace;
-    if compact {
-        if let Some(panel) = drawer {
-            let ctx = ui.ctx().clone();
-            let mut open = true;
-            let size = ctx.content_rect().size();
-            egui::Window::new(crate::i18n::t(panel.label())).id(drawer_id).open(&mut open)
-                .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-52.0, 94.0))
-                .fixed_size(egui::vec2(320.0, (size.y - 140.0).max(120.0))).collapsible(false)
-                .show(&ctx, |ui| match panel {
-                    Panel::Tools => crate::panels::left_panel(app, ui),
-                    Panel::Inspector => crate::panels::right_panel(app, ui),
-                    Panel::Canvas => {}
-                });
-            if !open || (panel == Panel::Tools && !app.left_open) || (panel == Panel::Inspector && app.right.is_none()) { drawer = None; }
+    if compact
+        && let Some(panel) = drawer
+    {
+        let ctx = ui.ctx().clone();
+        let mut open = true;
+        let size = ctx.content_rect().size();
+        egui::Window::new(crate::i18n::t(panel.label()))
+            .id(drawer_id)
+            .open(&mut open)
+            .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-52.0, 94.0))
+            .fixed_size(egui::vec2(320.0, (size.y - 140.0).max(120.0)))
+            .collapsible(false)
+            .show(&ctx, |ui| match panel {
+                Panel::Tools => crate::panels::left_panel(app, ui),
+                Panel::Inspector => crate::panels::right_panel(app, ui),
+                Panel::Canvas => {}
+            });
+        if !open || (panel == Panel::Tools && !app.left_open) || (panel == Panel::Inspector && app.right.is_none()) {
+            drawer = None;
         }
     }
     ui.data_mut(|data| {
-        if let Some(panel) = drawer { data.insert_temp(drawer_id, panel); }
-        else { data.remove::<Panel>(drawer_id); }
+        if let Some(panel) = drawer {
+            data.insert_temp(drawer_id, panel);
+        } else {
+            data.remove::<Panel>(drawer_id);
+        }
     });
     for mut action in output.actions {
-        if compact && matches!(action, Action::ResizeSplit { .. }) { continue; }
+        if compact && matches!(action, Action::ResizeSplit { .. }) {
+            continue;
+        }
         if app.active.is_none()
             && let Action::ResizeSplit { path, .. } = &mut action
         {
