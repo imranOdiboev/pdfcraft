@@ -753,7 +753,10 @@ impl PdfCraftApp {
                                 "Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.",
                                 &[("name", name), ("e", &e.to_string()), ("n", &written.to_string()), ("dir", &dir.display().to_string())],
                             );
-                            if let Some(message) = &mut app.operation_error { message.push(' ' ); message.push_str(tl!("Try a local NTFS folder with write access and free space.")); }
+                            if let Some(message) = &mut app.operation_error {
+                                message.push(' ');
+                                message.push_str(tl!("Try a local NTFS folder with write access and free space."));
+                            }
                         } else {
                             app.notify_fmt("Couldn't write {name}: {e}", &[("name", name), ("e", &e.to_string())]);
                         }
@@ -882,7 +885,10 @@ impl PdfCraftApp {
                 self.notify_tr(message);
                 true
             }
-            Err(e) => { self.operation_failed("Couldn't open the result: {e}", &[("e", &e.to_string())]); false },
+            Err(e) => {
+                self.operation_failed("Couldn't open the result: {e}", &[("e", &e.to_string())]);
+                false
+            }
         }
     }
 }

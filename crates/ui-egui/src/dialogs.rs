@@ -483,7 +483,9 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                     };
                     if valid {
                         ui.label(egui::RichText::new(text).color(t.text_muted));
-                        if files == Some(1) { ui.label(tl!("Choose settings that create at least two files.")); }
+                        if files == Some(1) {
+                            ui.label(tl!("Choose settings that create at least two files."));
+                        }
                     }
                     if draft.mode == M::Ranges
                         && let Err(error) = &explicit
@@ -1727,8 +1729,14 @@ fn password_modal(
         // Focus once on opening; Tab must be able to reach the actions.
         let focus_id = egui::Id::new((id, "password-last-frame"));
         let frame = ctx.cumulative_frame_nr();
-        let previous = ctx.data_mut(|d| { let previous = d.get_temp::<u64>(focus_id); d.insert_temp(focus_id, frame); previous });
-        if previous.is_none_or(|last| last.saturating_add(1) < frame) { r.request_focus(); }
+        let previous = ctx.data_mut(|d| {
+            let previous = d.get_temp::<u64>(focus_id);
+            d.insert_temp(focus_id, frame);
+            previous
+        });
+        if previous.is_none_or(|last| last.saturating_add(1) < frame) {
+            r.request_focus();
+        }
         // Enter submits from the field; action buttons handle their own keyboard activation.
         if (r.has_focus() || r.lost_focus()) && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
             answer = Some(PasswordAnswer::Submit);
