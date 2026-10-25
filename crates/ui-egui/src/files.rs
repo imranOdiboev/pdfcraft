@@ -674,7 +674,7 @@ impl PdfCraftApp {
             // document must be unedited since (page numbers shift, and edits to those pages
             // aren't in the files) and still the active one (deleting edits the active document).
             let generation = self.session.get(id).map(|d| d.edit_generation());
-            self.write_files_then(named, tl!("Choose a folder for the extracted pages"), move |app| {
+            self.write_files_policy(named, tl!("Choose a folder for the extracted pages"), true, move |app| {
                 if !opts.delete {
                     return;
                 }
@@ -696,7 +696,7 @@ impl PdfCraftApp {
                     };
                     // Save As offers the tab's name, so a name typed in the dialog is kept.
                     let name = if renamed { format!("{base}.pdf") } else { format!("{stem} (extract).pdf") };
-                    self.open_created(&name, bytes, &message)
+                    if !self.try_open_created(&name, bytes, &message) { return; }
                 }
                 Err(e) => {
                     self.notify_fmt("Couldn't extract pages: {e}", &[("e", &e.to_string())]);
@@ -841,11 +841,12 @@ impl PdfCraftApp {
             .map(|(a, b, bytes)| {
                 // Bookmark splits are named after the bookmark that starts the part.
                 let title = titles.iter().find(|(p, _)| *p + 1 == a).map(|(_, t)| safe(t));
-                let name = match title {
+                let desired_name = match title {
                     Some(t) => format!("{stem} - {t}.pdf"),
                     None if a == b => format!("{stem} (page {a}).pdf"),
                     None => format!("{stem} (pages {a}-{b}).pdf"),
                 };
+                let name = format!("{}.pdf", file_stem_from_user(&desired_name));
                 // Equal titles (or titles that sanitize alike) get (2), (3), ... so no part overwrites another; compared case-insensitively.
                 let mut unique = name.clone();
                 let mut n = 1;
@@ -901,7 +902,7 @@ pub(crate) fn strip_pdf(name: &str) -> &str {
 /// after the dialog's preflight. A volume without hard links fails safely; never fall back to
 /// rename-over or opening the destination for writing. Normal Save/Save As remain unchanged.
 #[cfg(not(target_arch = "wasm32"))]
-fn write_new_pdf(path: &std::path::Path, bytes: &[u8]) -> std::io::Result<()> {
+pub(crate) fn write_new_pdf(path: &std::path::Path, bytes: &[u8]) -> std::io::Result<()> {
     use pdfcraft_platform::staging::{StagingName, create_staging, staging_suffixes};
     use std::io::Write as _;
     let dir = path.parent().unwrap_or(std::path::Path::new("."));

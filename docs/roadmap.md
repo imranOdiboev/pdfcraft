@@ -1,5 +1,7 @@
 # PdfCraft roadmap: milestones and what's next
 
+> **Fork update:** 2026-10-25 · M3.7 quality/beta preparation: four-agent audit, targeted safety/UX fixes, observational performance protocol and limited user-test plan. CI pending; no beta-readiness claim. See [audit](ODIBO_M3_7_AUDIT.md).
+
 > **Fork update:** 2026-10-25 · Stage 3.6 UI/UX polish: independent UX/accessibility/QA audit and targeted UI-only fixes; cloud validation pending. See [audit](uiux/STAGE_3_6_AUDIT.md). Upstream milestone estimates unchanged.
 
 > **Last reviewed:** 2026-10-18 · **Last updated:** 2026-10-18 · **Change:** minor (M5, PR #1971: bounded nested FDF export excludes source page/page-tree dictionaries; refreshed against upstream 4db6ac4a; estimates unchanged)

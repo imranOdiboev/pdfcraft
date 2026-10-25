@@ -2,7 +2,7 @@ name: ODIBO isolated source preparation
 
 on:
   push:
-    branches: [feature/odibo-rebranding, feature/odibo-uiux, feature/odibo-home, feature/odibo-editor-workspace, feature/odibo-core-ux, feature/odibo-uiux-polish]
+    branches: [feature/odibo-rebranding, feature/odibo-uiux, feature/odibo-home, feature/odibo-editor-workspace, feature/odibo-core-ux, feature/odibo-uiux-polish, feature/odibo-beta-readiness, feature/odibo-readme-showcase]
   workflow_dispatch:
     inputs:
       prepare_security_patch:

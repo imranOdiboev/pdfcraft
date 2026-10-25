@@ -1034,13 +1034,18 @@ fn outline_item(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, item: &OutlineIte
         let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), h), Sense::click());
         resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &item.title));
         theme::Press::track(ui, &resp).wash(ui, rect, 6, false);
+        widgets::focus_ring(ui, &resp);
         let x0 = rect.left() + indent;
         if !item.children.is_empty() {
             let tri = Rect::from_min_size(pos2(x0, rect.top() + 6.0), vec2(16.0, 16.0));
             icons::paint(ui, tri, if open { "chevron-down" } else { "chevron-right" }, 14.0, t.text_muted);
-            if !cx.searching && ui.interact(tri, id.with("tri"), Sense::click()).clicked() {
-                open = !open;
-                ui.data_mut(|d| d.insert_temp(id, open));
+            let disclosure = ui.interact(tri, id.with("tri"), Sense::click());
+            let action = if open { tl!("Collapse") } else { tl!("Expand") };
+            disclosure.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, !cx.searching, open, format!("{action}: {}", item.title)));
+            widgets::focus_ring(ui, &disclosure);
+            if !cx.searching {
+                let next = if disclosure.clicked() { Some(!open) } else if resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::ArrowRight)) { Some(true) } else if resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::ArrowLeft)) { Some(false) } else { None };
+                if let Some(next) = next { open = next; ui.data_mut(|d| d.insert_temp(id, open)); }
             }
         }
         ui.painter().galley(pos2(x0 + 20.0, rect.top() + 6.0), galley, t.text);

@@ -60,11 +60,16 @@ pub struct BatchProgress {
     pub done: usize,
     pub total: usize,
     pub message: Option<String>,
+    pub failed: bool,
 }
 
 pub struct OcrRun {
     pub doc: DocId,
     pub progress: Arc<Mutex<OcrProgress>>,
+}
+
+fn guard_ocr_work(work: impl FnOnce(), failed: impl FnOnce(String)) {
+    if let Err(error) = pdfcraft_engine::guard(work) { failed(error); }
 }
 
 pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> (bool, bool) {
@@ -181,11 +186,14 @@ impl PdfCraftApp {
                 s.result = Some(result);
             }
         };
+        let recovery = progress.clone();
+        let work = move || { guard_ocr_work(work, |e| {
+            recovery.lock().unwrap_or_else(std::sync::PoisonError::into_inner).result = Some(Err(e));
+        }); };
         #[cfg(not(target_arch = "wasm32"))]
-        if self.run_inline {
-            work();
-        } else {
-            std::thread::Builder::new().name("pdfcraft-ocr".into()).spawn(work).ok();
+        if self.run_inline { work(); } else if let Err(e) = std::thread::Builder::new().name("pdfcraft-ocr".into()).spawn(work) {
+            self.operation_failed("That didn't work: an internal error stopped it ({m}).", &[("m", &e.to_string())]);
+            return;
         }
         #[cfg(target_arch = "wasm32")]
         work();
@@ -221,6 +229,11 @@ impl PdfCraftApp {
             self.notify_tr("Text recognition is already running");
             return;
         }
+        #[cfg(not(target_arch = "wasm32"))]
+        for (name, _) in &files {
+            if !crate::files::is_plain_file_name(name) { self.operation_failed("Couldn't write {name}: {e}", &[("name", name), ("e", tl!("the name is not a plain file name"))]); return; }
+            if std::fs::symlink_metadata(dir.join(name)).is_ok() { self.operation_failed("{name} already exists. Choose another folder; no files were written.", &[("name", name)]); return; }
+        }
         let progress = Arc::new(Mutex::new(BatchProgress { total: files.len(), ..Default::default() }));
         let p = progress.clone();
         // The summary is written on the worker thread: draw it in the UI's language.
@@ -238,7 +251,7 @@ impl PdfCraftApp {
                         let r = pdfcraft_engine::ocr::recognize_file(&name, Arc::new(bytes), None, settings.clone(), &ocr, |_, _| true);
                         let saved = r.and_then(|r| {
                             #[cfg(not(target_arch = "wasm32"))]
-                            crate::editing::write_atomically(&dir.join(&name).to_string_lossy(), &r.bytes).map_err(|e| e.to_string())?;
+                            crate::files::write_new_pdf(&dir.join(&name), &r.bytes).map_err(|e| e.to_string())?;
                             #[cfg(target_arch = "wasm32")]
                             crate::editing::download(&name, &r.bytes)?;
                             Ok(r.words())
@@ -265,13 +278,18 @@ impl PdfCraftApp {
             if let Ok(mut s) = p.lock() {
                 s.done = s.total;
                 s.message = Some(msg);
+                s.failed = !failed.is_empty();
             }
         };
+        let recovery = progress.clone();
+        let work = move || { guard_ocr_work(work, |e| {
+            let mut state = recovery.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            state.failed = true; state.message = Some(e);
+        }); };
         #[cfg(not(target_arch = "wasm32"))]
-        if self.run_inline {
-            work();
-        } else {
-            std::thread::Builder::new().name("pdfcraft-ocr-files".into()).spawn(work).ok();
+        if self.run_inline { work(); } else if let Err(e) = std::thread::Builder::new().name("pdfcraft-ocr-files".into()).spawn(work) {
+            self.operation_failed("That didn't work: an internal error stopped it ({m}).", &[("m", &e.to_string())]);
+            return;
         }
         #[cfg(target_arch = "wasm32")]
         work();
@@ -295,7 +313,7 @@ impl PdfCraftApp {
             match msg {
                 Some(Ok(m)) => {
                     self.ocr_batch = None;
-                    self.notify(m);
+                    if b.lock().map(|s| s.failed).unwrap_or(true) { self.operation_error = Some(m); } else { self.notify(m); }
                 }
                 Some(Err((done, total))) => {
                     let m = crate::i18n::fmt(
@@ -365,5 +383,24 @@ impl PdfCraftApp {
             }
             Err(e) => self.notify_error(e),
         }
+    }
+}
+
+#[cfg(test)]
+mod beta_worker_tests {
+    use super::*;
+    #[test]
+    fn worker_panic_publishes_failure_and_clears_the_run_without_editing() {
+        let mut app = PdfCraftApp::new();
+        let bytes = app.session.create_from_text("demo", "Safe original").unwrap();
+        app.open_bytes("demo.pdf", None, bytes.to_vec()).unwrap();
+        let doc = app.views[0].id;
+        let progress = Arc::new(Mutex::new(OcrProgress::default()));
+        guard_ocr_work(|| panic!("synthetic worker failure"), |error| { progress.lock().unwrap().result = Some(Err(error)); });
+        app.ocr_run = Some(OcrRun { doc, progress });
+        app.poll_ocr();
+        assert!(app.ocr_run.is_none());
+        assert_eq!(app.session.get(doc).unwrap().bytes.as_slice(), bytes.as_slice());
+        assert!(app.toast.is_some());
     }
 }

@@ -272,3 +272,20 @@ fn expanding_and_collapsing_all_bookmarks() {
     h.run_steps(3);
     assert!(shown(&h, "Chapter") && !shown(&h, "Section"));
 }
+
+#[test]
+fn beta_bookmark_keyboard_disclosure_does_not_edit_document() {
+    use egui::accesskit::Role;
+    use pdfcraft_engine::Edit;
+    let mut h = harness();
+    h.state_mut().apply_edit(Edit::AddBookmark { parent:vec![], index:0, title:"Parent".into(), page:0 });
+    h.state_mut().apply_edit(Edit::AddBookmark { parent:vec![0], index:0, title:"Child".into(), page:1 });
+    h.run_steps(4);
+    let before=h.state().session.get(h.state().views[0].id).unwrap().bytes.clone();
+    h.get_by_role_and_label(Role::Button,"Parent").focus(); h.run_steps(2);
+    h.key_press(Key::ArrowLeft); h.run_steps(3); assert!(h.query_by_label("Child").is_none());
+    h.key_press(Key::ArrowRight); h.run_steps(3); assert!(h.query_by_label("Child").is_some());
+    h.key_press(Key::Tab); h.run_steps(3);
+    h.key_press(Key::Enter); h.run_steps(3);
+    assert_eq!(h.state().session.get(h.state().views[0].id).unwrap().bytes.as_slice(),before.as_slice());
+}

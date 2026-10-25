@@ -802,16 +802,21 @@ pub(crate) fn body(
     labels: &[String],
     thumb: &mut dyn FnMut(usize) -> Option<egui::TextureId>,
 ) -> (bool, bool) {
-    ui.set_width(820.0);
+    let width = (ui.ctx().content_rect().width() - 64.0).clamp(320.0, 820.0);
+    let compact = width < 820.0;
+    ui.set_width(width);
     ui.label(egui::RichText::new(tl!("Print")).font(theme::semibold(18.0)));
     ui.add_space(8.0);
     let settings = d.settings(sizes.len(), labels);
     let sheets = settings.as_ref().ok().and_then(|s| print::layout(sizes, s).ok()).unwrap_or_default();
     d.sheet = d.sheet.min(sheets.len().saturating_sub(1));
-    ui.horizontal_top(|ui| {
+    let max_height = (ui.ctx().content_rect().height() - 170.0).max(120.0);
+    egui::ScrollArea::both().id_salt("print-options").max_height(max_height).max_width(width).show(ui, |ui| {
+    let layout = if compact { egui::Layout::top_down(egui::Align::Min) } else { egui::Layout::left_to_right(egui::Align::Min) };
+    ui.with_layout(layout, |ui| {
         // Settings.
         ui.vertical(|ui| {
-            ui.set_width(470.0);
+            ui.set_width(if compact { width } else { 470.0 });
             egui::Grid::new("print-top").num_columns(2).spacing([10.0, 8.0]).show(ui, |ui| {
                 ui.label(tl!("Printer:"));
                 let before = d.printer.clone();
@@ -1224,6 +1229,7 @@ pub(crate) fn body(
                 }
             }
         });
+    });
     });
     ui.add_space(12.0);
     let (mut go, mut cancel) = (false, false);
