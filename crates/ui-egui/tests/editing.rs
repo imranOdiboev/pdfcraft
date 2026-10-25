@@ -4974,19 +4974,22 @@ fn wait_for_combine(h: &mut Harness<'static, PdfCraftApp>) {
     panic!("Combine worker did not finish");
 }
 
-
 #[test]
 fn beta_split_long_cyrillic_name_produces_bounded_distinct_outputs() {
-    let dir = temp_path("beta-split-long-name"); std::fs::create_dir_all(&dir).unwrap();
+    let dir = temp_path("beta-split-long-name");
+    std::fs::create_dir_all(&dir).unwrap();
     let original = fixture(3);
     let name = format!("{}.pdf", "Документ".repeat(35));
     let mut h = harness(1, |_| {});
-    h.state_mut().open_bytes(&name,None,original.clone()).unwrap();
+    h.state_mut().open_bytes(&name, None, original.clone()).unwrap();
     h.state_mut().export_dir_override = Some(dir.to_string_lossy().into_owned());
     h.state_mut().split_active(&pdfcraft_ui_egui::SplitPlan::By(pdfcraft_engine::SplitBy::PageCount(1)));
-    let files:Vec<_> = std::fs::read_dir(&dir).unwrap().map(|e| e.unwrap().path()).collect();
-    assert_eq!(files.len(),3);
-    for p in &files { assert!(p.file_name().unwrap().to_string_lossy().len()<=255); assert_eq!(pdfcraft_render::inspect(std::sync::Arc::new(std::fs::read(p).unwrap()),None).unwrap().pages.len(),1); }
-    assert_eq!(h.state().session.get(h.state().views[1].id).unwrap().bytes.as_slice(),original);
+    let files: Vec<_> = std::fs::read_dir(&dir).unwrap().map(|e| e.unwrap().path()).collect();
+    assert_eq!(files.len(), 3);
+    for p in &files {
+        assert!(p.file_name().unwrap().to_string_lossy().len() <= 255);
+        assert_eq!(pdfcraft_render::inspect(std::sync::Arc::new(std::fs::read(p).unwrap()), None).unwrap().pages.len(), 1);
+    }
+    assert_eq!(h.state().session.get(h.state().views[1].id).unwrap().bytes.as_slice(), original);
     std::fs::remove_dir_all(dir).unwrap();
 }

@@ -60,7 +60,9 @@ fn main() -> Result<(), String> {
             app.split_draft.mode = pdfcraft_ui_egui::SplitMode::Ranges;
             app.split_draft.ranges = ranges.clone();
         }
-        if let Some(command) = &invoke { app.execute(command); }
+        if let Some(command) = &invoke {
+            app.execute(command);
+        }
         app
     });
     // Let fonts install, layout settle and background renders arrive.

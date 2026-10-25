@@ -169,8 +169,14 @@ pub fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
                     }
                     let frame = ctx.cumulative_frame_nr();
                     let id = egui::Id::new("palette-last-frame");
-                    let last = ctx.data_mut(|d| { let last = d.get_temp::<u64>(id); d.insert_temp(id, frame); last });
-                    if last.is_none_or(|last| last.saturating_add(1) < frame) { r.request_focus(); }
+                    let last = ctx.data_mut(|d| {
+                        let last = d.get_temp::<u64>(id);
+                        d.insert_temp(id, frame);
+                        last
+                    });
+                    if last.is_none_or(|last| last.saturating_add(1) < frame) {
+                        r.request_focus();
+                    }
                 });
                 ui.separator();
                 egui::ScrollArea::vertical().id_salt("palette-results").max_height((screen.height() - 180.0).max(36.0)).show(ui, |ui| {
@@ -182,8 +188,12 @@ pub fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
                         if index == selected && (down || up || query_changed) {
                             resp.scroll_to_me(Some(egui::Align::Center));
                         }
-                        if index == selected && (down || up || query_changed) && !ctx.text_edit_focused() { resp.request_focus(); }
-                        if resp.has_focus() && !down && !up && !query_changed { ctx.data_mut(|d| d.insert_temp(egui::Id::new("palette_selected"), index)); }
+                        if index == selected && (down || up || query_changed) && !ctx.text_edit_focused() {
+                            resp.request_focus();
+                        }
+                        if resp.has_focus() && !down && !up && !query_changed {
+                            ctx.data_mut(|d| d.insert_temp(egui::Id::new("palette_selected"), index));
+                        }
                         let press = theme::Press::track(ui, &resp);
                         press.wash(ui, rect, 6, index == selected);
                         crate::widgets::focus_ring(ui, &resp);

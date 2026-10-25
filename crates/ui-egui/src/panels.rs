@@ -1044,8 +1044,19 @@ fn outline_item(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, item: &OutlineIte
             disclosure.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, !cx.searching, open, format!("{action}: {}", item.title)));
             widgets::focus_ring(ui, &disclosure);
             if !cx.searching {
-                let next = if disclosure.clicked() { Some(!open) } else if resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::ArrowRight)) { Some(true) } else if resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::ArrowLeft)) { Some(false) } else { None };
-                if let Some(next) = next { open = next; ui.data_mut(|d| d.insert_temp(id, open)); }
+                let next = if disclosure.clicked() {
+                    Some(!open)
+                } else if resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::ArrowRight)) {
+                    Some(true)
+                } else if resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::ArrowLeft)) {
+                    Some(false)
+                } else {
+                    None
+                };
+                if let Some(next) = next {
+                    open = next;
+                    ui.data_mut(|d| d.insert_temp(id, open));
+                }
             }
         }
         ui.painter().galley(pos2(x0 + 20.0, rect.top() + 6.0), galley, t.text);

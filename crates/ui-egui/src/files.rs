@@ -696,7 +696,9 @@ impl PdfCraftApp {
                     };
                     // Save As offers the tab's name, so a name typed in the dialog is kept.
                     let name = if renamed { format!("{base}.pdf") } else { format!("{stem} (extract).pdf") };
-                    if !self.try_open_created(&name, bytes, &message) { return; }
+                    if !self.try_open_created(&name, bytes, &message) {
+                        return;
+                    }
                 }
                 Err(e) => {
                     self.notify_fmt("Couldn't extract pages: {e}", &[("e", &e.to_string())]);
