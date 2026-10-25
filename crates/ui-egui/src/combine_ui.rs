@@ -776,7 +776,9 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 let action_width = [tl!("Move up"), tl!("Move down"), tl!("Remove")]
                     .iter()
                     .map(|label| widgets::text_width(ui, label, &action_font) + 46.0)
-                    .sum::<f32>() + 30.0 + 3.0 * 6.0;
+                    .sum::<f32>()
+                    + 30.0
+                    + 3.0 * 6.0;
                 group(ui, &t, edge, action_width);
                 // Moves need a selected row with room to move; the buttons stay put either way.
                 let can_up = selected.iter().skip_while(|s| **s).any(|s| *s);

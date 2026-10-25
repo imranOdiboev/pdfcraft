@@ -80,6 +80,27 @@ jobs:
           test "$status" -ne 0
           grep -F 'split_outputs_never_replace_existing_files_or_write_on_preflight_failure ... FAILED' dist/core-ux-qa/negative-control.log
           cargo test --locked -p pdfcraft-ui-egui --lib split_outputs_never_replace_existing_files_or_write_on_preflight_failure
+      - name: Prove compact labelled actions regression
+        run: |
+          cp crates/ui-egui/src/combine_ui.rs "$RUNNER_TEMP/combine-layout-fixed.rs"
+          trap 'cp "$RUNNER_TEMP/combine-layout-fixed.rs" crates/ui-egui/src/combine_ui.rs' EXIT
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('crates/ui-egui/src/combine_ui.rs')
+          s, n = re.subn(r'let action_font = theme::medium\(12\.5\);.*?group\(ui, &t, edge, action_width\);', 'group(ui, &t, edge, 4.0 * 30.0 + 3.0 * 6.0);', p.read_text(), count=1, flags=re.S)
+          assert n == 1
+          p.write_text(s)
+          PY
+          set +e
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group compact_combine_keeps_files_reachable_without_changing_saved_panels > dist/core-ux-qa/compact-negative-control.log 2>&1
+          status=$?
+          set -e
+          cp "$RUNNER_TEMP/combine-layout-fixed.rs" crates/ui-egui/src/combine_ui.rs
+          trap - EXIT
+          test "$status" -ne 0
+          grep -F 'core_tools::compact_combine_keeps_files_reachable_without_changing_saved_panels ... FAILED' dist/core-ux-qa/compact-negative-control.log
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group compact_combine_keeps_files_reachable_without_changing_saved_panels
       - name: Real egui editor screenshots using a synthetic document
         if: ${{ !cancelled() }}
         env:
