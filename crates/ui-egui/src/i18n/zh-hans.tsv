@@ -2422,3 +2422,8 @@ animation effects	Off	关
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	无法写入 {name}：{e}。{dir} 中保留了 {n} 个已完成的文件；原始文件未被替换。
 	Couldn't combine files: the PDF worker stopped	无法合并文件：PDF 处理进程已停止
 	Print pages	打印页面
+
+	Choose settings that create at least two files.	请选择至少生成两个文件的设置。
+	Use a folder that supports hard links, such as a local NTFS folder.	请使用支持硬链接的文件夹，例如本地 NTFS 文件夹。
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	文件选择器意外停止。文档未更改。请重试。
+	Try a local NTFS folder with write access and free space.	请尝试有写入权限和可用空间的本地 NTFS 文件夹。

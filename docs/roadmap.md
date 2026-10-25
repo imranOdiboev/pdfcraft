@@ -1,5 +1,7 @@
 # PdfCraft roadmap: milestones and what's next
 
+> **Fork update:** 2026-10-25 · Stage 3.6 UI/UX polish: independent UX/accessibility/QA audit and targeted UI-only fixes; cloud validation pending. See [audit](uiux/STAGE_3_6_AUDIT.md). Upstream milestone estimates unchanged.
+
 > **Last reviewed:** 2026-10-18 · **Last updated:** 2026-10-18 · **Change:** minor (M5, PR #1971: bounded nested FDF export excludes source page/page-tree dictionaries; refreshed against upstream 4db6ac4a; estimates unchanged)
 > **Last reviewed:** 2026-10-15 · **Last updated:** 2026-10-15 · **Change:** minor (M14/#2383 GPU-limit candidate; estimates unchanged) · **Target:** Adobe Acrobat Pro (Acrobat DC, continuous track 26.002.21931, macOS)
 > **Last reviewed:** 2026-10-15 · **Last updated:** 2026-10-15 · **Change:** minor (M7: the Edit text caret is as tall as the row it is on; estimates unchanged) · **Target:** Adobe Acrobat Pro (Acrobat DC, continuous track 26.002.21931, macOS)

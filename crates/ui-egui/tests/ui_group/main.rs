@@ -10,6 +10,7 @@ mod animate;
 mod bulk_fields;
 mod column_select;
 mod core_tools;
+mod polish;
 mod design_system;
 mod editor_workspace;
 mod home;

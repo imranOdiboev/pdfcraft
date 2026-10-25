@@ -2454,3 +2454,8 @@ animation effects	Off	Kapalı
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	{name} yazılamadı: {e}. {dir} içinde {n} tamamlanmış dosya kaldı; özgün dosyalar değiştirilmedi.
 	Couldn't combine files: the PDF worker stopped	Dosyalar birleştirilemedi: PDF işleyicisi durdu
 	Print pages	Sayfaları yazdır
+
+	Choose settings that create at least two files.	En az iki dosya oluşturan ayarları seçin.
+	Use a folder that supports hard links, such as a local NTFS folder.	Yerel NTFS klasörü gibi sabit bağlantıları destekleyen bir klasör kullanın.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Dosya seçici beklenmedik şekilde durdu. Belgeniz değişmedi. Tekrar deneyin.
+	Try a local NTFS folder with write access and free space.	Yazma izni ve boş alanı olan yerel bir NTFS klasörü deneyin.

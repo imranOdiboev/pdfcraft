@@ -1,0 +1,184 @@
+name: ODIBO UI UX polish acceptance
+
+on:
+  push:
+    branches: [feature/odibo-uiux-polish]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: odibo-uiux-polish-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_BUILD_JOBS: '2'
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
+  CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+
+jobs:
+  components:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: storytold/craft-fonts
+          ref: 3d9ab3a132ed0eff457e424226a435a901da30d3
+          path: craft-fonts
+          persist-credentials: false
+      - name: Linux dependencies on disposable runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libgtk-3-dev
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.95.0
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
+      - name: Prepare formatting patch without local Rust installation
+        run: |
+          mkdir -p dist/polish-qa
+          cargo fmt --all
+          git diff --binary -- '*.rs' > dist/polish-qa/format.patch
+      - name: Clippy
+        run: cargo clippy --locked -p pdfcraft-ui-egui --all-targets -- -D warnings
+      - name: UI tests
+        run: |
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group --no-fail-fast
+          cargo test --locked -p pdfcraft-ui-egui --lib --test commands --test create --test ui --test control --test dialog_chrome --test accessibility --test actions --test editing --test javascript --test signing --test prepare --test viewer --test view --test pickers --test folders --test combine_grid --no-fail-fast
+      - name: Prove no-clobber regression with the old writer
+        run: |
+          cp crates/ui-egui/src/files.rs "$RUNNER_TEMP/core-files-fixed.rs"
+          trap 'cp "$RUNNER_TEMP/core-files-fixed.rs" crates/ui-egui/src/files.rs' EXIT
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('crates/ui-egui/src/files.rs')
+          s = p.read_text()
+          signature = 'fn write_new_pdf(path: &std::path::Path, bytes: &[u8]) -> std::io::Result<()> {'
+          assert s.count(signature) == 1
+          start = s.index(signature) + len(signature)
+          end = s.index('\n}\n', start)
+          # Revert the production publication function to the old overwrite writer.
+          # The regression test itself stays byte-for-byte unchanged.
+          s = s[:start] + '\n    crate::editing::write_atomically(&path.to_string_lossy(), bytes)\n' + s[end:]
+          p.write_text(s)
+          PY
+          set +e
+          cargo test --locked -p pdfcraft-ui-egui --lib split_outputs_never_replace_existing_files_or_write_on_preflight_failure > dist/polish-qa/negative-control.log 2>&1
+          status=$?
+          set -e
+          cp "$RUNNER_TEMP/core-files-fixed.rs" crates/ui-egui/src/files.rs
+          trap - EXIT
+          test "$status" -ne 0
+          grep -F 'split_outputs_never_replace_existing_files_or_write_on_preflight_failure ... FAILED' dist/polish-qa/negative-control.log
+          cargo test --locked -p pdfcraft-ui-egui --lib split_outputs_never_replace_existing_files_or_write_on_preflight_failure
+      - name: Prove compact labelled actions regression
+        run: |
+          cp crates/ui-egui/src/combine_ui.rs "$RUNNER_TEMP/combine-layout-fixed.rs"
+          trap 'cp "$RUNNER_TEMP/combine-layout-fixed.rs" crates/ui-egui/src/combine_ui.rs' EXIT
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('crates/ui-egui/src/combine_ui.rs')
+          s, n = re.subn(r'let action_font = theme::medium\(12\.5\);.*?group\(ui, &t, edge, action_width\);', 'group(ui, &t, edge, 4.0 * 30.0 + 3.0 * 6.0);', p.read_text(), count=1, flags=re.S)
+          assert n == 1
+          p.write_text(s)
+          PY
+          set +e
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group compact_combine_keeps_files_reachable_without_changing_saved_panels > dist/polish-qa/compact-negative-control.log 2>&1
+          status=$?
+          set -e
+          cp "$RUNNER_TEMP/combine-layout-fixed.rs" crates/ui-egui/src/combine_ui.rs
+          trap - EXIT
+          test "$status" -ne 0
+          grep -F 'core_tools::compact_combine_keeps_files_reachable_without_changing_saved_panels ... FAILED' dist/polish-qa/compact-negative-control.log
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group compact_combine_keeps_files_reachable_without_changing_saved_panels
+      - name: Prove password keyboard regression with focus stealing restored
+        run: |
+          cp crates/ui-egui/src/dialogs.rs "$RUNNER_TEMP/polish-dialogs.rs"
+          trap 'cp "$RUNNER_TEMP/polish-dialogs.rs" crates/ui-egui/src/dialogs.rs' EXIT
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('crates/ui-egui/src/dialogs.rs')
+          s = p.read_text()
+          marker = '// Enter submits from the field; action buttons handle their own keyboard activation.'
+          assert s.count(marker) == 1
+          p.write_text(s.replace(marker, 'r.request_focus();\n        ' + marker))
+          PY
+          set +e
+          cargo test --locked -p pdfcraft-ui-egui --test dialog_chrome polish_password_tab_reaches_cancel_without_focus_being_stolen > dist/polish-qa/password-negative-control.log 2>&1
+          status=$?
+          set -e
+          cp "$RUNNER_TEMP/polish-dialogs.rs" crates/ui-egui/src/dialogs.rs
+          trap - EXIT
+          test "$status" -ne 0
+          grep -F 'polish_password_tab_reaches_cancel_without_focus_being_stolen ... FAILED' dist/polish-qa/password-negative-control.log
+          cargo test --locked -p pdfcraft-ui-egui --test dialog_chrome polish_password_tab_reaches_cancel_without_focus_being_stolen
+      - name: Real egui editor screenshots using a synthetic document
+        if: ${{ !cancelled() }}
+        env:
+          PDFCRAFT_SYSTEM_FONTS: '0'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          objects = [b'<< /Type /Catalog /Pages 2 0 R >>', b'<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>', b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << >> /Contents 5 0 R >>', b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] >>', b'<< /Length 55 >>\nstream\n0.9 0.94 1 rg 60 620 475 140 re f 0 0.36 0.9 rg 60 620 8 140 re f\nendstream']
+          # No text/fonts/images in the PDF: only original vector rectangles.
+          stream = objects[4].split(b'stream\n')[1].split(b'\nendstream')[0]
+          objects[4] = b'<< /Length ' + str(len(stream)).encode() + b' >>\nstream\n' + stream + b'\nendstream'
+          out = bytearray(b'%PDF-1.7\n'); offsets = []
+          for i, obj in enumerate(objects, 1):
+              offsets.append(len(out)); out.extend(f'{i} 0 obj\n'.encode() + obj + b'\nendobj\n')
+          xref = len(out)
+          out.extend(f'xref\n0 {len(objects)+1}\n0000000000 65535 f \n'.encode())
+          for offset in offsets: out.extend(f'{offset:010d} 00000 n \n'.encode())
+          out.extend(f'trailer\n<< /Size {len(objects)+1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n'.encode())
+          Path('dist/polish-qa/fixture.pdf').write_bytes(out)
+          PY
+          for language in en ru; do
+            for theme in light dark; do
+              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/polish-qa/organize-$language-$theme.png dist/polish-qa/fixture.pdf --scale 1 --language $language --theme $theme --tool organize --organize on
+              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/polish-qa/split-$language-$theme.png dist/polish-qa/fixture.pdf --scale 1 --language $language --theme $theme --dialog split --split-ranges 1,2
+              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/polish-qa/combine-$language-$theme.png dist/polish-qa/fixture.pdf --scale 1 --language $language --theme $theme --combine-fixture yes
+            done
+          done
+          for language in en ru; do
+            for theme in light dark; do
+              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/polish-qa/palette-$language-$theme.png --size 820x520 --scale 1 --language $language --theme $theme --palette ''
+              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/polish-qa/split-invalid-$language-$theme.png dist/polish-qa/fixture.pdf --size 820x520 --scale 1.5 --language $language --theme $theme --dialog split --split-ranges '1,1'
+            done
+          done
+          for scale in 1 1.5 2; do
+            cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/polish-qa/split-minimum-$scale.png dist/polish-qa/fixture.pdf --size 820x520 --scale $scale --language ru --theme dark --dialog split --split-ranges 1,2
+          done
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/polish-qa/combine-minimum-light.png dist/polish-qa/fixture.pdf --size 820x520 --scale 1.5 --language ru --theme light --combine-fixture yes
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/polish-qa/organize-minimum-dark.png dist/polish-qa/fixture.pdf --size 820x520 --scale 2 --language ru --theme dark --organize on --click 'Инструменты'
+          cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/polish-qa/
+          cp LICENSE-MIT LICENSE-APACHE NOTICE dist/polish-qa/
+          cp assets/fonts/OFL-Inter.txt assets/fonts/OFL-JetBrainsMono.txt assets/icons/LICENSE-lucide.txt dist/polish-qa/
+          echo 'Own egui screenshots and synthetic vector PDF: MIT OR Apache-2.0; ODIBO marks: LicenseRef-ODIBO-Brand. UI fonts: Inter/OFL; icons: Lucide/ISC. Source:' > dist/polish-qa/PROVENANCE.txt
+          echo "$GITHUB_SHA" >> dist/polish-qa/PROVENANCE.txt
+          sha256sum dist/polish-qa/*.png dist/polish-qa/fixture.pdf > dist/polish-qa/SHA256SUMS.txt
+      - name: Layering and assets
+        if: ${{ !cancelled() }}
+        run: |
+          cargo xtask layers
+          cargo xtask assets
+          cargo xtask parity
+      - name: Require formatting patch to be applied to the branch
+        if: ${{ !cancelled() }}
+        run: test ! -s dist/polish-qa/format.patch
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: odibo-uiux-polish-${{ github.sha }}
+          path: dist/polish-qa
+          retention-days: 7
+          if-no-files-found: error

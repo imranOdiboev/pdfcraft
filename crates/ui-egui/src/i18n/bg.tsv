@@ -2421,3 +2421,8 @@ animation effects	Off	Изключени
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Не може да се запише {name}: {e}. В {dir} остават {n} завършени файла; оригиналите не са заменени.
 	Couldn't combine files: the PDF worker stopped	Файловете не могат да се обединят: PDF процесът спря
 	Print pages	Печат на страници
+
+	Choose settings that create at least two files.	Изберете настройки, които създават поне два файла.
+	Use a folder that supports hard links, such as a local NTFS folder.	Използвайте папка с поддръжка на твърди връзки, например локална NTFS папка.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Изборът на файлове спря неочаквано. Документът не е променен. Опитайте пак.
+	Try a local NTFS folder with write access and free space.	Опитайте локална NTFS папка с право за запис и свободно място.

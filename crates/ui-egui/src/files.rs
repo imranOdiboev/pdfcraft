@@ -738,7 +738,7 @@ impl PdfCraftApp {
         {
             let write = move |app: &mut Self, dir: std::path::PathBuf| {
                 if new_only && let Some((name, _)) = named.iter().find(|(name, _)| std::fs::symlink_metadata(dir.join(name)).is_ok()) {
-                    app.notify_fmt("{name} already exists. Choose another folder; no files were written.", &[("name", name)]);
+                    app.operation_failed("{name} already exists. Choose another folder; no files were written.", &[("name", name)]);
                     return;
                 }
                 for (written, (name, bytes)) in named.iter().enumerate() {
@@ -749,10 +749,11 @@ impl PdfCraftApp {
                     };
                     if let Err(e) = result {
                         if new_only {
-                            app.notify_fmt(
+                            app.operation_failed(
                                 "Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.",
                                 &[("name", name), ("e", &e.to_string()), ("n", &written.to_string()), ("dir", &dir.display().to_string())],
                             );
+                            if let Some(message) = &mut app.operation_error { message.push(' ' ); message.push_str(tl!("Try a local NTFS folder with write access and free space.")); }
                         } else {
                             app.notify_fmt("Couldn't write {name}: {e}", &[("name", name), ("e", &e.to_string())]);
                         }
@@ -867,16 +868,21 @@ impl PdfCraftApp {
     }
 
     pub(crate) fn open_created(&mut self, name: &str, bytes: Arc<Vec<u8>>, message: &str) {
+        self.try_open_created(name, bytes, message);
+    }
+
+    pub(crate) fn try_open_created(&mut self, name: &str, bytes: Arc<Vec<u8>>, message: &str) -> bool {
         match self.session.open_new(name, bytes) {
             Ok(id) => {
                 // The reading-colours preference is app-wide: the newly created document starts with it.
                 self.session.set_reading_colors(id, self.reading_colors);
-                let Some(doc) = self.session.get(id) else { return };
+                let Some(doc) = self.session.get(id) else { return false };
                 self.views.push(crate::DocView::new(id, &doc.info, self.view_defaults));
                 self.active = Some(self.views.len() - 1);
                 self.notify_tr(message);
+                true
             }
-            Err(e) => self.notify_fmt("Couldn't open the result: {e}", &[("e", &e.to_string())]),
+            Err(e) => { self.operation_failed("Couldn't open the result: {e}", &[("e", &e.to_string())]); false },
         }
     }
 }

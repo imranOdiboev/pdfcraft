@@ -1,0 +1,5 @@
+# Project-scoped subagents for ODIBO PDF (current local Codex clients).
+# The main Codex agent owns all implementation edits and integration.
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 3

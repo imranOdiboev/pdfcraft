@@ -2367,3 +2367,8 @@ animation effects	Off	ఆఫ్
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	{name}ను రాయలేకపోయింది: {e}. {dir}లో పూర్తయిన {n} ఫైళ్లు మిగిలాయి; అసలు ఫైళ్లు భర్తీ కాలేదు.
 	Couldn't combine files: the PDF worker stopped	ఫైళ్లను కలపలేకపోయింది: PDF ప్రక్రియ ఆగిపోయింది
 	Print pages	పేజీలను ముద్రించు
+
+	Choose settings that create at least two files.	కనీసం రెండు ఫైళ్లను సృష్టించే సెట్టింగ్‌లను ఎంచుకోండి.
+	Use a folder that supports hard links, such as a local NTFS folder.	స్థానిక NTFS ఫోల్డర్ వంటి హార్డ్ లింక్‌లకు మద్దతిచ్చే ఫోల్డర్‌ను ఉపయోగించండి.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	ఫైల్ ఎంపిక అనుకోకుండా ఆగింది. పత్రం మారలేదు. మళ్లీ ప్రయత్నించండి.
+	Try a local NTFS folder with write access and free space.	వ్రాత అనుమతి మరియు ఖాళీ స్థలం ఉన్న స్థానిక NTFS ఫోల్డర్‌ను ప్రయత్నించండి.

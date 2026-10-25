@@ -2458,3 +2458,8 @@ animation effects	Off	オフ
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	{name} を書き込めませんでした：{e}。{dir} に完了済みのファイルが {n} 個残っています。元のファイルは置き換えていません。
 	Couldn't combine files: the PDF worker stopped	ファイルを結合できませんでした：PDF 処理が停止しました
 	Print pages	ページを印刷
+
+	Choose settings that create at least two files.	少なくとも2つのファイルを作成する設定を選んでください。
+	Use a folder that supports hard links, such as a local NTFS folder.	ローカルのNTFSフォルダーなど、ハードリンクに対応するフォルダーを使用してください。
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	ファイル選択が予期せず停止しました。文書は変更されていません。再試行してください。
+	Try a local NTFS folder with write access and free space.	書き込み権限と空き容量のあるローカルNTFSフォルダーを試してください。

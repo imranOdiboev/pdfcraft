@@ -109,6 +109,7 @@ pub fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
     }
     hits.sort_by_key(|(s, h)| (*s, !h.ready));
     hits.truncate(12);
+    let query_changed = ctx.data(|d| d.get_temp::<String>(egui::Id::new("palette_selected_query")).as_deref() != Some(q.as_str()));
     let (down, up) = ctx.input(|i| (i.key_pressed(egui::Key::ArrowDown), i.key_pressed(egui::Key::ArrowUp)));
     let selected = ctx.data_mut(|data| {
         let id = egui::Id::new("palette_selected");
@@ -149,7 +150,7 @@ pub fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
         .fixed_pos(egui::pos2(screen.center().x, screen.top() + 96.0))
         .show(ctx, |ui| {
             egui::Frame::popup(ui.style()).corner_radius(CornerRadius::same(12)).inner_margin(egui::Margin::same(10)).show(ui, |ui| {
-                ui.set_width(560.0);
+                ui.set_width((screen.width() - 48.0).clamp(120.0, 560.0));
                 ui.horizontal(|ui| {
                     ui.add(icons::image("search", 18.0, t.text_muted));
                     let r = ui.add(
@@ -172,8 +173,11 @@ pub fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
                     }
                 });
                 ui.separator();
+                egui::ScrollArea::vertical().id_salt("palette-results").max_height((screen.height() - 180.0).max(36.0)).show(ui, |ui| {
                 for (index, (_, h)) in hits.iter().enumerate() {
                     let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 36.0), Sense::click());
+                    if index == selected { ctx.data_mut(|d| d.insert_temp(egui::Id::new("palette-selected-rect"), rect)); }
+                    if index == selected && (down || up || query_changed) { resp.scroll_to_me(Some(egui::Align::Center)); }
                     let press = theme::Press::track(ui, &resp);
                     press.wash(ui, rect, 6, index == selected);
                     let body = rect.translate(press.offset());
@@ -200,6 +204,7 @@ pub fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
                         chosen = Some((h.command, h.group));
                     }
                 }
+                });
                 if hits.is_empty() {
                     ui.label(egui::RichText::new(tl!("No matching tools")).color(t.text_muted));
                 }

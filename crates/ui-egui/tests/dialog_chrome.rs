@@ -2,7 +2,7 @@
 
 use egui::accesskit::Role;
 use egui_kittest::Harness;
-use egui_kittest::kittest::Queryable;
+use egui_kittest::kittest::{Queryable, NodeT};
 use pdfcraft_ui_egui::PdfCraftApp;
 
 fn fixture() -> Vec<u8> {
@@ -80,6 +80,25 @@ fn password_prompt_field_is_tall_and_inset() {
     assert!(card.right() - field.right() >= 16.0, "password field {field:?} in {card:?}");
     let heading = h.get_by_label("Password required").rect();
     assert!(heading.top() - card.top() >= 16.0, "heading inset {heading:?} in {card:?}");
+}
+
+#[test]
+fn polish_password_tab_reaches_cancel_without_focus_being_stolen() {
+    let mut h = Harness::builder().with_size(egui::vec2(820.0, 520.0)).build_eframe(|_| {
+        let mut app = PdfCraftApp::new();
+        app.set_option("language", "en").unwrap();
+        app.open_bytes("secret.pdf", None, protected()).unwrap();
+        app
+    });
+    h.run_steps(5);
+    // Natural Tab from the initially focused field, rather than forcing button focus.
+    h.key_press(egui::Key::Tab); h.run_steps(4);
+    h.key_press(egui::Key::Tab); h.run_steps(4);
+    let cancel = h.get_by_role_and_label(Role::Button, "Cancel");
+    assert!(cancel.is_focused());
+    h.key_press(egui::Key::Space); h.run_steps(3);
+    assert!(h.state().password_prompt.is_none());
+    assert!(h.state().views.is_empty());
 }
 
 #[test]

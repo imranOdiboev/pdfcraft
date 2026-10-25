@@ -2456,3 +2456,8 @@ animation effects	Off	Өшірулі
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	{name} жазылмады: {e}. {dir} ішінде {n} дайын файл қалды; түпнұсқалар ауыстырылған жоқ.
 	Couldn't combine files: the PDF worker stopped	Файлдар біріктірілмеді: PDF өңдеушісі тоқтады
 	Print pages	Беттерді басып шығару
+
+	Choose settings that create at least two files.	Кемінде екі файл жасайтын параметрлерді таңдаңыз.
+	Use a folder that supports hard links, such as a local NTFS folder.	Қатаң сілтемелерді қолдайтын қалтаны, мысалы жергілікті NTFS дискісін пайдаланыңыз.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Файл таңдау терезесі күтпеген жерден жабылды. Құжат өзгерген жоқ. Қайталап көріңіз.
+	Try a local NTFS folder with write access and free space.	Жазу құқығы және бос орны бар жергілікті NTFS қалтасын қолданып көріңіз.

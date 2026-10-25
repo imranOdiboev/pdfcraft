@@ -593,6 +593,8 @@ pub struct PdfCraftApp {
     /// Folders pinned to Home, and what they held when last listed.
     pub pinned: folders_ui::PinnedFolders,
     pub toast: Option<(String, f64)>,
+    /// Transient, explicitly dismissed operation failure; never persisted.
+    pub operation_error: Option<String>,
     /// Whether the macOS title bar is drawn by us (traffic lights over our tab strip).
     pub integrated_titlebar: bool,
     /// Set when the desktop leaves the window frame to the app (GNOME on Wayland): the tab strip
@@ -957,6 +959,7 @@ impl PdfCraftApp {
             open_prepare_gate: None,
             pinned: Default::default(),
             toast: None,
+            operation_error: None,
             integrated_titlebar: false,
             window_controls: None,
             system_title_bar: false,
@@ -1998,6 +2001,10 @@ impl PdfCraftApp {
         {
             self.open_url(&p.url);
         }
+    }
+
+    pub(crate) fn operation_failed(&mut self, template: &str, args: &[(&str, &str)]) {
+        self.operation_error = Some(i18n::fmt(tl!(template), args));
     }
 
     pub fn notify(&mut self, msg: impl Into<String>) {

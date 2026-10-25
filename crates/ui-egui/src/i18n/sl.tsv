@@ -2463,3 +2463,8 @@ animation effects	Off	Izklopljeni
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Ni mogoče zapisati {name}: {e}. V mapi {dir} ostaja {n} dokončanih datotek; izvirniki niso bili zamenjani.
 	Couldn't combine files: the PDF worker stopped	Datotek ni mogoče združiti: proces PDF se je ustavil
 	Print pages	Natisni strani
+
+	Choose settings that create at least two files.	Izberite nastavitve, ki ustvarijo vsaj dve datoteki.
+	Use a folder that supports hard links, such as a local NTFS folder.	Uporabite mapo s podporo za trde povezave, na primer lokalno mapo NTFS.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Izbirnik datotek se je nepričakovano ustavil. Dokument ni spremenjen. Poskusite znova.
+	Try a local NTFS folder with write access and free space.	Poskusite lokalno mapo NTFS s pravico pisanja in prostim prostorom.
