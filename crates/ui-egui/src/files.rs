@@ -1098,9 +1098,9 @@ impl PdfCraftApp {
 
 #[cfg(test)]
 mod stem_tests {
-    use super::{attachment_file_name, file_stem_from_user, is_plain_file_name, split_range_plan};
     #[cfg(not(target_arch = "wasm32"))]
     use super::write_new_pdf;
+    use super::{attachment_file_name, file_stem_from_user, is_plain_file_name, split_range_plan};
     use std::sync::Arc;
 
     #[test]

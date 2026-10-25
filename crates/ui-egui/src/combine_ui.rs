@@ -716,198 +716,201 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     let mut combine = false;
     let page_height = ui.available_height();
     egui::ScrollArea::vertical().id_salt("combine-page").auto_shrink([false, false]).show(ui, |ui| {
-    egui::Frame::NONE.inner_margin(egui::Margin::symmetric(28, 20)).show(ui, |ui| {
-        let body_top = ui.cursor().min.y;
-        // Title and Combine.
-        ui.horizontal(|ui| {
-            ui.label(egui::RichText::new(tl!("Combine files")).font(theme::semibold(20.0)));
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                let response = ui.add_enabled_ui(blocker.is_none(), |ui| widgets::icon_pill(ui, "files", tl!("Combine"), true)).inner;
-                if let Some(why) = &blocker {
-                    response.clone().on_disabled_hover_text(why);
-                }
-                if response.clicked() {
-                    combine = true;
-                }
-            });
-        });
-        let hint = if grid {
-            tl!("Files are combined in the order shown. Drag them to change it.")
-        } else {
-            tl!("Files are combined from top to bottom. Leave Pages empty to take every page.")
-        };
-        ui.label(egui::RichText::new(hint).color(t.text_muted));
-        ui.label(
-            egui::RichText::new(tl!("Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result."))
-                .color(t.text_muted),
-        );
-        if app.combine_pending() {
+        egui::Frame::NONE.inner_margin(egui::Margin::symmetric(28, 20)).show(ui, |ui| {
+            let body_top = ui.cursor().min.y;
+            // Title and Combine.
             ui.horizontal(|ui| {
-                ui.spinner();
-                ui.label(tl!("The previous PDF step is still finishing. You can keep working; try Combine again shortly."));
+                ui.label(egui::RichText::new(tl!("Combine files")).font(theme::semibold(20.0)));
+                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    let response = ui.add_enabled_ui(blocker.is_none(), |ui| widgets::icon_pill(ui, "files", tl!("Combine"), true)).inner;
+                    if let Some(why) = &blocker {
+                        response.clone().on_disabled_hover_text(why);
+                    }
+                    if response.clicked() {
+                        combine = true;
+                    }
+                });
             });
-        }
-        ui.add_space(12.0);
+            let hint = if grid {
+                tl!("Files are combined in the order shown. Drag them to change it.")
+            } else {
+                tl!("Files are combined from top to bottom. Leave Pages empty to take every page.")
+            };
+            ui.label(egui::RichText::new(hint).color(t.text_muted));
+            ui.label(
+                egui::RichText::new(tl!("Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result."))
+                    .color(t.text_muted),
+            );
+            if app.combine_pending() {
+                ui.horizontal(|ui| {
+                    ui.spinner();
+                    ui.label(tl!("The previous PDF step is still finishing. You can keep working; try Combine again shortly."));
+                });
+            }
+            ui.add_space(12.0);
 
-        // Toolbar: on two lines when the window is narrow.
-        ui.horizontal_wrapped(|ui| {
-            ui.spacing_mut().item_spacing.x = 6.0;
-            // Where the line ends (an overflowing line would move it).
-            let edge = ui.max_rect().right();
-            add_menu(app, ui);
-            let open_docs: Vec<(usize, String)> =
-                app.views.iter().enumerate().filter_map(|(i, _)| crate::canvas::tab_label(app, i).map(|name| (i, name))).collect();
-            let response = ui.add_enabled_ui(!open_docs.is_empty(), |ui| widgets::icon_pill(ui, "file-plus", tl!("Add open documents"), false)).inner;
-            response.clone().on_disabled_hover_text(tl!("No documents are open"));
-            egui::Popup::menu(&response).show(|ui| {
-                if open_docs.len() > 1 && ui.button(tl!("All open documents")).clicked() {
-                    app.add_open_documents(&open_docs.iter().map(|(i, _)| *i).collect::<Vec<_>>());
-                    ui.close();
-                }
-                for (i, name) in &open_docs {
-                    if ui.button(crate::bidi::visual(name).as_ref()).clicked() {
-                        app.add_open_documents(&[*i]);
+            // Toolbar: on two lines when the window is narrow.
+            ui.horizontal_wrapped(|ui| {
+                ui.spacing_mut().item_spacing.x = 6.0;
+                // Where the line ends (an overflowing line would move it).
+                let edge = ui.max_rect().right();
+                add_menu(app, ui);
+                let open_docs: Vec<(usize, String)> =
+                    app.views.iter().enumerate().filter_map(|(i, _)| crate::canvas::tab_label(app, i).map(|name| (i, name))).collect();
+                let response =
+                    ui.add_enabled_ui(!open_docs.is_empty(), |ui| widgets::icon_pill(ui, "file-plus", tl!("Add open documents"), false)).inner;
+                response.clone().on_disabled_hover_text(tl!("No documents are open"));
+                egui::Popup::menu(&response).show(|ui| {
+                    if open_docs.len() > 1 && ui.button(tl!("All open documents")).clicked() {
+                        app.add_open_documents(&open_docs.iter().map(|(i, _)| *i).collect::<Vec<_>>());
                         ui.close();
                     }
+                    for (i, name) in &open_docs {
+                        if ui.button(crate::bidi::visual(name).as_ref()).clicked() {
+                            app.add_open_documents(&[*i]);
+                            ui.close();
+                        }
+                    }
+                });
+                group(ui, &t, edge, 4.0 * 30.0 + 3.0 * 6.0);
+                // Moves need a selected row with room to move; the buttons stay put either way.
+                let can_up = selected.iter().skip_while(|s| **s).any(|s| *s);
+                let can_down = selected.iter().rev().skip_while(|s| **s).any(|s| *s);
+                let why = tl!("Select a file first");
+                let pages_picked = app.combine_tab.selected_pages.len();
+                let remove = match (pages_picked, count) {
+                    (1, _) => tl!("Remove page").to_string(),
+                    (k, _) if k > 1 => crate::i18n::fmt(tl!("Remove {n} pages"), &[("n", &k.to_string())]),
+                    (_, 1) => {
+                        let name = app.combine_draft.iter().find(|f| app.combine_tab.selected.contains(&f.id)).map_or("", |f| f.name.as_str());
+                        crate::i18n::fmt(tl!("Remove {name}"), &[("name", name)])
+                    }
+                    (_, 0) => tl!("Remove").to_string(),
+                    (_, k) => crate::i18n::fmt(tl!("Remove {n} files"), &[("n", &k.to_string())]),
+                };
+                if tool(ui, can_up, "chevron-up", tl!("Move up"), why).clicked() {
+                    events.action = Some(RowAction::MoveUp);
+                }
+                if tool(ui, can_down, "chevron-down", tl!("Move down"), why).clicked() {
+                    events.action = Some(RowAction::MoveDown);
+                }
+                if tool(ui, count > 0 || pages_picked > 0, "trash-2", &remove, why).clicked() {
+                    events.action = Some(RowAction::Remove);
+                }
+                let locked = app.combine_draft.iter().any(|f| f.lock.is_some() && app.combine_tab.selected.contains(&f.id));
+                let unlock = tool(ui, locked, "lock-open", tl!("Unlock…"), tl!("Select a password-protected file first"));
+                if unlock.clicked() {
+                    events.action = Some(RowAction::Unlock(None, unlock.rect.left_bottom() + vec2(0.0, 6.0)));
+                }
+                group(ui, &t, edge, 2.0 * 30.0 + 6.0);
+                let (undo, redo) = (!app.combine_tab.undo.is_empty(), !app.combine_tab.redo.is_empty());
+                if tool(ui, undo, "undo-2", tl!("Undo"), tl!("Nothing to undo")).clicked() {
+                    app.execute("edit.undo");
+                }
+                if tool(ui, redo, "redo-2", tl!("Redo"), tl!("Nothing to redo")).clicked() {
+                    app.execute("edit.redo");
+                }
+                group(ui, &t, edge, 2.0 * 30.0 + 6.0);
+                // Thumbnails or the table; the choice is kept in the settings.
+                for (view, icon, label) in [(CombineView::Grid, "layout-grid", tl!("Grid view")), (CombineView::List, "list", tl!("List view"))] {
+                    if icons::button(ui, icon, 30.0, app.combine_view == view, label).clicked() {
+                        app.combine_view = view;
+                    }
+                }
+                if count > 1 {
+                    ui.add_space(6.0);
+                    ui.label(egui::RichText::new(crate::i18n::fmt(tl!("{n} selected"), &[("n", &count.to_string())])).color(t.text_muted));
+                }
+                if grid && n > 0 {
+                    // Every file as its pages, or all as cards again.
+                    group(ui, &t, edge, 2.0 * 30.0 + 6.0);
+                    let can_expand = app.combine_draft.iter_mut().any(|f| !app.combine_tab.expanded.contains(&f.id) && expandable(f));
+                    if ui.add_enabled_ui(can_expand, |ui| icons::button(ui, "maximize-2", 30.0, false, tl!("Expand all"))).inner.clicked() {
+                        events.action = Some(RowAction::ExpandAll(true));
+                    }
+                    let can_collapse = !app.combine_tab.expanded.is_empty();
+                    if ui.add_enabled_ui(can_collapse, |ui| icons::button(ui, "minimize-2", 30.0, false, tl!("Collapse all"))).inner.clicked() {
+                        events.action = Some(RowAction::ExpandAll(false));
+                    }
+                    zoom_controls(app, ui, &t, edge);
                 }
             });
-            group(ui, &t, edge, 4.0 * 30.0 + 3.0 * 6.0);
-            // Moves need a selected row with room to move; the buttons stay put either way.
-            let can_up = selected.iter().skip_while(|s| **s).any(|s| *s);
-            let can_down = selected.iter().rev().skip_while(|s| **s).any(|s| *s);
-            let why = tl!("Select a file first");
-            let pages_picked = app.combine_tab.selected_pages.len();
-            let remove = match (pages_picked, count) {
-                (1, _) => tl!("Remove page").to_string(),
-                (k, _) if k > 1 => crate::i18n::fmt(tl!("Remove {n} pages"), &[("n", &k.to_string())]),
-                (_, 1) => {
-                    let name = app.combine_draft.iter().find(|f| app.combine_tab.selected.contains(&f.id)).map_or("", |f| f.name.as_str());
-                    crate::i18n::fmt(tl!("Remove {name}"), &[("name", name)])
-                }
-                (_, 0) => tl!("Remove").to_string(),
-                (_, k) => crate::i18n::fmt(tl!("Remove {n} files"), &[("n", &k.to_string())]),
-            };
-            if tool(ui, can_up, "chevron-up", tl!("Move up"), why).clicked() {
-                events.action = Some(RowAction::MoveUp);
-            }
-            if tool(ui, can_down, "chevron-down", tl!("Move down"), why).clicked() {
-                events.action = Some(RowAction::MoveDown);
-            }
-            if tool(ui, count > 0 || pages_picked > 0, "trash-2", &remove, why).clicked() {
-                events.action = Some(RowAction::Remove);
-            }
-            let locked = app.combine_draft.iter().any(|f| f.lock.is_some() && app.combine_tab.selected.contains(&f.id));
-            let unlock = tool(ui, locked, "lock-open", tl!("Unlock…"), tl!("Select a password-protected file first"));
-            if unlock.clicked() {
-                events.action = Some(RowAction::Unlock(None, unlock.rect.left_bottom() + vec2(0.0, 6.0)));
-            }
-            group(ui, &t, edge, 2.0 * 30.0 + 6.0);
-            let (undo, redo) = (!app.combine_tab.undo.is_empty(), !app.combine_tab.redo.is_empty());
-            if tool(ui, undo, "undo-2", tl!("Undo"), tl!("Nothing to undo")).clicked() {
-                app.execute("edit.undo");
-            }
-            if tool(ui, redo, "redo-2", tl!("Redo"), tl!("Nothing to redo")).clicked() {
-                app.execute("edit.redo");
-            }
-            group(ui, &t, edge, 2.0 * 30.0 + 6.0);
-            // Thumbnails or the table; the choice is kept in the settings.
-            for (view, icon, label) in [(CombineView::Grid, "layout-grid", tl!("Grid view")), (CombineView::List, "list", tl!("List view"))] {
-                if icons::button(ui, icon, 30.0, app.combine_view == view, label).clicked() {
-                    app.combine_view = view;
-                }
-            }
-            if count > 1 {
-                ui.add_space(6.0);
-                ui.label(egui::RichText::new(crate::i18n::fmt(tl!("{n} selected"), &[("n", &count.to_string())])).color(t.text_muted));
-            }
-            if grid && n > 0 {
-                // Every file as its pages, or all as cards again.
-                group(ui, &t, edge, 2.0 * 30.0 + 6.0);
-                let can_expand = app.combine_draft.iter_mut().any(|f| !app.combine_tab.expanded.contains(&f.id) && expandable(f));
-                if ui.add_enabled_ui(can_expand, |ui| icons::button(ui, "maximize-2", 30.0, false, tl!("Expand all"))).inner.clicked() {
-                    events.action = Some(RowAction::ExpandAll(true));
-                }
-                let can_collapse = !app.combine_tab.expanded.is_empty();
-                if ui.add_enabled_ui(can_collapse, |ui| icons::button(ui, "minimize-2", 30.0, false, tl!("Collapse all"))).inner.clicked() {
-                    events.action = Some(RowAction::ExpandAll(false));
-                }
-                zoom_controls(app, ui, &t, edge);
+            ui.add_space(10.0);
+
+            // The list, in a card that highlights while files are dragged over the window.
+            let footer_h = 34.0;
+            // Keep a whole default thumbnail card reachable on short windows. The outer page
+            // scrolls rather than clipping the file names below a compressed thumbnail viewport.
+            let used = ui.cursor().min.y - body_top;
+            let card_h = (page_height - 40.0 - used - footer_h).max(if grid { 290.0 } else { 120.0 });
+            let stroke = if files_hovering { Stroke::new(2.0, t.accent) } else { Stroke::new(1.0, t.border) };
+            egui::Frame::NONE
+                .fill(t.card)
+                .stroke(stroke)
+                .corner_radius(CornerRadius::same(t.radius))
+                .inner_margin(egui::Margin::symmetric(8, 6))
+                .show(ui, |ui| {
+                    ui.set_min_height(card_h - 12.0);
+                    // The grid scrolls inside the card, leaving room for the totals below it.
+                    if grid {
+                        ui.set_max_height(card_h - 12.0);
+                    }
+                    ui.set_width(ui.available_width());
+                    if n == 0 {
+                        empty_state(app, ui, &t, files_hovering);
+                    // The view as the toolbar left it: a click on List view this frame starts no
+                    // thumbnail renders.
+                    } else if app.combine_view == CombineView::Grid {
+                        if let Some(action) = crate::combine_grid::grid(app, ui, &t, &checks, &selected, &twice) {
+                            events.action = Some(action);
+                        }
+                    } else {
+                        let table_events = table(app, ui, &t, &checks, &selected, &conflicts, &twice);
+                        events.range_focused |= table_events.range_focused;
+                        events.range_changed |= table_events.range_changed;
+                        if table_events.action.is_some() {
+                            events.action = table_events.action;
+                        }
+                    }
+                });
+
+            // A file shown large, over everything.
+            crate::combine_grid::preview(app, ui.ctx(), &t);
+
+            // Totals.
+            ui.add_space(8.0);
+            if n > 0 {
+                ui.horizontal(|ui| {
+                    let pages: usize = checks.iter().filter_map(|c| c.as_ref().ok()).sum();
+                    // Each file's size once, however many parts it is in.
+                    let mut counted = BTreeSet::new();
+                    let size: usize = app.combine_draft.iter().filter(|f| counted.insert(f.group)).map(|f| f.bytes.len()).sum();
+                    // A file split into parts counts once.
+                    let n = app.combine_draft.iter().map(|f| f.group).collect::<BTreeSet<u64>>().len();
+                    let files = if n == 1 { tl!("1 file").to_string() } else { crate::i18n::fmt(tl!("{n} files"), &[("n", &n.to_string())]) };
+                    let pages = if pages == 1 { tl!("1 page").to_string() } else { crate::i18n::fmt(tl!("{n} pages"), &[("n", &pages.to_string())]) };
+                    ui.label(egui::RichText::new(format!("{files} · {pages} · {}", crate::panels::human_size(size))).color(t.text_muted));
+                    let bad = app
+                        .combine_draft
+                        .iter()
+                        .zip(&checks)
+                        .filter(|(f, c)| f.problem.is_some() || c.is_err())
+                        .map(|(f, _)| f.group)
+                        .collect::<BTreeSet<u64>>()
+                        .len();
+                    if bad > 0 {
+                        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                            let text = if bad == 1 {
+                                tl!("1 file needs attention").to_string()
+                            } else {
+                                crate::i18n::fmt(tl!("{n} files need attention"), &[("n", &bad.to_string())])
+                            };
+                            ui.label(egui::RichText::new(text).color(ERROR));
+                        });
+                    }
+                });
             }
         });
-        ui.add_space(10.0);
-
-        // The list, in a card that highlights while files are dragged over the window.
-        let footer_h = 34.0;
-        // Keep a whole default thumbnail card reachable on short windows. The outer page
-        // scrolls rather than clipping the file names below a compressed thumbnail viewport.
-        let used = ui.cursor().min.y - body_top;
-        let card_h = (page_height - 40.0 - used - footer_h).max(if grid { 290.0 } else { 120.0 });
-        let stroke = if files_hovering { Stroke::new(2.0, t.accent) } else { Stroke::new(1.0, t.border) };
-        egui::Frame::NONE.fill(t.card).stroke(stroke).corner_radius(CornerRadius::same(t.radius)).inner_margin(egui::Margin::symmetric(8, 6)).show(
-            ui,
-            |ui| {
-                ui.set_min_height(card_h - 12.0);
-                // The grid scrolls inside the card, leaving room for the totals below it.
-                if grid {
-                    ui.set_max_height(card_h - 12.0);
-                }
-                ui.set_width(ui.available_width());
-                if n == 0 {
-                    empty_state(app, ui, &t, files_hovering);
-                // The view as the toolbar left it: a click on List view this frame starts no
-                // thumbnail renders.
-                } else if app.combine_view == CombineView::Grid {
-                    if let Some(action) = crate::combine_grid::grid(app, ui, &t, &checks, &selected, &twice) {
-                        events.action = Some(action);
-                    }
-                } else {
-                    let table_events = table(app, ui, &t, &checks, &selected, &conflicts, &twice);
-                    events.range_focused |= table_events.range_focused;
-                    events.range_changed |= table_events.range_changed;
-                    if table_events.action.is_some() {
-                        events.action = table_events.action;
-                    }
-                }
-            },
-        );
-
-        // A file shown large, over everything.
-        crate::combine_grid::preview(app, ui.ctx(), &t);
-
-        // Totals.
-        ui.add_space(8.0);
-        if n > 0 {
-            ui.horizontal(|ui| {
-                let pages: usize = checks.iter().filter_map(|c| c.as_ref().ok()).sum();
-                // Each file's size once, however many parts it is in.
-                let mut counted = BTreeSet::new();
-                let size: usize = app.combine_draft.iter().filter(|f| counted.insert(f.group)).map(|f| f.bytes.len()).sum();
-                // A file split into parts counts once.
-                let n = app.combine_draft.iter().map(|f| f.group).collect::<BTreeSet<u64>>().len();
-                let files = if n == 1 { tl!("1 file").to_string() } else { crate::i18n::fmt(tl!("{n} files"), &[("n", &n.to_string())]) };
-                let pages = if pages == 1 { tl!("1 page").to_string() } else { crate::i18n::fmt(tl!("{n} pages"), &[("n", &pages.to_string())]) };
-                ui.label(egui::RichText::new(format!("{files} · {pages} · {}", crate::panels::human_size(size))).color(t.text_muted));
-                let bad = app
-                    .combine_draft
-                    .iter()
-                    .zip(&checks)
-                    .filter(|(f, c)| f.problem.is_some() || c.is_err())
-                    .map(|(f, _)| f.group)
-                    .collect::<BTreeSet<u64>>()
-                    .len();
-                if bad > 0 {
-                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        let text = if bad == 1 {
-                            tl!("1 file needs attention").to_string()
-                        } else {
-                            crate::i18n::fmt(tl!("{n} files need attention"), &[("n", &bad.to_string())])
-                        };
-                        ui.label(egui::RichText::new(text).color(ERROR));
-                    });
-                }
-            });
-        }
-    });
     });
     // A Pages field taking the keyboard remembers the list; its first change makes the undo step.
     if events.range_focused {
