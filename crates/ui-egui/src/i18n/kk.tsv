@@ -2441,3 +2441,18 @@ animation effects	Off	Өшірулі
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Ашық бастапқы код: MIT OR Apache-2.0. ODIBO бренд материалдарына бөлек шарттар қолданылады.
 	ODIBO PDF project	ODIBO PDF жобасы
 	Feedback	Кері байланыс
+
+	Undo restores recent page changes. Save As keeps the original file.	Болдырмау соңғы бет өзгерістерін қалпына келтіреді. «Басқаша сақтау» бастапқы файлды сақтайды.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Шығыс қалтасын таңдаңыз. Түпнұсқалар өзгермейді; бар файлдар ауыстырылмайды.
+	Combining PDFs…	PDF файлдарын біріктіру…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Бастапқы файлдарды өзгертпей жаңа PDF жасайды. Нәтиже орнын «Басқаша сақтау» арқылы таңдаңыз.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Барлық бетті қамтитын бірізді ауқымдарды енгізіңіз, мысалы 1-3, 4-6.
+	Move selected pages earlier	Таңдалған беттерді алға жылжыту
+	Move selected pages later	Таңдалған беттерді кейін жылжыту
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Түпнұсқалар өзгермейді. Болдырмау нәтижені тастайды; ағымдағы PDF қадамының аяқталуына уақыт қажет болуы мүмкін.
+	Page ranges	Бет ауқымдары
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Алдыңғы PDF қадамы әлі аяқталуда. Жұмысты жалғастыра аласыз; біріктіруді сәл кейін қайталаңыз.
+	{name} already exists. Choose another folder; no files were written.	{name} бұрыннан бар. Басқа қалтаны таңдаңыз; файлдар жазылған жоқ.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	{name} жазылмады: {e}. {dir} ішінде {n} дайын файл қалды; түпнұсқалар ауыстырылған жоқ.
+	Couldn't combine files: the PDF worker stopped	Файлдар біріктірілмеді: PDF өңдеушісі тоқтады
+	Print pages	Беттерді басып шығару

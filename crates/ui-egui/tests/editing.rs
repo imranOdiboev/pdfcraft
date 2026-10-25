@@ -4896,12 +4896,13 @@ fn organize_panel_comes_with_the_grid_and_closes_it() {
     let mut h = organize(3);
     h.get_by_label("Insert");
     h.get_by_label("Bates numbering");
-    h.get_by_label("Page properties");
+    h.get_by_label("Move selected pages earlier");
+    assert!(h.query_by_label("Page properties").is_none(), "unsupported placeholders are hidden");
     h.get_by_label("Close panel").click();
     h.run_steps(3);
     assert!(!h.state().views[0].organize, "Close ends Organize");
     assert_eq!(h.state().left, pdfcraft_ui_egui::LeftPanel::AllTools);
-    assert!(h.query_by_label("Page properties").is_none(), "the panel is gone");
+    assert!(h.query_by_label("Move selected pages earlier").is_none(), "the panel is gone");
 }
 
 /// Leaving Organize (a page opened from the grid, or the grid's Close) goes back to the

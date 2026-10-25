@@ -280,4 +280,4 @@ ODIBO editor workspace stage 3.4 (2026-10-23): candidate in [PR #5](https://gith
 
 ### ODIBO stage 3.5 (2026-10-24)
 
-M4 / core document tools: UX improvements in progress; see [scope and validation](uiux/STAGE_3_5_PLAN.md). Upstream parity estimates unchanged.
+M4 / core document tools: UX implementation and cloud acceptance tracked in PR #6; see [scope and validation](uiux/STAGE_3_5_PLAN.md). Upstream parity estimates unchanged.

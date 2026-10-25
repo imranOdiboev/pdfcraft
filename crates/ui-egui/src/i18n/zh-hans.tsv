@@ -2407,3 +2407,18 @@ animation effects	Off	关
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	开源代码：MIT OR Apache-2.0。ODIBO 品牌素材适用单独的使用条款。
 	ODIBO PDF project	ODIBO PDF 项目
 	Feedback	反馈
+
+	Undo restores recent page changes. Save As keeps the original file.	撤销可恢复最近的页面更改。“另存为”可保留原始文件。
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	接下来选择输出文件夹。原始文件保持不变，也不会替换已有文件。
+	Combining PDFs…	正在合并 PDF…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	创建新的 PDF，原始文件保持不变。请用“另存为”选择结果的保存位置。
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	请输入覆盖所有页面的连续范围，例如 1-3, 4-6。
+	Move selected pages earlier	将所选页面前移
+	Move selected pages later	将所选页面后移
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	原始文件保持不变。取消会丢弃结果，但当前 PDF 步骤可能需要一些时间才能结束。
+	Page ranges	页面范围
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	上一个 PDF 步骤仍在结束中。您可以继续工作，稍后再尝试合并。
+	{name} already exists. Choose another folder; no files were written.	{name} 已存在。请选择其他文件夹；未写入任何文件。
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	无法写入 {name}：{e}。{dir} 中保留了 {n} 个已完成的文件；原始文件未被替换。
+	Couldn't combine files: the PDF worker stopped	无法合并文件：PDF 处理进程已停止
+	Print pages	打印页面

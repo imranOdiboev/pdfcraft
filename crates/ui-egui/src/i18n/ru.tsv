@@ -2361,12 +2361,10 @@ animation effects	Off	Выкл
 	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Далее выберите папку. Исходный документ останется без изменений; существующие файлы не будут заменены.
 	{name} already exists. Choose another folder; no files were written.	Файл {name} уже существует. Выберите другую папку; файлы не записаны.
 	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Будет создан новый PDF. Исходные файлы останутся без изменений. Выберите «Сохранить как», чтобы сохранить результат.
-	Changes can be undone until you close the document. Save As keeps the original file.	Изменения можно отменить до закрытия документа. «Сохранить как» позволяет сохранить исходный файл.
 
 	Page ranges	Диапазоны страниц
 	Combining PDFs…	Объединение PDF…
 	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Исходные файлы не изменяются. Отмена удаляет результат; завершение текущего шага может занять время.
-	Cancelled. Waiting for the current PDF step to finish…	Отменено. Ожидание завершения текущего шага…
 	Couldn't combine files: the PDF worker stopped	Не удалось объединить файлы: обработчик PDF остановился
 
 	Move selected pages earlier	Переместить выбранные страницы раньше
@@ -2376,3 +2374,5 @@ animation effects	Off	Выкл
 	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Предыдущий шаг PDF ещё выполняется. Можно продолжать работу; повторите объединение чуть позже.
 
 	Print pages	Печать страниц
+
+	Undo restores recent page changes. Save As keeps the original file.	Отмена восстанавливает недавние изменения страниц. «Сохранить как» позволяет сохранить исходный файл.

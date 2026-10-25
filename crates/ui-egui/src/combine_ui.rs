@@ -2744,9 +2744,10 @@ mod tests {
             let mut app = PdfCraftApp::new();
             app.set_option("language", "en").unwrap();
             app.open_combine_tab();
-            app.combine_run = Some(CombineRun { receiver, count: 2, cancelled: false });
             app
         });
+        h.run_steps(4);
+        h.state_mut().combine_run = Some(CombineRun { receiver, count: 2, cancelled: false });
         h.run_steps(3);
         h.get_by_label("Cancel").click();
         h.run_steps(2);

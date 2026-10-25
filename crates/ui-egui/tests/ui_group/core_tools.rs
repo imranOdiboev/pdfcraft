@@ -8,9 +8,13 @@ const PDF: &[u8] = b"%PDF-1.7\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\
 
 #[test]
 fn compact_combine_keeps_files_reachable_without_changing_saved_panels() {
-    let mut h = Harness::builder().with_size(egui::vec2(820.0, 520.0)).build_eframe(|_| {
+    for language in ["en", "ru"] {
+    for theme in ["light", "dark"] {
+    for scale in [1.0, 1.5, 2.0] {
+    let mut h = Harness::builder().with_size(egui::vec2(820.0, 520.0)).with_pixels_per_point(scale).build_eframe(move |_| {
         let mut app = PdfCraftApp::new();
-        app.set_option("language", "ru").unwrap();
+        app.set_option("language", language).unwrap();
+        app.set_option("theme", theme).unwrap();
         app.use_files(pdfcraft_ui_egui::FilePurpose::Combine, vec![("First.pdf".into(), PDF.to_vec()), ("Second.pdf".into(), PDF.to_vec())]);
         app
     });
@@ -24,6 +28,43 @@ fn compact_combine_keeps_files_reachable_without_changing_saved_panels() {
     h.run_steps(3);
     assert_eq!(h.state().combine_selection(), vec![1]);
     assert_eq!(serde_json::to_value(&h.state().docking).unwrap(), saved);
+    }
+    }
+    }
+}
+
+#[test]
+fn compact_organize_keyboard_move_and_undo_work_in_all_variants() {
+    for language in ["en", "ru"] {
+        let lang = i18n::Lang::from_code(language).unwrap();
+        for theme in ["light", "dark"] {
+            for scale in [1.0, 1.5, 2.0] {
+                let mut h = Harness::builder().with_size(egui::vec2(820.0, 520.0)).with_pixels_per_point(scale).build_eframe(move |_| {
+                    let mut app = PdfCraftApp::new();
+                    app.set_option("language", language).unwrap();
+                    app.set_option("theme", theme).unwrap();
+                    app.open_bytes("source.pdf", None, PDF.to_vec()).unwrap();
+                    app.set_option("organize", "on").unwrap();
+                    app.views[0].select_pages(&[1]);
+                    app
+                });
+                h.run_steps(5);
+                h.get_by_role_and_label(Role::Button, i18n::tr(lang, "Tools")).click();
+                h.run_steps(3);
+                let label = i18n::tr(lang, "Move selected pages earlier");
+                h.get_by_role_and_label(Role::Button, label).scroll_to_me();
+                h.run_steps(4);
+                h.get_by_role_and_label(Role::Button, label).focus();
+                h.run_steps(1);
+                h.key_press(egui::Key::Enter);
+                h.run_steps(4);
+                assert!(h.state().session.get(h.state().views[0].id).unwrap().dirty);
+                h.state_mut().run_command("edit.undo");
+                h.run_steps(3);
+                assert_eq!(h.state().session.get(h.state().views[0].id).unwrap().bytes.as_slice(), PDF);
+            }
+        }
+    }
 }
 
 #[test]

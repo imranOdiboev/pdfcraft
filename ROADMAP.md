@@ -1,6 +1,6 @@
 # PdfCraft roadmap
 
-> **Fork work in progress:** 2026-10-24 · ODIBO stage 3.5: core PDF tools UX and split output safety; cloud verification pending. See [plan](docs/uiux/STAGE_3_5_PLAN.md).
+> **Fork update:** 2026-10-25 · ODIBO stage 3.5: core PDF tools UX and split output safety; acceptance evidence is maintained in PR #6. See [plan](docs/uiux/STAGE_3_5_PLAN.md).
 
 **Stage: alpha** · next: beta, ~25% (ready for real work 50% → 75%) and ~400–700 h away
 

@@ -16,10 +16,14 @@ ordinary Save/Save As keep their existing semantics. On a filesystem without har
 refuse safely; report this portability limitation. A later-part failure can leave completed
 parts, but never replaces originals. Multi-file output is not an all-or-nothing transaction.
 
-Validation pending: cloud formatting/assets, Rust/Clippy, UI/functional tests, negative control,
+Validation workflow: cloud formatting/assets, Rust/Clippy, UI/functional tests, negative control,
 security/licences, actual egui screenshots and Windows package. No local Rust or EXE execution.
 
 Native Combine runs the existing engine method on one bounded worker, guarded against panic.
 The UI remains responsive and cancellation discards the result. Its non-interruptible engine
 step drains before retry, without writing any file. The synchronous automation method remains.
 Split errors report how many completed outputs remain; retry should use a separate empty folder.
+
+Latest tested source, actual results and downloadable artifacts: https://github.com/imranOdiboev/pdfcraft/pull/6.
+Targeted security updates: crypto-bigint 0.7.5 → 0.7.6 and ctutils 0.4.4 → 0.4.5 (RUSTSEC-2026-0387); no security exceptions.
+Inherited Undo history retains up to 100 recent steps; UI guidance refers to recent changes.

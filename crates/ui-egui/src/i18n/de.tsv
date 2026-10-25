@@ -2444,3 +2444,18 @@ animation effects	Off	Aus
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Open-Source-Code: MIT OR Apache-2.0. Für ODIBO-Markenmaterialien gelten gesonderte Bedingungen.
 	ODIBO PDF project	ODIBO PDF-Projekt
 	Feedback	Feedback
+
+	Undo restores recent page changes. Save As keeps the original file.	Rückgängig stellt letzte Seitenänderungen wieder her. Speichern unter erhält die Originaldatei.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Wählen Sie anschließend einen Ausgabeordner. Originale bleiben unverändert; vorhandene Dateien werden nicht ersetzt.
+	Combining PDFs…	PDFs werden zusammengefügt…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Erstellt eine neue PDF ohne Änderung der Quelldateien. Wählen Sie den Speicherort mit Speichern unter.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Geben Sie lückenlose Bereiche für alle Seiten ein, zum Beispiel 1-3, 4-6.
+	Move selected pages earlier	Ausgewählte Seiten nach vorne verschieben
+	Move selected pages later	Ausgewählte Seiten nach hinten verschieben
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Originale bleiben unverändert. Abbrechen verwirft das Ergebnis; der aktuelle PDF-Schritt kann noch Zeit benötigen.
+	Page ranges	Seitenbereiche
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Der vorherige PDF-Schritt läuft noch. Sie können weiterarbeiten; versuchen Sie das Zusammenfügen gleich erneut.
+	{name} already exists. Choose another folder; no files were written.	{name} ist bereits vorhanden. Wählen Sie einen anderen Ordner; es wurden keine Dateien geschrieben.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	{name} konnte nicht geschrieben werden: {e}. {n} fertige Dateien verbleiben in {dir}; Originale wurden nicht ersetzt.
+	Couldn't combine files: the PDF worker stopped	Dateien konnten nicht zusammengefügt werden: Der PDF-Prozess wurde beendet
+	Print pages	Seiten drucken

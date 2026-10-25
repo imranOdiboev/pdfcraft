@@ -2449,3 +2449,18 @@ animation effects	Off	Ανενεργά
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Ανοικτός κώδικας: MIT OR Apache-2.0. Το υλικό της επωνυμίας ODIBO έχει ξεχωριστούς όρους.
 	ODIBO PDF project	Έργο ODIBO PDF
 	Feedback	Σχόλια
+
+	Undo restores recent page changes. Save As keeps the original file.	Η Αναίρεση επαναφέρει πρόσφατες αλλαγές σελίδων. Η Αποθήκευση ως διατηρεί το αρχικό αρχείο.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Επιλέξτε φάκελο εξόδου. Τα πρωτότυπα δεν αλλάζουν· τα υπάρχοντα αρχεία δεν θα αντικατασταθούν.
+	Combining PDFs…	Συνένωση PDF…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Δημιουργεί νέο PDF χωρίς αλλαγές στα αρχεία προέλευσης. Επιλέξτε τη θέση του αποτελέσματος με Αποθήκευση ως.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Εισαγάγετε διαδοχικά εύρη για όλες τις σελίδες, π.χ. 1-3, 4-6.
+	Move selected pages earlier	Μετακίνηση επιλεγμένων σελίδων νωρίτερα
+	Move selected pages later	Μετακίνηση επιλεγμένων σελίδων αργότερα
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Τα πρωτότυπα δεν αλλάζουν. Η ακύρωση απορρίπτει το αποτέλεσμα· το τρέχον βήμα PDF μπορεί να αργήσει να ολοκληρωθεί.
+	Page ranges	Εύρη σελίδων
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Το προηγούμενο βήμα PDF ολοκληρώνεται ακόμη. Μπορείτε να συνεχίσετε την εργασία· δοκιμάστε τη συνένωση ξανά σε λίγο.
+	{name} already exists. Choose another folder; no files were written.	Το {name} υπάρχει ήδη. Επιλέξτε άλλο φάκελο· δεν γράφτηκαν αρχεία.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Αδυναμία εγγραφής του {name}: {e}. Παραμένουν {n} ολοκληρωμένα αρχεία στο {dir}· τα πρωτότυπα δεν αντικαταστάθηκαν.
+	Couldn't combine files: the PDF worker stopped	Αδυναμία συνένωσης αρχείων: η διεργασία PDF σταμάτησε
+	Print pages	Εκτύπωση σελίδων

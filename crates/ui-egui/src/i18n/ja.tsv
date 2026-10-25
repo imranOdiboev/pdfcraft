@@ -2443,3 +2443,18 @@ animation effects	Off	オフ
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	ソースコード: MIT OR Apache-2.0。ODIBO のブランド素材には別の利用条件が適用されます。
 	ODIBO PDF project	ODIBO PDF プロジェクト
 	Feedback	フィードバック
+
+	Undo restores recent page changes. Save As keeps the original file.	元に戻すで最近のページ変更を取り消せます。名前を付けて保存すると元のファイルを残せます。
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	次に出力フォルダーを選びます。元のファイルは変更せず、既存のファイルも置き換えません。
+	Combining PDFs…	PDF を結合中…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	元のファイルを変更せずに新しい PDF を作成します。名前を付けて保存で結果の保存先を選んでください。
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	すべてのページを含む連続した範囲を入力してください。例：1-3, 4-6。
+	Move selected pages earlier	選択したページを前へ移動
+	Move selected pages later	選択したページを後ろへ移動
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	元のファイルは変更しません。キャンセルすると結果を破棄しますが、現在の PDF 処理の終了には時間がかかる場合があります。
+	Page ranges	ページ範囲
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	前の PDF 処理がまだ終了していません。作業は続けられます。少し待ってから結合を再試行してください。
+	{name} already exists. Choose another folder; no files were written.	{name} は既に存在します。別のフォルダーを選んでください。ファイルは書き込まれていません。
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	{name} を書き込めませんでした：{e}。{dir} に完了済みのファイルが {n} 個残っています。元のファイルは置き換えていません。
+	Couldn't combine files: the PDF worker stopped	ファイルを結合できませんでした：PDF 処理が停止しました
+	Print pages	ページを印刷

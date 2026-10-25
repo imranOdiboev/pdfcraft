@@ -2442,3 +2442,18 @@ animation effects	Off	Ki
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Nyílt forráskód: MIT OR Apache-2.0. Az ODIBO márkaanyagokra külön feltételek vonatkoznak.
 	ODIBO PDF project	ODIBO PDF projekt
 	Feedback	Visszajelzés
+
+	Undo restores recent page changes. Save As keeps the original file.	A Visszavonás visszaállítja a legutóbbi oldalmódosításokat. A Mentés másként megőrzi az eredeti fájlt.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Válasszon kimeneti mappát. Az eredetik változatlanok maradnak; meglévő fájlokat nem írunk felül.
+	Combining PDFs…	PDF-ek egyesítése…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Új PDF-et készít a forrásfájlok módosítása nélkül. Az eredmény helyét a Mentés másként paranccsal válassza ki.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Adjon meg minden oldalt lefedő, egymást követő tartományokat, például 1-3, 4-6.
+	Move selected pages earlier	Kijelölt oldalak mozgatása előrébb
+	Move selected pages later	Kijelölt oldalak mozgatása hátrébb
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Az eredetik változatlanok maradnak. A megszakítás elveti az eredményt; az aktuális PDF-lépés befejezése időt igényelhet.
+	Page ranges	Oldaltartományok
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Az előző PDF-lépés még befejeződik. Folytathatja a munkát; hamarosan próbálja újra az egyesítést.
+	{name} already exists. Choose another folder; no files were written.	{name} már létezik. Válasszon másik mappát; nem történt fájlírás.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	{name} nem írható: {e}. {n} kész fájl marad itt: {dir}; az eredetiket nem írtuk felül.
+	Couldn't combine files: the PDF worker stopped	A fájlok nem egyesíthetők: a PDF-feldolgozó leállt
+	Print pages	Oldalak nyomtatása

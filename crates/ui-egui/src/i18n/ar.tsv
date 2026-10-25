@@ -2720,3 +2720,18 @@ certificate	Version	الإصدار
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	الشيفرة مفتوحة المصدر: MIT OR Apache-2.0. لمواد علامة ODIBO شروط منفصلة.
 	ODIBO PDF project	مشروع ODIBO PDF
 	Feedback	ملاحظات
+
+	Undo restores recent page changes. Save As keeps the original file.	يعيد التراجع تغييرات الصفحات الأخيرة. يحافظ الحفظ باسم على الملف الأصلي.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	اختر مجلد الإخراج بعد ذلك. تبقى الملفات الأصلية دون تغيير ولن تُستبدل الملفات الموجودة.
+	Combining PDFs…	جارٍ دمج ملفات PDF…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	ينشئ ملف PDF جديدًا دون تغيير الملفات المصدر. استخدم الحفظ باسم لاختيار مكان النتيجة.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	أدخل نطاقات متتابعة تشمل جميع الصفحات، مثل 1-3, 4-6.
+	Move selected pages earlier	نقل الصفحات المحددة إلى موضع أسبق
+	Move selected pages later	نقل الصفحات المحددة إلى موضع لاحق
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	تبقى الملفات الأصلية دون تغيير. يتخلص الإلغاء من النتيجة، لكن انتهاء خطوة PDF الحالية قد يستغرق بعض الوقت.
+	Page ranges	نطاقات الصفحات
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	لا تزال خطوة PDF السابقة قيد الانتهاء. يمكنك متابعة العمل والمحاولة مجددًا بعد قليل.
+	{name} already exists. Choose another folder; no files were written.	الملف {name} موجود بالفعل. اختر مجلدًا آخر؛ لم تُكتب أي ملفات.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	تعذرت كتابة {name}: {e}. بقي {n} من الملفات المكتملة في {dir}؛ لم تُستبدل الملفات الأصلية.
+	Couldn't combine files: the PDF worker stopped	تعذر دمج الملفات: توقفت عملية معالجة PDF
+	Print pages	طباعة الصفحات

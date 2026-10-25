@@ -2439,3 +2439,18 @@ animation effects	Off	Kapalı
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Açık kaynak kod: MIT OR Apache-2.0. ODIBO marka materyalleri ayrı koşullara tabidir.
 	ODIBO PDF project	ODIBO PDF projesi
 	Feedback	Geri bildirim
+
+	Undo restores recent page changes. Save As keeps the original file.	Geri Al son sayfa değişikliklerini geri yükler. Farklı Kaydet özgün dosyayı korur.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Bir çıktı klasörü seçin. Özgün dosyalar değişmez; mevcut dosyaların üzerine yazılmaz.
+	Combining PDFs…	PDF’ler birleştiriliyor…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Kaynakları değiştirmeden yeni bir PDF oluşturur. Sonucun konumunu Farklı Kaydet ile seçin.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Tüm sayfaları kapsayan ardışık aralıklar girin; örneğin 1-3, 4-6.
+	Move selected pages earlier	Seçili sayfaları öne taşı
+	Move selected pages later	Seçili sayfaları arkaya taşı
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Özgün dosyalar değişmez. İptal sonucu atar; geçerli PDF adımının bitmesi zaman alabilir.
+	Page ranges	Sayfa aralıkları
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Önceki PDF adımı hâlâ tamamlanıyor. Çalışmaya devam edebilirsiniz; birleştirmeyi birazdan tekrar deneyin.
+	{name} already exists. Choose another folder; no files were written.	{name} zaten var. Başka bir klasör seçin; hiçbir dosya yazılmadı.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	{name} yazılamadı: {e}. {dir} içinde {n} tamamlanmış dosya kaldı; özgün dosyalar değiştirilmedi.
+	Couldn't combine files: the PDF worker stopped	Dosyalar birleştirilemedi: PDF işleyicisi durdu
+	Print pages	Sayfaları yazdır

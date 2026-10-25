@@ -2352,3 +2352,18 @@ animation effects	Off	ఆఫ్
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	ఓపెన్ సోర్స్ కోడ్: MIT OR Apache-2.0. ODIBO బ్రాండ్ వనరులకు ప్రత్యేక నిబంధనలు వర్తిస్తాయి.
 	ODIBO PDF project	ODIBO PDF ప్రాజెక్ట్
 	Feedback	అభిప్రాయం
+
+	Undo restores recent page changes. Save As keeps the original file.	రద్దు ఇటీవలి పేజీ మార్పులను పునరుద్ధరిస్తుంది. వేరే పేరుతో సేవ్ చేయడం అసలు ఫైల్‌ను ఉంచుతుంది.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	తరువాత అవుట్‌పుట్ ఫోల్డర్‌ను ఎంచుకోండి. అసలు ఫైళ్లు మారవు; ఉన్న ఫైళ్లు భర్తీ కావు.
+	Combining PDFs…	PDFలను కలుపుతోంది…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	మూల ఫైళ్లను మార్చకుండా కొత్త PDFని సృష్టిస్తుంది. ఫలితాన్ని ఎక్కడ ఉంచాలో వేరే పేరుతో సేవ్ చేయడం ద్వారా ఎంచుకోండి.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	అన్ని పేజీలను కవర్ చేసే వరుస పరిధులను నమోదు చేయండి, ఉదాహరణకు 1-3, 4-6.
+	Move selected pages earlier	ఎంచుకున్న పేజీలను ముందుకు తరలించు
+	Move selected pages later	ఎంచుకున్న పేజీలను వెనుకకు తరలించు
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	అసలు ఫైళ్లు మారవు. రద్దు చేస్తే ఫలితం విస్మరించబడుతుంది; ప్రస్తుత PDF దశ ముగియడానికి సమయం పట్టవచ్చు.
+	Page ranges	పేజీ పరిధులు
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	మునుపటి PDF దశ ఇంకా ముగుస్తోంది. మీరు పని కొనసాగించవచ్చు; కొద్దిసేపటి తరువాత మళ్లీ కలపడానికి ప్రయత్నించండి.
+	{name} already exists. Choose another folder; no files were written.	{name} ఇప్పటికే ఉంది. వేరే ఫోల్డర్‌ను ఎంచుకోండి; ఏ ఫైళ్లూ రాయబడలేదు.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	{name}ను రాయలేకపోయింది: {e}. {dir}లో పూర్తయిన {n} ఫైళ్లు మిగిలాయి; అసలు ఫైళ్లు భర్తీ కాలేదు.
+	Couldn't combine files: the PDF worker stopped	ఫైళ్లను కలపలేకపోయింది: PDF ప్రక్రియ ఆగిపోయింది
+	Print pages	పేజీలను ముద్రించు

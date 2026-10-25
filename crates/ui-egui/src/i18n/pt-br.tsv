@@ -2457,3 +2457,18 @@ animation effects	Off	Desativados
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Código aberto: MIT OR Apache-2.0. Os materiais da marca ODIBO têm condições separadas.
 	ODIBO PDF project	Projeto ODIBO PDF
 	Feedback	Comentários
+
+	Undo restores recent page changes. Save As keeps the original file.	Desfazer restaura alterações recentes das páginas. Salvar como preserva o arquivo original.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Escolha uma pasta de saída a seguir. Os originais não mudam; arquivos existentes não serão substituídos.
+	Combining PDFs…	Combinando PDFs…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Cria um novo PDF sem alterar os arquivos de origem. Use Salvar como para escolher onde guardar o resultado.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Digite intervalos consecutivos que cubram todas as páginas, por exemplo 1-3, 4-6.
+	Move selected pages earlier	Mover páginas selecionadas para antes
+	Move selected pages later	Mover páginas selecionadas para depois
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Os originais não mudam. Cancelar descarta o resultado; a etapa PDF atual pode demorar a terminar.
+	Page ranges	Intervalos de páginas
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	A etapa PDF anterior ainda está terminando. Você pode continuar trabalhando; tente combinar novamente em instantes.
+	{name} already exists. Choose another folder; no files were written.	{name} já existe. Escolha outra pasta; nenhum arquivo foi gravado.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Não foi possível gravar {name}: {e}. {n} arquivos concluídos permanecem em {dir}; os originais não foram substituídos.
+	Couldn't combine files: the PDF worker stopped	Não foi possível combinar os arquivos: o processo PDF parou
+	Print pages	Imprimir páginas

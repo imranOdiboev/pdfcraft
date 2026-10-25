@@ -2448,3 +2448,18 @@ animation effects	Off	Izklopljeni
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Odprta koda: MIT OR Apache-2.0. Za gradiva znamke ODIBO veljajo ločeni pogoji.
 	ODIBO PDF project	Projekt ODIBO PDF
 	Feedback	Povratne informacije
+
+	Undo restores recent page changes. Save As keeps the original file.	Razveljavi obnovi nedavne spremembe strani. Shrani kot ohrani izvirno datoteko.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Izberite izhodno mapo. Izvirniki ostanejo nespremenjeni; obstoječe datoteke ne bodo zamenjane.
+	Combining PDFs…	Združevanje PDF-jev…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Ustvari nov PDF brez spreminjanja izvornih datotek. Mesto rezultata izberite s Shrani kot.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Vnesite zaporedne obsege vseh strani, na primer 1-3, 4-6.
+	Move selected pages earlier	Premakni izbrane strani naprej
+	Move selected pages later	Premakni izbrane strani nazaj
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Izvirniki ostanejo nespremenjeni. Preklic zavrže rezultat; trenutni korak PDF lahko potrebuje čas za dokončanje.
+	Page ranges	Obsegi strani
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Prejšnji korak PDF se še zaključuje. Lahko nadaljujete delo; združevanje poskusite znova čez trenutek.
+	{name} already exists. Choose another folder; no files were written.	{name} že obstaja. Izberite drugo mapo; nobena datoteka ni bila zapisana.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Ni mogoče zapisati {name}: {e}. V mapi {dir} ostaja {n} dokončanih datotek; izvirniki niso bili zamenjani.
+	Couldn't combine files: the PDF worker stopped	Datotek ni mogoče združiti: proces PDF se je ustavil
+	Print pages	Natisni strani
