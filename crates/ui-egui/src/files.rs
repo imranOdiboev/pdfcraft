@@ -1098,7 +1098,10 @@ impl PdfCraftApp {
 
 #[cfg(test)]
 mod stem_tests {
-    use super::{attachment_file_name, file_stem_from_user, is_plain_file_name};
+    use super::{attachment_file_name, file_stem_from_user, is_plain_file_name, split_range_plan};
+    #[cfg(not(target_arch = "wasm32"))]
+    use super::write_new_pdf;
+    use std::sync::Arc;
 
     #[test]
     fn user_file_names_stay_inside_the_folder_and_writable_everywhere() {
@@ -1188,6 +1191,7 @@ mod stem_tests {
     }
 
     #[test]
+    #[cfg(not(target_arch = "wasm32"))]
     fn split_outputs_never_replace_existing_files_or_write_on_preflight_failure() {
         let dir = std::env::temp_dir().join(format!("odibo-split-no-clobber-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();

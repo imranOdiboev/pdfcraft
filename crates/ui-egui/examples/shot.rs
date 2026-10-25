@@ -65,7 +65,9 @@ fn main() -> Result<(), String> {
     let start = Instant::now();
     harness.run_steps(4);
     if let Some(label) = click {
-        let Some(node) = harness.query_by_label(&label) else { return Err(format!("shot: clickable UI label not found: {label}")) };
+        let Some(node) = harness.query_by_role_and_label(egui::accesskit::Role::Button, &label) else {
+            return Err(format!("shot: clickable button not found: {label}"));
+        };
         node.click();
         harness.run_steps(4);
     }
