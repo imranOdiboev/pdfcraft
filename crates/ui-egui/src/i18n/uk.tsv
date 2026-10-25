@@ -2482,3 +2482,8 @@ animation effects	Off	Вимкнено
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Не вдалося записати {name}: {e}. У папці {dir} залишилося готових файлів: {n}; оригінали не замінено.
 	Couldn't combine files: the PDF worker stopped	Не вдалося об’єднати файли: обробник PDF зупинився
 	Print pages	Друк сторінок
+
+	Choose settings that create at least two files.	Виберіть параметри, що створюють принаймні два файли.
+	Use a folder that supports hard links, such as a local NTFS folder.	Використовуйте папку з підтримкою жорстких посилань, наприклад на локальному диску NTFS.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Вікно вибору файлів несподівано закрилося. Документ не змінено. Спробуйте ще раз.
+	Try a local NTFS folder with write access and free space.	Спробуйте локальну папку NTFS із правом запису та вільним місцем.

@@ -2458,3 +2458,8 @@ animation effects	Off	Désactivés
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Impossible d’écrire {name} : {e}. {n} fichiers terminés restent dans {dir} ; les originaux n’ont pas été remplacés.
 	Couldn't combine files: the PDF worker stopped	Impossible de fusionner les fichiers : le processus PDF s’est arrêté
 	Print pages	Imprimer les pages
+
+	Choose settings that create at least two files.	Choisissez des paramètres créant au moins deux fichiers.
+	Use a folder that supports hard links, such as a local NTFS folder.	Utilisez un dossier prenant en charge les liens physiques, par exemple sur un disque NTFS local.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Le sélecteur de fichiers s’est arrêté. Votre document est inchangé. Réessayez.
+	Try a local NTFS folder with write access and free space.	Essayez un dossier NTFS local accessible en écriture avec de l’espace libre.

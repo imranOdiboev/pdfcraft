@@ -432,16 +432,16 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                     ui.add_enabled_ui(draft.mode == M::Pages, |ui| {
                         ui.horizontal(|ui| {
                             ui.add_space(24.0);
-                            ui.label(tl!("Pages per file"));
-                            ui.add(egui::DragValue::new(&mut draft.every).range(1..=n.max(1)));
+                            let label = ui.label(tl!("Pages per file"));
+                            ui.add(egui::DragValue::new(&mut draft.every).range(1..=n.max(1))).labelled_by(label.id);
                         });
                     });
                     widgets::radio_value(ui, &mut draft.mode, M::Size, tl!("File size"));
                     ui.add_enabled_ui(draft.mode == M::Size, |ui| {
                         ui.horizontal(|ui| {
                             ui.add_space(24.0);
-                            ui.label(tl!("At most"));
-                            ui.add(egui::DragValue::new(&mut draft.size_mb).range(0.05..=2000.0).speed(0.1).suffix(" MB"));
+                            let label = ui.label(tl!("At most"));
+                            ui.add(egui::DragValue::new(&mut draft.size_mb).range(0.05..=2000.0).speed(0.1).suffix(" MB")).labelled_by(label.id);
                         });
                     });
                     ui.add_enabled_ui(!marks.is_empty(), |ui| {
@@ -455,6 +455,7 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                     ui.add_enabled_ui(!selected.is_empty(), |ui| {
                         widgets::radio_value(ui, &mut draft.mode, M::Selection, tl!("Before each selected page (select pages in Organize)"))
                     });
+                    let valid = draft.mode != M::Ranges || explicit.is_ok();
                     let plan = match draft.mode {
                         M::Pages => crate::SplitPlan::By(pdfcraft_engine::SplitBy::PageCount(draft.every)),
                         M::Selection => crate::SplitPlan::By(pdfcraft_engine::SplitBy::Before(selected)),
@@ -480,13 +481,18 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                         }
                         None => crate::i18n::fmt(tl!("Each file holds as many of the {n} pages as fit."), &[("n", &n.to_string())]),
                     };
-                    ui.label(egui::RichText::new(text).color(t.text_muted));
+                    if valid {
+                        ui.label(egui::RichText::new(text).color(t.text_muted));
+                        if files == Some(1) {
+                            ui.label(tl!("Choose settings that create at least two files."));
+                        }
+                    }
                     if draft.mode == M::Ranges
                         && let Err(error) = &explicit
                     {
                         ui.colored_label(crate::combine_ui::ERROR, error);
                     }
-                    if let crate::SplitPlan::By(by) = &plan {
+                    if valid && let crate::SplitPlan::By(by) = &plan {
                         let ranges = pdfcraft_engine::split_ranges(n, by);
                         egui::ScrollArea::vertical().id_salt("split-preview").max_height(88.0).show(ui, |ui| {
                             for (index, range) in ranges.iter().take(100).enumerate() {
@@ -495,6 +501,7 @@ fn dialogs(app: &mut PdfCraftApp, ctx: &egui::Context) {
                         });
                     }
                     ui.label(tl!("Choose an output folder next. Originals stay unchanged; existing files will not be replaced."));
+                    ui.label(tl!("Use a folder that supports hard links, such as a local NTFS folder."));
                     if files.is_none_or(|f| f > 1) && (draft.mode != M::Ranges || explicit.is_ok()) {
                         split_ready = Some(plan);
                     }
@@ -1719,12 +1726,21 @@ fn password_modal(
         ui.add(egui::Label::new(message).wrap());
         ui.add_space(8.0);
         let r = ui.add(widgets::line(input).password(true).hint_text(tl!("Password")).desired_width(f32::INFINITY));
-        // Enter submits. The field keeps focus (we request it every frame), so check the key
-        // while it is focused as well as on the frame focus is lost.
+        // Focus once on opening; Tab must be able to reach the actions.
+        let focus_id = egui::Id::new((id, "password-last-frame"));
+        let frame = ctx.cumulative_frame_nr();
+        let previous = ctx.data_mut(|d| {
+            let previous = d.get_temp::<u64>(focus_id);
+            d.insert_temp(focus_id, frame);
+            previous
+        });
+        if previous.is_none_or(|last| last.saturating_add(1) < frame) {
+            r.request_focus();
+        }
+        // Enter submits from the field; action buttons handle their own keyboard activation.
         if (r.has_focus() || r.lost_focus()) && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
             answer = Some(PasswordAnswer::Submit);
         }
-        r.request_focus();
         if let Some(e) = error {
             ui.add_space(4.0);
             // Known error text is translated; anything else passes through.

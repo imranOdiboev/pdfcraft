@@ -75,6 +75,12 @@ pub struct Tokens {
     pub radius: u8,
 }
 
+/// Opaque primary surfaces keep white labels readable in both themes.
+pub(crate) fn primary_fills() -> [Color32; 3] {
+    let normal = Tokens::for_kind(ThemeKind::Light).accent;
+    [normal, normal.lerp_to_gamma(Color32::BLACK, 0.12), normal.lerp_to_gamma(Color32::BLACK, 0.22)]
+}
+
 impl Tokens {
     pub fn for_kind(kind: ThemeKind) -> Self {
         match kind {
@@ -754,6 +760,13 @@ mod tests {
         let held = Press { hover: 1.0, down: 1.0 };
         assert_eq!(held.fill(rest, hover, pressed), pressed);
         assert_eq!(held.offset(), Vec2::new(0.0, 1.0));
+    }
+
+    #[test]
+    fn primary_labels_are_readable_in_every_state() {
+        for fill in primary_fills() {
+            assert!(contrast(Color32::WHITE, fill) >= 4.5);
+        }
     }
 
     #[test]

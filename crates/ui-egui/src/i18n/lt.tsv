@@ -2709,3 +2709,8 @@ theme	Appearance	Išvaizda
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Nepavyko įrašyti {name}: {e}. Aplanke {dir} liko {n} užbaigtų failų; originalai nepakeisti.
 	Couldn't combine files: the PDF worker stopped	Nepavyko sujungti failų: PDF procesas sustojo
 	Print pages	Spausdinti puslapius
+
+	Choose settings that create at least two files.	Pasirinkite bent du failus kuriančias nuostatas.
+	Use a folder that supports hard links, such as a local NTFS folder.	Naudokite aplanką, palaikantį griežtąsias nuorodas, pavyzdžiui, vietinį NTFS aplanką.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Failų parinkiklis netikėtai sustojo. Dokumentas nepakeistas. Bandykite dar kartą.
+	Try a local NTFS folder with write access and free space.	Bandykite vietinį NTFS aplanką su rašymo teise ir laisva vieta.

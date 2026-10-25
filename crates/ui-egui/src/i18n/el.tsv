@@ -2464,3 +2464,8 @@ animation effects	Off	Ανενεργά
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Αδυναμία εγγραφής του {name}: {e}. Παραμένουν {n} ολοκληρωμένα αρχεία στο {dir}· τα πρωτότυπα δεν αντικαταστάθηκαν.
 	Couldn't combine files: the PDF worker stopped	Αδυναμία συνένωσης αρχείων: η διεργασία PDF σταμάτησε
 	Print pages	Εκτύπωση σελίδων
+
+	Choose settings that create at least two files.	Επιλέξτε ρυθμίσεις που δημιουργούν τουλάχιστον δύο αρχεία.
+	Use a folder that supports hard links, such as a local NTFS folder.	Χρησιμοποιήστε φάκελο με υποστήριξη σκληρών συνδέσμων, όπως τοπικό φάκελο NTFS.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Η επιλογή αρχείων σταμάτησε απροσδόκητα. Το έγγραφο δεν άλλαξε. Δοκιμάστε ξανά.
+	Try a local NTFS folder with write access and free space.	Δοκιμάστε τοπικό φάκελο NTFS με δικαίωμα εγγραφής και ελεύθερο χώρο.

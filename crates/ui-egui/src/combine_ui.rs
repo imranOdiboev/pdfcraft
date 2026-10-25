@@ -1989,9 +1989,10 @@ impl PdfCraftApp {
                 if !cancelled {
                     match result {
                         Ok(bytes) => {
-                            self.close_combine_tab();
                             let message = crate::i18n::fmt(tl!("Combined {n} files"), &[("n", &count.to_string())]);
-                            self.open_created("Combined.pdf", bytes, &message);
+                            if self.try_open_created("Combined.pdf", bytes, &message) {
+                                self.close_combine_tab();
+                            }
                         }
                         Err(error) => self.notify_fmt("Couldn't combine files: {e}", &[("e", &error)]),
                     }
@@ -2730,9 +2731,10 @@ impl PdfCraftApp {
         let passwords: Vec<Option<&str>> = files.iter().map(|f| f.password.as_ref().map(|p| p.0.as_str())).collect();
         match self.session.combine_grouped(&sources, &groups, &passwords) {
             Ok(bytes) => {
-                self.close_combine_tab();
                 let message = crate::i18n::fmt(tl!("Combined {n} files"), &[("n", &count.to_string())]);
-                self.open_created("Combined.pdf", bytes, &message)
+                if self.try_open_created("Combined.pdf", bytes, &message) {
+                    self.close_combine_tab();
+                }
             }
             // The list stays, so the user can fix it.
             Err(e) => self.notify_fmt("Couldn't combine files: {e}", &[("e", &e.to_string())]),
@@ -2743,6 +2745,21 @@ impl PdfCraftApp {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn polish_failed_result_open_keeps_combine_staging() {
+        let mut app = PdfCraftApp::new();
+        app.stage_combine(vec![("first.pdf".into(), locked())]);
+        let (sender, receiver) = std::sync::mpsc::channel();
+        app.combine_run = Some(CombineRun { receiver, count: 2, cancelled: false });
+        sender.send(Ok(Arc::new(b"not a PDF".to_vec()))).unwrap();
+        app.poll_combine(&egui::Context::default());
+        assert!(app.combine_showing());
+        assert_eq!(app.combine_draft.len(), 1);
+        assert!(app.views.is_empty());
+        assert!(app.operation_error.is_some());
+    }
 
     #[cfg(not(target_arch = "wasm32"))]
     #[test]

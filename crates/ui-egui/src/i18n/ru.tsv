@@ -2376,3 +2376,8 @@ animation effects	Off	Выкл
 	Print pages	Печать страниц
 
 	Undo restores recent page changes. Save As keeps the original file.	Отмена восстанавливает недавние изменения страниц. «Сохранить как» позволяет сохранить исходный файл.
+
+	Choose settings that create at least two files.	Выберите параметры, создающие как минимум два файла.
+	Use a folder that supports hard links, such as a local NTFS folder.	Используйте папку с поддержкой жёстких ссылок, например на локальном диске NTFS.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Окно выбора файлов неожиданно закрылось. Документ не изменён. Повторите попытку.
+	Try a local NTFS folder with write access and free space.	Попробуйте локальную папку NTFS с правом записи и свободным местом.

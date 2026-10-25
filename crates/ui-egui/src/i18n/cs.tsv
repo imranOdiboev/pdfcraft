@@ -2532,3 +2532,8 @@ animation effects	Off	Vypnuto
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Nelze zapsat {name}: {e}. Ve složce {dir} zůstává {n} dokončených souborů; originály nebyly nahrazeny.
 	Couldn't combine files: the PDF worker stopped	Soubory nelze sloučit: proces PDF se zastavil
 	Print pages	Tisk stránek
+
+	Choose settings that create at least two files.	Zvolte nastavení vytvářející alespoň dva soubory.
+	Use a folder that supports hard links, such as a local NTFS folder.	Použijte složku podporující pevné odkazy, například místní složku NTFS.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Výběr souborů se neočekávaně zastavil. Dokument se nezměnil. Zkuste to znovu.
+	Try a local NTFS folder with write access and free space.	Zkuste místní složku NTFS s právem zápisu a volným místem.

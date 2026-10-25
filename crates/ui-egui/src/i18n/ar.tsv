@@ -2735,3 +2735,8 @@ certificate	Version	الإصدار
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	تعذرت كتابة {name}: {e}. بقي {n} من الملفات المكتملة في {dir}؛ لم تُستبدل الملفات الأصلية.
 	Couldn't combine files: the PDF worker stopped	تعذر دمج الملفات: توقفت عملية معالجة PDF
 	Print pages	طباعة الصفحات
+
+	Choose settings that create at least two files.	اختر إعدادات تنشئ ملفين على الأقل.
+	Use a folder that supports hard links, such as a local NTFS folder.	استخدم مجلداً يدعم الروابط الصلبة، مثل مجلد NTFS محلي.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	توقف منتقي الملفات بشكل غير متوقع. لم يتغير المستند. حاول مجدداً.
+	Try a local NTFS folder with write access and free space.	جرّب مجلد NTFS محلياً بصلاحية كتابة ومساحة خالية.

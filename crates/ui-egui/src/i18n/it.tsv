@@ -2670,3 +2670,8 @@ certificate	SHA-256 digest	Impronta SHA-256
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Impossibile scrivere {name}: {e}. {n} file completati restano in {dir}; gli originali non sono stati sostituiti.
 	Couldn't combine files: the PDF worker stopped	Impossibile unire i file: il processo PDF si è interrotto
 	Print pages	Stampa pagine
+
+	Choose settings that create at least two files.	Scegli impostazioni che creino almeno due file.
+	Use a folder that supports hard links, such as a local NTFS folder.	Usa una cartella che supporti i collegamenti fisici, ad esempio su un disco NTFS locale.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	La selezione dei file si è interrotta. Il documento non è cambiato. Riprova.
+	Try a local NTFS folder with write access and free space.	Prova una cartella NTFS locale scrivibile con spazio libero.

@@ -2711,3 +2711,8 @@ key	Space	Space
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Không thể ghi {name}: {e}. Còn {n} tệp đã hoàn tất trong {dir}; các tệp gốc không bị thay thế.
 	Couldn't combine files: the PDF worker stopped	Không thể gộp các tệp: tiến trình xử lý PDF đã dừng
 	Print pages	In các trang
+
+	Choose settings that create at least two files.	Chọn cài đặt tạo ít nhất hai tệp.
+	Use a folder that supports hard links, such as a local NTFS folder.	Dùng thư mục hỗ trợ liên kết cứng, chẳng hạn thư mục NTFS cục bộ.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Trình chọn tệp dừng đột ngột. Tài liệu không thay đổi. Hãy thử lại.
+	Try a local NTFS folder with write access and free space.	Thử thư mục NTFS cục bộ có quyền ghi và dung lượng trống.

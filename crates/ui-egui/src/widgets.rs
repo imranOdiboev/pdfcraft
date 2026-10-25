@@ -176,7 +176,14 @@ pub fn pill_button(ui: &mut egui::Ui, label: &str, primary: bool) -> Response {
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), label));
     let press = theme::Press::track(ui, &resp);
     let (fill, stroke, text) = if primary {
-        (press.fill(t.accent, t.accent_text, t.accent.lerp_to_gamma(Color32::BLACK, 0.22)), Stroke::NONE, Color32::WHITE)
+        (
+            {
+                let [normal, hover, pressed] = theme::primary_fills();
+                press.fill(normal, hover, pressed)
+            },
+            Stroke::NONE,
+            Color32::WHITE,
+        )
     } else {
         (press.fill(t.card, t.hover, t.pressed), Stroke::new(1.0, t.border), t.text)
     };
@@ -419,11 +426,14 @@ fn wrapped_lines(ui: &egui::Ui, text: &str, font: &egui::FontId, width: f32, tru
 
 /// Transient message at the bottom centre.
 pub fn toast(app: &mut PdfCraftApp, ctx: &egui::Context) {
-    let Some((msg, start)) = app.toast.clone() else { return };
+    let persistent = app.operation_error.is_some();
+    let Some((msg, start)) = app.operation_error.clone().map(|text| (text, 0.0)).or_else(|| app.toast.clone()) else { return };
     let now = ctx.input(|i| i.time);
     let start = if start == 0.0 { now } else { start };
-    app.toast = Some((msg.clone(), start));
-    if now - start > 3.5 {
+    if !persistent {
+        app.toast = Some((msg.clone(), start));
+    }
+    if !persistent && now - start > 3.5 {
         app.toast = None;
         return;
     }
@@ -447,10 +457,20 @@ pub fn toast(app: &mut PdfCraftApp, ctx: &egui::Context) {
                     // Allow natural short labels; wrap longer ones within the viewport,
                     // including the frame's 32 points and 16-point outside margins.
                     ui.set_max_width((screen.width() - 64.0).clamp(1.0, 560.0));
-                    ui.add(
-                        egui::Label::new(egui::RichText::new(msg).color(if t.dark() { Color32::from_rgb(0x22, 0x22, 0x26) } else { Color32::WHITE }))
-                            .wrap(),
-                    );
+                    egui::ScrollArea::vertical().id_salt("notification-message").max_height((screen.height() * 0.35).max(40.0)).show(ui, |ui| {
+                        ui.add(
+                            egui::Label::new(egui::RichText::new(msg).color(if t.dark() {
+                                Color32::from_rgb(0x22, 0x22, 0x26)
+                            } else {
+                                Color32::WHITE
+                            }))
+                            .wrap()
+                            .selectable(persistent),
+                        );
+                    });
+                    if persistent && ui.button(tl!("Dismiss")).clicked() {
+                        app.operation_error = None;
+                    }
                 });
         });
     ctx.request_repaint_after(std::time::Duration::from_millis(100));
@@ -623,7 +643,14 @@ pub fn icon_pill(ui: &mut egui::Ui, icon: &str, label: &str, primary: bool) -> R
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), label));
     let press = theme::Press::track(ui, &resp);
     let (fill, stroke, text) = if primary {
-        (press.fill(t.accent, t.accent_text, t.accent.lerp_to_gamma(Color32::BLACK, 0.22)), Stroke::NONE, Color32::WHITE)
+        (
+            {
+                let [normal, hover, pressed] = theme::primary_fills();
+                press.fill(normal, hover, pressed)
+            },
+            Stroke::NONE,
+            Color32::WHITE,
+        )
     } else {
         (press.fill(t.card, t.hover, t.pressed), Stroke::new(1.0, t.border), t.text)
     };

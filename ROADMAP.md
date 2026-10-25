@@ -1,5 +1,7 @@
 # PdfCraft roadmap
 
+> **Fork update:** 2026-10-25 · ODIBO stage 3.6: three independent read-only subagent audits, bounded command search, keyboard focus, readable primary controls and actionable operation errors. Verification in progress; upstream estimates unchanged. See [audit](docs/uiux/STAGE_3_6_AUDIT.md).
+
 > **Fork update:** 2026-10-25 · ODIBO stage 3.5: core PDF tools UX and split output safety; acceptance evidence is maintained in PR #6. See [plan](docs/uiux/STAGE_3_5_PLAN.md).
 
 **Stage: alpha** · next: beta, ~25% (ready for real work 50% → 75%) and ~400–700 h away

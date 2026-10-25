@@ -2457,3 +2457,8 @@ animation effects	Off	Ki
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	{name} nem írható: {e}. {n} kész fájl marad itt: {dir}; az eredetiket nem írtuk felül.
 	Couldn't combine files: the PDF worker stopped	A fájlok nem egyesíthetők: a PDF-feldolgozó leállt
 	Print pages	Oldalak nyomtatása
+
+	Choose settings that create at least two files.	Válasszon legalább két fájlt létrehozó beállításokat.
+	Use a folder that supports hard links, such as a local NTFS folder.	Használjon merev hivatkozásokat támogató mappát, például helyi NTFS-mappát.
+	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	A fájlválasztó váratlanul leállt. A dokumentum változatlan. Próbálja újra.
+	Try a local NTFS folder with write access and free space.	Próbáljon helyi NTFS-mappát írási joggal és szabad hellyel.

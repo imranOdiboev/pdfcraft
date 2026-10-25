@@ -62,6 +62,7 @@ struct Picked {
     target: Option<PickTarget>,
     /// The chosen paths; empty when the picker was cancelled.
     paths: Vec<PathBuf>,
+    failed: bool,
     then: Then,
 }
 
@@ -131,8 +132,10 @@ impl Pickers {
         std::thread::Builder::new()
             .name("file-picker".into())
             .spawn(move || {
-                let paths = pollster::block_on(pick);
-                done.lock().unwrap_or_else(PoisonError::into_inner).push(Picked { target, paths, then });
+                let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| pollster::block_on(pick)));
+                let failed = outcome.is_err();
+                let paths = outcome.unwrap_or_default();
+                done.lock().unwrap_or_else(PoisonError::into_inner).push(Picked { target, paths, failed, then });
                 showing.hand_over();
                 if let Some(ctx) = ctx {
                     ctx.request_repaint();
@@ -144,7 +147,7 @@ impl Pickers {
     /// Queue a pick that is already known (tests and automation). Like a real pick, it keeps
     /// the flag until the frame uses it.
     fn deliver(&self, target: Option<PickTarget>, paths: Vec<PathBuf>, then: Then) {
-        self.done.lock().unwrap_or_else(PoisonError::into_inner).push(Picked { target, paths, then });
+        self.done.lock().unwrap_or_else(PoisonError::into_inner).push(Picked { target, paths, failed: false, then });
     }
 
     fn take(&self) -> Vec<Picked> {
@@ -234,7 +237,7 @@ impl PdfCraftApp {
 
     /// Use the picks that finished since the last frame. Called every frame.
     pub(crate) fn process_picked(&mut self) {
-        for Picked { target, paths, then } in self.pickers.take() {
+        for Picked { target, paths, failed, then } in self.pickers.take() {
             // The pick is in hand: the next picker may show, including one `then` asks for.
             self.pickers.showing.store(false, Ordering::SeqCst);
             // Opens were polled before this pick was consumed. Wake their retained replies
@@ -243,6 +246,10 @@ impl PdfCraftApp {
                 && let Some(ctx) = &self.ctx
             {
                 ctx.request_repaint();
+            }
+            if failed {
+                self.operation_failed("The file picker stopped unexpectedly. Your document is unchanged. Please try again.", &[]);
+                continue;
             }
             if paths.is_empty() {
                 continue;
@@ -302,10 +309,14 @@ mod tests {
         }
         let got = Arc::new(Mutex::new(Vec::new()));
         let worker = pickers.spawn_worker(None, Some(ctx.clone()), async { fail() }, record(&got)).expect("worker starts");
-        // join returns once the panic has unwound and the drop guard has run.
-        assert!(worker.join().is_err());
-        assert!(!pickers.showing.load(Ordering::SeqCst));
-        assert!(pickers.take().is_empty());
+        assert!(worker.join().is_ok());
+        assert!(pickers.pending(), "failure must wait for the UI frame just like a pick");
+        let mut app = PdfCraftApp::new();
+        app.pickers = pickers.clone();
+        app.process_picked();
+        assert!(!pickers.pending());
+        assert!(app.operation_error.as_deref().unwrap().contains("file picker"));
+        assert!(got.lock().unwrap().is_empty(), "failed picker never invokes continuation");
         assert!(ctx.has_requested_repaint(), "retained opens must get another frame after a picker worker fails");
         assert_eq!(wakes.load(Ordering::SeqCst), 1, "an abandoned picker requests one wake");
     }

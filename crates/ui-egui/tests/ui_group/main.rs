@@ -19,6 +19,7 @@ mod links;
 mod marks;
 mod pageboxes;
 mod pdf_links;
+mod polish;
 mod protect;
 mod redact;
 mod text_select;
