@@ -111,7 +111,7 @@ jobs:
             cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/core-ux-qa/split-minimum-$scale.png dist/core-ux-qa/fixture.pdf --size 820x520 --scale $scale --language ru --theme dark --dialog split --split-ranges 1,2
           done
           cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/core-ux-qa/combine-minimum-light.png dist/core-ux-qa/fixture.pdf --size 820x520 --scale 1.5 --language ru --theme light --combine-fixture yes
-          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/core-ux-qa/organize-minimum-dark.png dist/core-ux-qa/fixture.pdf --size 820x520 --scale 2 --language ru --theme dark --tool organize --organize on --click 'Инструменты'
+          cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/core-ux-qa/organize-minimum-dark.png dist/core-ux-qa/fixture.pdf --size 820x520 --scale 2 --language ru --theme dark --organize on --click 'Инструменты'
           cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/core-ux-qa/
           cp LICENSE-MIT LICENSE-APACHE NOTICE dist/core-ux-qa/
           cp assets/fonts/OFL-Inter.txt assets/fonts/OFL-JetBrainsMono.txt assets/icons/LICENSE-lucide.txt dist/core-ux-qa/

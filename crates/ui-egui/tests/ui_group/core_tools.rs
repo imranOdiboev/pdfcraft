@@ -27,6 +27,8 @@ fn compact_combine_keeps_files_reachable_without_changing_saved_panels() {
                 let saved = serde_json::to_value(&h.state().docking).unwrap();
                 let body: egui::Rect = h.ctx.data(|d| d.get_temp(egui::Id::new("odibo-editor-document-body"))).unwrap();
                 assert!(body.width() > 760.0, "Combine must use the compact full-width projection");
+                let remove = h.get_by_role_and_label(Role::Button, i18n::tr(lang, "Remove")).rect();
+                assert!(remove.left() >= 0.0 && remove.right() <= 820.0, "labelled Remove must not overflow horizontally: {remove:?}");
                 assert!(h.query_by_role_and_label(Role::Button, i18n::tr(lang, "Inspector")).is_none(), "no document inspector button on Combine");
                 h.get_by_label("Second.pdf").scroll_to_me();
                 h.run_steps(5);

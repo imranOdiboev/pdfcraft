@@ -749,7 +749,7 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             }
             ui.add_space(12.0);
 
-            // Toolbar: on two lines when the window is narrow.
+            // Wrap complete action groups using the labelled buttons' actual widths.
             ui.horizontal_wrapped(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
                 // Where the line ends (an overflowing line would move it).
@@ -772,7 +772,12 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                         }
                     }
                 });
-                group(ui, &t, edge, 4.0 * 30.0 + 3.0 * 6.0);
+                let action_font = theme::medium(12.5);
+                let action_width = [tl!("Move up"), tl!("Move down"), tl!("Remove")]
+                    .iter()
+                    .map(|label| widgets::text_width(ui, label, &action_font) + 46.0)
+                    .sum::<f32>() + 30.0 + 3.0 * 6.0;
+                group(ui, &t, edge, action_width);
                 // Moves need a selected row with room to move; the buttons stay put either way.
                 let can_up = selected.iter().skip_while(|s| **s).any(|s| *s);
                 let can_down = selected.iter().rev().skip_while(|s| **s).any(|s| *s);
