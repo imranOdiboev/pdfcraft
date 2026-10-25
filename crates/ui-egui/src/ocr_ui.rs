@@ -381,7 +381,10 @@ impl PdfCraftApp {
             }
         };
         if self.session.get(doc).is_none_or(|d| d.edit_generation() != generation) {
-            self.operation_failed("The document changed or closed during text recognition. No results were applied. Run recognition again on the current document.", &[]);
+            self.operation_failed(
+                "The document changed or closed during text recognition. No results were applied. Run recognition again on the current document.",
+                &[],
+            );
             return;
         }
         let read = found.iter().filter(|p| p.skipped.is_none()).count();
@@ -458,11 +461,8 @@ mod beta_worker_tests {
                 already_on_page: 0,
                 skipped: None,
             }];
-            app.ocr_run = Some(OcrRun {
-                doc,
-                generation,
-                progress: Arc::new(Mutex::new(OcrProgress { result: Some(Ok(found)), ..Default::default() })),
-            });
+            app.ocr_run =
+                Some(OcrRun { doc, generation, progress: Arc::new(Mutex::new(OcrProgress { result: Some(Ok(found)), ..Default::default() })) });
             if changed == 3 {
                 app.session.close(doc);
             } else if changed != 0 {

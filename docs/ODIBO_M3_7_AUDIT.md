@@ -1,6 +1,7 @@
 # ODIBO PDF M3.7 — quality and beta preparation
 
-Status: implementation and isolated verification in progress, 2026-10-26.
+Status: candidate implementation, 2026-10-26. Live verification and final evidence:
+[M3.7 PR #8](https://github.com/imranOdiboev/pdfcraft/pull/8).
 Base main `8e0cd08b44819a0a6e9c932b96eb257655e925a6` contains merged PR #7.
 Product branch: `feature/odibo-beta-readiness`; independent documentation worktree/branch:
 `feature/odibo-readme-showcase`. No merge, official release or stage 4 work.
@@ -86,4 +87,4 @@ licensing and performance work. No nonfunctional language option was added.
   or results have been invented; owner recruits and decides acceptance.
 
 Final counts, skips, measurement values, unresolved issues, screenshots, ZIP hashes and both
-PR links will be recorded after actual GitHub Actions results. Nothing is installed locally.
+PR links are tracked in the PR report after actual GitHub Actions results. Nothing is installed locally.
