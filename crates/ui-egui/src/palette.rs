@@ -217,7 +217,8 @@ pub fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
                             fg,
                             (rect.width() - 36.0 - detail_w - 24.0).max(0.0),
                         );
-                        if theme::hand(resp).clicked() {
+                        let keyboard = resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter) || i.key_pressed(egui::Key::Space));
+                        if theme::hand(resp).clicked() || keyboard {
                             chosen = Some((h.command, h.group));
                         }
                     }

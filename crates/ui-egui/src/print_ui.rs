@@ -811,9 +811,7 @@ pub(crate) fn body(
     let sheets = settings.as_ref().ok().and_then(|s| print::layout(sizes, s).ok()).unwrap_or_default();
     d.sheet = d.sheet.min(sheets.len().saturating_sub(1));
     let max_height = (ui.ctx().content_rect().height() - 170.0).max(120.0);
-    egui::ScrollArea::both().id_salt("print-options").max_height(max_height).max_width(width).show(ui, |ui| {
-    let layout = if compact { egui::Layout::top_down(egui::Align::Min) } else { egui::Layout::left_to_right(egui::Align::Min) };
-    ui.with_layout(layout, |ui| {
+    let contents = |ui: &mut egui::Ui| {
         // Settings.
         ui.vertical(|ui| {
             ui.set_width(if compact { width } else { 470.0 });
@@ -1229,8 +1227,16 @@ pub(crate) fn body(
                 }
             }
         });
-    });
-    });
+    };
+    if compact {
+        egui::ScrollArea::both().id_salt("print-options").max_height(max_height).max_width(width).show(ui, |ui| {
+            ui.vertical(contents);
+        });
+    } else {
+        // Keep the bounded horizontal layout: an unconstrained horizontal scroll
+        // scope can move controls after hit testing when the printer text grows.
+        ui.horizontal_top(contents);
+    }
     ui.add_space(12.0);
     let (mut go, mut cancel) = (false, false);
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {

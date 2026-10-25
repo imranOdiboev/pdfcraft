@@ -14,14 +14,15 @@ import subprocess
 import time
 
 
-def fixture(pages):
+def fixture(pages, with_text=True):
     objects = [b"<< /Type /Catalog /Pages 2 0 R >>",
                f"<< /Type /Pages /Kids [{' '.join(f'{4+2*i} 0 R' for i in range(pages))}] /Count {pages} /MediaBox [0 0 595 842] >>".encode(),
-               b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"]
+               b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>" if with_text else b"<< >>"]
     for i in range(pages):
-        stream = f"BT /F1 16 Tf 30 790 Td (PAGE-{i+1:04}) Tj ET\n".encode()
+        stream = f"BT /F1 16 Tf 30 790 Td (PAGE-{i+1:04}) Tj ET\n".encode() if with_text else b""
         stream += b"0.9 0.94 1 rg\n" + b"".join(f"{20+j%8*65} {40+j//8*65} 45 40 re f\n".encode() for j in range(64))
-        objects += [f"<< /Type /Page /Parent 2 0 R /Contents {5+2*i} 0 R /Resources << /Font << /F1 3 0 R >> >> >>".encode(),
+        resources = "<< /Font << /F1 3 0 R >> >>" if with_text else "<< >>"
+        objects += [f"<< /Type /Page /Parent 2 0 R /Contents {5+2*i} 0 R /Resources {resources} >>".encode(),
                     f"<< /Length {len(stream)} >>\nstream\n".encode()+stream+b"endstream"]
     out = bytearray(b"%PDF-1.7\n"); offsets = []
     for i, obj in enumerate(objects, 1):

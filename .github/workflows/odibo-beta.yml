@@ -207,6 +207,7 @@ jobs:
               cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/home-$language-$theme.png --scale 1 --language $language --theme $theme
               cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/editor-$language-$theme.png dist/beta-qa/fixture.pdf --scale 1 --language $language --theme $theme --panel pages
               cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/print-$language-$theme.png dist/beta-qa/fixture.pdf --size 820x520 --scale 1.5 --language $language --theme $theme --invoke print.dialog
+              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/print-wide-$language-$theme.png dist/beta-qa/fixture.pdf --size 1400x900 --scale 1 --language $language --theme $theme --invoke print.dialog
             done
           done
           for scale in 1 1.5 2; do
@@ -214,6 +215,20 @@ jobs:
           done
           cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/combine-minimum-light.png dist/beta-qa/fixture.pdf --size 820x520 --scale 1.5 --language ru --theme light --combine-fixture yes
           cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/organize-minimum-dark.png dist/beta-qa/fixture.pdf --size 820x520 --scale 2 --language ru --theme dark --organize on --click 'Инструменты'
+          python3 - <<'PY'
+          import hashlib, importlib.util, json, os
+          from pathlib import Path
+          spec = importlib.util.spec_from_file_location('beta', 'packaging/odibo_beta_benchmark.py')
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          data = module.fixture(500, with_text=False)
+          assert b'/Font' not in data and b'/Image' not in data
+          Path(os.environ['RUNNER_TEMP'], 'odibo-ui-500.pdf').write_bytes(data)
+          Path('dist/beta-qa/ui-fixture.json').write_text(json.dumps({'pages':500,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'rectangles_per_page':64}), encoding='utf-8')
+          PY
+          for sample in 0 1 2 3 4 5; do
+            cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/ui-first-display-$sample.png "$RUNNER_TEMP/odibo-ui-500.pdf" --size 1280x800 --scale 1 --language ru --theme dark --metrics dist/beta-qa/ui-metrics-$sample.json
+          done
           cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/beta-qa/
           cp LICENSE-MIT LICENSE-APACHE NOTICE dist/beta-qa/
           cp assets/fonts/OFL-Inter.txt assets/fonts/OFL-JetBrainsMono.txt assets/icons/LICENSE-lucide.txt dist/beta-qa/
