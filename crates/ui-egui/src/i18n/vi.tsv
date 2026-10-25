@@ -2696,3 +2696,18 @@ key	Space	Space
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Mã nguồn mở: MIT OR Apache-2.0. Tài nguyên thương hiệu ODIBO có điều khoản riêng.
 	ODIBO PDF project	Dự án ODIBO PDF
 	Feedback	Phản hồi
+
+	Undo restores recent page changes. Save As keeps the original file.	Hoàn tác khôi phục các thay đổi trang gần đây. Lưu thành giữ lại tệp gốc.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Tiếp theo hãy chọn thư mục đầu ra. Các tệp gốc không đổi; tệp hiện có sẽ không bị thay thế.
+	Combining PDFs…	Đang gộp PDF…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Tạo PDF mới mà không thay đổi tệp nguồn. Dùng Lưu thành để chọn nơi lưu kết quả.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Nhập các khoảng liên tiếp bao phủ mọi trang, ví dụ 1-3, 4-6.
+	Move selected pages earlier	Chuyển các trang đã chọn lên trước
+	Move selected pages later	Chuyển các trang đã chọn ra sau
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Các tệp gốc không đổi. Hủy sẽ bỏ kết quả; bước xử lý PDF hiện tại có thể cần thời gian để kết thúc.
+	Page ranges	Khoảng trang
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Bước xử lý PDF trước vẫn đang kết thúc. Bạn có thể tiếp tục làm việc; hãy thử gộp lại sau một lát.
+	{name} already exists. Choose another folder; no files were written.	{name} đã tồn tại. Hãy chọn thư mục khác; chưa có tệp nào được ghi.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Không thể ghi {name}: {e}. Còn {n} tệp đã hoàn tất trong {dir}; các tệp gốc không bị thay thế.
+	Couldn't combine files: the PDF worker stopped	Không thể gộp các tệp: tiến trình xử lý PDF đã dừng
+	Print pages	In các trang

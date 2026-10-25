@@ -95,21 +95,40 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         let targets = view.target_pages();
         let last = targets.last().copied().unwrap_or(0);
         widgets::section_title(ui, tl!("Page options"));
+        ui.label(egui::RichText::new(tl!("Undo restores recent page changes. Save As keeps the original file.")).color(t.text_muted));
         ui.add_enabled_ui(editable, |ui| {
-            ui.horizontal(|ui| {
+            let first = targets.first().copied().unwrap_or(0);
+            ui.vertical(|ui| {
+                if ui
+                    .add_enabled_ui(first > 0, |ui| row(ui, t, "chevron-left", tl!("Move selected pages earlier"), Availability::Ready, false))
+                    .inner
+                    .clicked()
+                {
+                    act = Some(Act::Edit(Box::new(Edit::MovePages { pages: targets.clone(), to: first - 1 })));
+                }
+                if ui
+                    .add_enabled_ui(last + 1 < n, |ui| row(ui, t, "chevron-right", tl!("Move selected pages later"), Availability::Ready, false))
+                    .inner
+                    .clicked()
+                {
+                    act = Some(Act::Edit(Box::new(Edit::MovePages { pages: targets.clone(), to: first + 1 })));
+                }
+            });
+            ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
-                if icons::button(ui, "rotate-ccw", 34.0, false, tl!("Rotate counterclockwise")).clicked() {
+                if row(ui, t, "rotate-ccw", tl!("Rotate counterclockwise"), Availability::Ready, false).clicked() {
                     act = Some(Act::Edit(Box::new(Edit::RotatePages { pages: targets.clone(), degrees: -90 })));
                 }
-                if icons::button(ui, "rotate-cw", 34.0, false, tl!("Rotate clockwise")).clicked() {
+                if row(ui, t, "rotate-cw", tl!("Rotate clockwise"), Availability::Ready, false).clicked() {
                     act = Some(Act::Edit(Box::new(Edit::RotatePages { pages: targets.clone(), degrees: 90 })));
                 }
                 // A document keeps at least one page.
                 let can_delete = targets.len() < n;
-                if ui.add_enabled_ui(can_delete, |ui| icons::button(ui, "trash-2", 34.0, false, tl!("Delete pages (Delete)"))).inner.clicked() {
+                if ui.add_enabled_ui(can_delete, |ui| row(ui, t, "trash-2", tl!("Delete pages (Delete)"), Availability::Ready, false)).inner.clicked()
+                {
                     act = Some(Act::Edit(Box::new(Edit::DeletePages { pages: targets.clone() })));
                 }
-                if icons::button(ui, "file-output", 34.0, false, tl!("Extract pages to a new document")).clicked() {
+                if row(ui, t, "file-output", tl!("Extract pages to a new document"), Availability::Ready, false).clicked() {
                     act = Some(Act::View(ViewAction::Extract));
                 }
             });
@@ -143,8 +162,6 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         for (icon, label, availability, command) in [
             ("square-dashed-mouse-pointer", "Set page boxes", Availability::Ready, Some("page.boxes")),
             ("crop", "Crop pages", Availability::Ready, Some("page.crop")),
-            ("presentation", "Page transitions", Availability::Later, Some("page.transitions")),
-            ("file-text", "Page templates", Availability::Later, None),
             ("printer", "Print pages", Availability::Ready, Some("print.dialog")),
         ] {
             if row(ui, t, icon, tl!(label), availability, false).clicked()
@@ -157,7 +174,6 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         if row(ui, t, "tag", tl!("Page labels"), Availability::Ready, false).clicked() {
             act = Some(Act::Command("page.number"));
         }
-        row(ui, t, "info", tl!("Page properties"), Availability::Later, false);
     });
 
     if close {
@@ -180,8 +196,6 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Availability {
     Ready,
-    /// Not in ODIBO PDF yet: shown muted, as Acrobat lists it, and says it is planned when hovered.
-    Later,
 }
 
 /// One row of the panel: a monochrome icon and the label, as Acrobat draws them, with a corner
@@ -194,13 +208,22 @@ fn row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability: Ava
     if ready {
         press.wash(ui, rect, 6, false);
     }
+    if resp.has_focus() {
+        ui.painter().rect_stroke(rect.shrink(1.0), 6, Stroke::new(2.0, t.accent), egui::StrokeKind::Inside);
+    }
     let body = rect.translate(press.offset());
     let fg = if ready { t.text } else { t.text_faint };
     let icon_rect = Rect::from_min_size(body.min + vec2(6.0, 8.0), vec2(18.0, 18.0));
     icons::paint(ui, icon_rect, icon, 17.0, fg);
     let font = theme::regular(13.5);
-    let width = crate::widgets::text_width(ui, label, &font);
-    ui.painter().text(body.left_center() + vec2(34.0, 0.0), Align2::LEFT_CENTER, label, font, fg);
+    let caption = match icon {
+        "chevron-left" => tl!("Move earlier"),
+        "chevron-right" => tl!("Move later"),
+        _ => label,
+    };
+    let shown = widgets::fit_line(caption, (body.width() - 52.0).max(1.0), |s| widgets::text_width(ui, s, &font));
+    let width = crate::widgets::text_width(ui, &shown, &font);
+    ui.painter().text(body.left_center() + vec2(34.0, 0.0), Align2::LEFT_CENTER, shown, font, fg);
     if menu {
         // The small corner triangle Acrobat puts after a label that opens a menu.
         let tip = body.left_center() + vec2(34.0 + width + 6.0, 6.0);
@@ -208,8 +231,7 @@ fn row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability: Ava
         ui.painter().add(egui::Shape::convex_polygon(tri, fg, Stroke::NONE));
     }
     match availability {
-        Availability::Ready => theme::hand(resp),
-        Availability::Later => resp.on_hover_text(tl!("Planned")),
+        Availability::Ready => theme::hand(resp).on_hover_text(label),
     }
 }
 

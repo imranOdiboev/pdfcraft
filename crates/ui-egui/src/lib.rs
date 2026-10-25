@@ -693,6 +693,8 @@ pub struct PdfCraftApp {
     pub combine_conflicts: combine_ui::ConflictPreview,
     /// The Combine files tab: whether it is open, shown, its selection and undo history.
     pub combine_tab: combine_ui::CombineTab,
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) combine_run: Option<combine_ui::CombineRun>,
     /// The Combine files table's column order and widths (kept in the settings).
     pub combine_columns: combine_ui::Columns,
     /// Combine files as thumbnails or as the table (kept in the settings).
@@ -1013,6 +1015,8 @@ impl PdfCraftApp {
             combine_draft: Vec::new(),
             combine_conflicts: Default::default(),
             combine_tab: Default::default(),
+            #[cfg(not(target_arch = "wasm32"))]
+            combine_run: None,
             combine_columns: Default::default(),
             combine_view: Default::default(),
             combine_zoom: 1.0,
@@ -3119,6 +3123,8 @@ impl eframe::App for PdfCraftApp {
         self.poll_export();
         self.poll_ocr();
         self.poll_optimize();
+        #[cfg(not(target_arch = "wasm32"))]
+        self.poll_combine(ctx);
         self.poll_action();
         self.process_file_requests();
         #[cfg(not(target_arch = "wasm32"))]

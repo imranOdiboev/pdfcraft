@@ -403,13 +403,16 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
             }
         }
     }
-    let compact = app.active.is_some() && ui.available_width() < 940.0;
+    let compact = (app.active.is_some() || app.combine_showing()) && ui.available_width() < 940.0;
     ui.data_mut(|data| data.insert_temp(egui::Id::new("odibo-compact-editor"), compact));
     let requested = app.pending_panel_reveals.last().copied();
     let drawer_id = egui::Id::new("odibo-editor-context-drawer");
     let mut drawer = ui.data(|data| data.get_temp::<Panel>(drawer_id));
+    if app.active.is_none() && drawer == Some(Panel::Inspector) {
+        drawer = None;
+    }
     if compact {
-        if let Some(panel) = requested.filter(|panel| *panel != Panel::Canvas) {
+        if let Some(panel) = requested.filter(|panel| *panel != Panel::Canvas && (app.active.is_some() || *panel != Panel::Inspector)) {
             drawer = Some(panel);
             crate::editor_navigation::close_drawer(ui.ctx());
         }
@@ -421,7 +424,7 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
                     crate::editor_navigation::close_drawer(ui.ctx());
                 }
             }
-            if app.right.is_some() && crate::widgets::ghost_button(ui, "panel-right", crate::i18n::t("Inspector")).clicked() {
+            if app.active.is_some() && app.right.is_some() && crate::widgets::ghost_button(ui, "panel-right", crate::i18n::t("Inspector")).clicked() {
                 drawer = if drawer == Some(Panel::Inspector) { None } else { Some(Panel::Inspector) };
                 if drawer.is_some() {
                     crate::editor_navigation::close_drawer(ui.ctx());

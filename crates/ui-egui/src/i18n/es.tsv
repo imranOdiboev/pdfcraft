@@ -2583,3 +2583,18 @@ animation effects	Off	Desactivados
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Código abierto: MIT OR Apache-2.0. Los recursos de marca ODIBO tienen condiciones independientes.
 	ODIBO PDF project	Proyecto ODIBO PDF
 	Feedback	Comentarios
+
+	Undo restores recent page changes. Save As keeps the original file.	Deshacer restaura cambios recientes de las páginas. Guardar como conserva el archivo original.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Elija después una carpeta de destino. Los originales no cambian; no se sustituirán archivos existentes.
+	Combining PDFs…	Combinando PDF…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Crea un PDF nuevo sin cambiar los archivos de origen. Use Guardar como para elegir dónde guardar el resultado.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Introduzca rangos consecutivos que cubran todas las páginas, por ejemplo 1-3, 4-6.
+	Move selected pages earlier	Mover las páginas seleccionadas hacia el principio
+	Move selected pages later	Mover las páginas seleccionadas hacia el final
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Los originales no cambian. Cancelar descarta el resultado; el paso PDF actual puede tardar en terminar.
+	Page ranges	Rangos de páginas
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	El paso PDF anterior sigue terminando. Puede seguir trabajando; vuelva a intentar combinar dentro de un momento.
+	{name} already exists. Choose another folder; no files were written.	{name} ya existe. Elija otra carpeta; no se escribió ningún archivo.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	No se pudo escribir {name}: {e}. Quedan {n} archivos completados en {dir}; no se sustituyeron los originales.
+	Couldn't combine files: the PDF worker stopped	No se pudieron combinar los archivos: el proceso PDF se detuvo
+	Print pages	Imprimir páginas

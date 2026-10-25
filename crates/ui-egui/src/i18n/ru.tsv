@@ -1819,7 +1819,7 @@
 	Rename	Переименовать
 	Set to current page ({n})	Установить текущей страницей ({n})
 	Move up	Переместить вверх
-	Move down	Переместить вdownarrow
+	Move down	Переместить вниз
 	Indent	Отступ
 	Outdent	Убрать отступ
 	This document has no form fields.	В этом документе нет полей формы.
@@ -2356,3 +2356,23 @@ animation effects	Off	Выкл
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Открытый код: MIT OR Apache-2.0. Для фирменных материалов ODIBO действуют отдельные условия.
 	ODIBO PDF project	Проект ODIBO PDF
 	Feedback	Обратная связь
+
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Введите последовательные диапазоны без пропусков, например 1-3, 4-6.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Далее выберите папку. Исходный документ останется без изменений; существующие файлы не будут заменены.
+	{name} already exists. Choose another folder; no files were written.	Файл {name} уже существует. Выберите другую папку; файлы не записаны.
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Будет создан новый PDF. Исходные файлы останутся без изменений. Выберите «Сохранить как», чтобы сохранить результат.
+
+	Page ranges	Диапазоны страниц
+	Combining PDFs…	Объединение PDF…
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Исходные файлы не изменяются. Отмена удаляет результат; завершение текущего шага может занять время.
+	Couldn't combine files: the PDF worker stopped	Не удалось объединить файлы: обработчик PDF остановился
+
+	Move selected pages earlier	Переместить выбранные страницы раньше
+	Move selected pages later	Переместить выбранные страницы позже
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Не удалось записать {name}: {e}. Готовых файлов в папке {dir}: {n}; исходные файлы не заменены.
+
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Предыдущий шаг PDF ещё выполняется. Можно продолжать работу; повторите объединение чуть позже.
+
+	Print pages	Печать страниц
+
+	Undo restores recent page changes. Save As keeps the original file.	Отмена восстанавливает недавние изменения страниц. «Сохранить как» позволяет сохранить исходный файл.

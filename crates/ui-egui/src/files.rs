@@ -129,11 +129,13 @@ pub struct SplitDraft {
     pub mode: SplitMode,
     /// The largest part, in megabytes (File size mode).
     pub size_mb: f64,
+    /// Consecutive, inclusive ranges covering the document; transient dialog state only.
+    pub ranges: String,
 }
 
 impl Default for SplitDraft {
     fn default() -> Self {
-        SplitDraft { every: 1, mode: SplitMode::Pages, size_mb: 2.0 }
+        SplitDraft { every: 1, mode: SplitMode::Pages, size_mb: 2.0, ranges: String::new() }
     }
 }
 
@@ -145,6 +147,34 @@ pub enum SplitMode {
     Selection,
     Size,
     Bookmarks,
+    Ranges,
+}
+
+/// Translate an explicit partition to the engine's existing split-before boundaries.
+/// Requiring complete, ordered coverage prevents accidentally omitting or duplicating pages.
+pub(crate) fn split_range_plan(input: &str, count: usize) -> Result<SplitBy, String> {
+    let invalid = || tl!("Enter consecutive ranges covering every page, for example 1-3, 4-6.").to_string();
+    let mut next = 1usize;
+    let mut cuts = Vec::new();
+    if count == 0 || input.len() > 16_384 {
+        return Err(invalid());
+    }
+    for part in input.split(',') {
+        let part = part.trim();
+        let (a, b) = part.split_once('-').map_or((part, part), |(a, b)| (a.trim(), b.trim()));
+        let (a, b) = (a.parse::<usize>().map_err(|_| invalid())?, b.parse::<usize>().map_err(|_| invalid())?);
+        if a != next || b < a || b > count {
+            return Err(invalid());
+        }
+        if a > 1 {
+            cuts.push(a - 1);
+        }
+        next = b.checked_add(1).ok_or_else(invalid)?;
+    }
+    if next.checked_sub(1) != Some(count) {
+        return Err(invalid());
+    }
+    Ok(SplitBy::Before(cuts))
 }
 
 /// What Split does once confirmed.
@@ -690,6 +720,16 @@ impl PdfCraftApp {
     /// when the user chooses the folder. `after` never runs when writing fails or is cancelled.
     /// Every name must be a plain file name ([`is_plain_file_name`]); otherwise nothing is written.
     pub(crate) fn write_files_then(&mut self, named: Vec<(String, Arc<Vec<u8>>)>, title: &str, after: impl FnOnce(&mut Self) + Send + 'static) {
+        self.write_files_policy(named, title, false, after);
+    }
+
+    fn write_files_policy(
+        &mut self,
+        named: Vec<(String, Arc<Vec<u8>>)>,
+        title: &str,
+        new_only: bool,
+        after: impl FnOnce(&mut Self) + Send + 'static,
+    ) {
         if let Some((name, _)) = named.iter().find(|(name, _)| !is_plain_file_name(name)) {
             self.notify_fmt("Couldn't write {name}: {e}", &[("name", name), ("e", tl!("the name is not a plain file name"))]);
             return;
@@ -697,9 +737,25 @@ impl PdfCraftApp {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let write = move |app: &mut Self, dir: std::path::PathBuf| {
-                for (name, bytes) in &named {
-                    if let Err(e) = crate::editing::write_atomically(&dir.join(name).to_string_lossy(), bytes) {
-                        app.notify_fmt("Couldn't write {name}: {e}", &[("name", name), ("e", &e.to_string())]);
+                if new_only && let Some((name, _)) = named.iter().find(|(name, _)| std::fs::symlink_metadata(dir.join(name)).is_ok()) {
+                    app.notify_fmt("{name} already exists. Choose another folder; no files were written.", &[("name", name)]);
+                    return;
+                }
+                for (written, (name, bytes)) in named.iter().enumerate() {
+                    let result = if new_only {
+                        write_new_pdf(&dir.join(name), bytes)
+                    } else {
+                        crate::editing::write_atomically(&dir.join(name).to_string_lossy(), bytes)
+                    };
+                    if let Err(e) = result {
+                        if new_only {
+                            app.notify_fmt(
+                                "Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.",
+                                &[("name", name), ("e", &e.to_string()), ("n", &written.to_string()), ("dir", &dir.display().to_string())],
+                            );
+                        } else {
+                            app.notify_fmt("Couldn't write {name}: {e}", &[("name", name), ("e", &e.to_string())]);
+                        }
                         return;
                     }
                 }
@@ -719,7 +775,7 @@ impl PdfCraftApp {
         }
         #[cfg(target_arch = "wasm32")]
         {
-            let _ = title;
+            let _ = (title, new_only);
             for (name, bytes) in &named {
                 if let Err(e) = crate::editing::download(name, bytes) {
                     self.notify_fmt("Couldn't download {name}: {e}", &[("name", name), ("e", &e.to_string())]);
@@ -796,7 +852,7 @@ impl PdfCraftApp {
                 (unique, bytes)
             })
             .collect();
-        self.write_files(&named, "Choose a folder for the split files");
+        self.write_files_policy(named, "Choose a folder for the split files", true, |_| {});
     }
 
     /// Summarize Comments: make the summary and open it as a new document.
@@ -827,6 +883,26 @@ impl PdfCraftApp {
 
 pub(crate) fn strip_pdf(name: &str) -> &str {
     name.strip_suffix(".pdf").or_else(|| name.strip_suffix(".PDF")).unwrap_or(name)
+}
+
+/// Publish a fully flushed output without replacing an existing file, even if one appeared
+/// after the dialog's preflight. A volume without hard links fails safely; never fall back to
+/// rename-over or opening the destination for writing. Normal Save/Save As remain unchanged.
+#[cfg(not(target_arch = "wasm32"))]
+fn write_new_pdf(path: &std::path::Path, bytes: &[u8]) -> std::io::Result<()> {
+    use pdfcraft_platform::staging::{StagingName, create_staging, staging_suffixes};
+    use std::io::Write as _;
+    let dir = path.parent().unwrap_or(std::path::Path::new("."));
+    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("split");
+    let (temporary, mut file) = create_staging(dir, name, StagingName::TagThenSuffix, staging_suffixes())?;
+    let result = (|| {
+        file.write_all(bytes)?;
+        file.sync_all()?;
+        drop(file);
+        std::fs::hard_link(&temporary, path)
+    })();
+    let _ = std::fs::remove_file(temporary);
+    result
 }
 
 impl PdfCraftApp {
@@ -1022,7 +1098,11 @@ impl PdfCraftApp {
 
 #[cfg(test)]
 mod stem_tests {
-    use super::{attachment_file_name, file_stem_from_user, is_plain_file_name};
+    #[cfg(not(target_arch = "wasm32"))]
+    use super::write_new_pdf;
+    use super::{attachment_file_name, file_stem_from_user, is_plain_file_name, split_range_plan};
+    #[cfg(not(target_arch = "wasm32"))]
+    use std::sync::Arc;
 
     #[test]
     fn user_file_names_stay_inside_the_folder_and_writable_everywhere() {
@@ -1097,6 +1177,42 @@ mod stem_tests {
         app.write_files(&[("x.pdf".into(), std::sync::Arc::new(b"%PDF".to_vec()))], "t");
         assert_eq!(walk(&dir), vec![out.join("x.pdf")]);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn explicit_split_ranges_cover_every_page_once() {
+        for input in ["1-3, 4-6", " 1 - 3 , 4,5-6 "] {
+            let by = split_range_plan(input, 6).unwrap();
+            let pages: Vec<_> = pdfcraft_engine::split_ranges(6, &by).into_iter().flatten().collect();
+            assert_eq!(pages, (0..6).collect::<Vec<_>>());
+        }
+        for input in ["", "0-3,4-6", "1-3,3-6", "1-2,4-6", "4-6,1-3", "1-7", "1-3,", "1-a", "1-2-3", "1-3", "18446744073709551616"] {
+            assert!(split_range_plan(input, 6).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    #[cfg(not(target_arch = "wasm32"))]
+    fn split_outputs_never_replace_existing_files_or_write_on_preflight_failure() {
+        let dir = std::env::temp_dir().join(format!("odibo-split-no-clobber-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let existing = dir.join("existing.pdf");
+        std::fs::write(&existing, b"original").unwrap();
+        let mut app = crate::PdfCraftApp::new();
+        app.set_option("language", "en").unwrap();
+        app.export_dir_override = Some(dir.to_string_lossy().into_owned());
+        let bytes = Arc::new(b"result".to_vec());
+        app.write_files_policy(vec![("new.pdf".into(), bytes.clone()), ("existing.pdf".into(), bytes)], "split", true, |_| {
+            panic!("must not complete")
+        });
+        assert!(!dir.join("new.pdf").exists());
+        assert_eq!(std::fs::read(&existing).unwrap(), b"original");
+        // The publish itself also refuses collisions, independently of preflight (TOCTOU).
+        assert!(write_new_pdf(&existing, b"replacement").is_err());
+        assert_eq!(std::fs::read(&existing).unwrap(), b"original");
+        assert!(write_new_pdf(&dir.join("missing").join("out.pdf"), b"x").is_err());
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1, "no staging file left on failure");
+        std::fs::remove_dir_all(dir).unwrap();
     }
 
     fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {

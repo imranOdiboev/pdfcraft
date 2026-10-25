@@ -2,7 +2,7 @@ name: ODIBO isolated source preparation
 
 on:
   push:
-    branches: [feature/odibo-rebranding, feature/odibo-uiux, feature/odibo-home, feature/odibo-editor-workspace]
+    branches: [feature/odibo-rebranding, feature/odibo-uiux, feature/odibo-home, feature/odibo-editor-workspace, feature/odibo-core-ux]
   workflow_dispatch:
     inputs:
       prepare_security_patch:
@@ -32,9 +32,16 @@ jobs:
           mkdir -p dist/preparation
           trap 'git diff --binary -- "*.rs" ATTRIBUTION.md Cargo.lock > dist/preparation/preparation.patch' EXIT
           if [ '${{ inputs.prepare_security_patch }}' = 'true' ]; then
-            test "$GITHUB_REF" = 'refs/heads/feature/odibo-editor-workspace'
-            cargo update -p ctutils --precise 0.4.4
-            cargo update -p clipboard-win
+            case "$GITHUB_REF" in
+              refs/heads/feature/odibo-core-ux)
+                cargo update -p crypto-bigint@0.7.5 --precise 0.7.6
+                ;;
+              refs/heads/feature/odibo-editor-workspace)
+                cargo update -p ctutils --precise 0.4.4
+                cargo update -p clipboard-win
+                ;;
+              *) exit 1 ;;
+            esac
           fi
           cargo fmt --all
           cargo xtask assets --write

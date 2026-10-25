@@ -1,5 +1,7 @@
 # PdfCraft roadmap
 
+> **Fork update:** 2026-10-25 · ODIBO stage 3.5: core PDF tools UX and split output safety; acceptance evidence is maintained in PR #6. See [plan](docs/uiux/STAGE_3_5_PLAN.md).
+
 **Stage: alpha** · next: beta, ~25% (ready for real work 50% → 75%) and ~400–700 h away
 
 > **Fork update:** 2026-10-21 · ODIBO foundation: independent Windows x64 build, PDF acceptance and licence-bundle verification passed. Upstream readiness estimates unchanged. See [foundation report](docs/ODIBO_FOUNDATION_REPORT.md).

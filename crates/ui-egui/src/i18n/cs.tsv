@@ -2517,3 +2517,18 @@ animation effects	Off	Vypnuto
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Otevřený zdrojový kód: MIT OR Apache-2.0. Materiály značky ODIBO mají samostatné podmínky.
 	ODIBO PDF project	Projekt ODIBO PDF
 	Feedback	Zpětná vazba
+
+	Undo restores recent page changes. Save As keeps the original file.	Zpět obnoví poslední změny stránek. Uložit jako zachová původní soubor.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Nyní vyberte výstupní složku. Originály se nezmění; existující soubory nebudou nahrazeny.
+	Combining PDFs…	Slučování PDF…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Vytvoří nové PDF beze změny zdrojových souborů. Cíl výsledku vyberte pomocí Uložit jako.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Zadejte navazující rozsahy všech stránek, například 1-3, 4-6.
+	Move selected pages earlier	Přesunout vybrané stránky dopředu
+	Move selected pages later	Přesunout vybrané stránky dozadu
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Originály se nezmění. Zrušení zahodí výsledek; dokončení aktuálního kroku PDF může chvíli trvat.
+	Page ranges	Rozsahy stránek
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Předchozí krok PDF ještě končí. Můžete dál pracovat; sloučení zkuste znovu za chvíli.
+	{name} already exists. Choose another folder; no files were written.	{name} již existuje. Vyberte jinou složku; nebyly zapsány žádné soubory.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Nelze zapsat {name}: {e}. Ve složce {dir} zůstává {n} dokončených souborů; originály nebyly nahrazeny.
+	Couldn't combine files: the PDF worker stopped	Soubory nelze sloučit: proces PDF se zastavil
+	Print pages	Tisk stránek

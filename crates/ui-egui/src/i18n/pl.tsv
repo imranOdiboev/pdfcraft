@@ -2419,3 +2419,18 @@ animation effects	Off	Wyłączone
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Otwarty kod: MIT OR Apache-2.0. Materiały marki ODIBO mają odrębne warunki.
 	ODIBO PDF project	Projekt ODIBO PDF
 	Feedback	Opinie
+
+	Undo restores recent page changes. Save As keeps the original file.	Cofnij przywraca ostatnie zmiany stron. Zapisz jako zachowuje oryginalny plik.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Wybierz teraz folder wyjściowy. Oryginały pozostają bez zmian; istniejące pliki nie zostaną zastąpione.
+	Combining PDFs…	Łączenie plików PDF…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Tworzy nowy PDF bez zmiany plików źródłowych. Wybierz miejsce zapisu wyniku za pomocą Zapisz jako.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Wpisz kolejne zakresy obejmujące wszystkie strony, na przykład 1-3, 4-6.
+	Move selected pages earlier	Przenieś wybrane strony wcześniej
+	Move selected pages later	Przenieś wybrane strony później
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Oryginały pozostają bez zmian. Anulowanie odrzuca wynik; bieżący krok PDF może potrzebować czasu na zakończenie.
+	Page ranges	Zakresy stron
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Poprzedni krok PDF jeszcze się kończy. Możesz kontynuować pracę; spróbuj połączyć ponownie za chwilę.
+	{name} already exists. Choose another folder; no files were written.	{name} już istnieje. Wybierz inny folder; nie zapisano żadnych plików.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Nie można zapisać {name}: {e}. W folderze {dir} pozostaje {n} gotowych plików; oryginałów nie zastąpiono.
+	Couldn't combine files: the PDF worker stopped	Nie można połączyć plików: proces PDF zatrzymał się
+	Print pages	Drukuj strony

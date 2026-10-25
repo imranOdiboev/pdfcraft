@@ -508,6 +508,7 @@ fn combine_follows_the_order_shown_in_the_grid() {
     drag(&mut h, three.center(), one.center() - vec2(one.width() * 0.3, 0.0));
     assert_eq!(names(&h), ["three.pdf", "one.pdf", "two.pdf"]);
     h.get_by_label("Combine").click();
+    wait_for_combine(&mut h);
     h.run_steps(3);
     let app = h.state();
     assert_eq!(app.views.len(), 1, "the result opens");
@@ -1588,6 +1589,7 @@ fn combining_with_files_expanded_gives_the_same_document() {
     h.run_steps(2);
     assert_eq!(h.state().combine_expanded(), [0, 1]);
     h.get_by_label("Combine").click();
+    wait_for_combine(&mut h);
     h.run_steps(3);
     let app = h.state();
     assert_eq!(app.views.len(), 1, "the result opens");
@@ -1701,6 +1703,7 @@ fn a_split_file_counts_once_and_combines_with_one_bookmark() {
     h.hover_at(egui::pos2(5.0, 890.0));
     h.run_steps(2);
     h.get_by_label("Combine").click();
+    wait_for_combine(&mut h);
     h.run_steps(3);
     let app = h.state();
     assert_eq!(app.views.len(), 1, "the result opens");
@@ -1840,4 +1843,17 @@ fn open_documents_already_in_the_list_are_not_added_again() {
     h.run_steps(2);
     add_all(&mut h);
     assert_eq!(names(&h), ["a.pdf", "report.pdf", "report.pdf", "b.pdf"]);
+}
+
+/// Pump real frames while the bounded native PDF worker finishes.
+fn wait_for_combine(h: &mut Harness<'static, PdfCraftApp>) {
+    h.run_steps(3);
+    for _ in 0..600 {
+        if !h.state().combine_pending() {
+            return;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        h.run_steps(1);
+    }
+    panic!("Combine worker did not finish");
 }

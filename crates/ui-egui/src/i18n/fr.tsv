@@ -2443,3 +2443,18 @@ animation effects	Off	Désactivés
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Code source ouvert : MIT OR Apache-2.0. Les éléments de marque ODIBO ont des conditions distinctes.
 	ODIBO PDF project	Projet ODIBO PDF
 	Feedback	Commentaires
+
+	Undo restores recent page changes. Save As keeps the original file.	Annuler restaure les modifications récentes des pages. Enregistrer sous conserve le fichier original.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Choisissez ensuite un dossier de sortie. Les originaux restent inchangés ; aucun fichier existant ne sera remplacé.
+	Combining PDFs…	Fusion des PDF…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Crée un nouveau PDF sans modifier les sources. Utilisez Enregistrer sous pour choisir où conserver le résultat.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Saisissez des plages consécutives couvrant toutes les pages, par exemple 1-3, 4-6.
+	Move selected pages earlier	Déplacer les pages sélectionnées plus tôt
+	Move selected pages later	Déplacer les pages sélectionnées plus tard
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Les originaux restent inchangés. Annuler abandonne le résultat ; l’étape PDF en cours peut prendre du temps.
+	Page ranges	Plages de pages
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	L’étape PDF précédente se termine. Vous pouvez continuer à travailler ; réessayez Fusionner dans un instant.
+	{name} already exists. Choose another folder; no files were written.	{name} existe déjà. Choisissez un autre dossier ; aucun fichier n’a été écrit.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Impossible d’écrire {name} : {e}. {n} fichiers terminés restent dans {dir} ; les originaux n’ont pas été remplacés.
+	Couldn't combine files: the PDF worker stopped	Impossible de fusionner les fichiers : le processus PDF s’est arrêté
+	Print pages	Imprimer les pages

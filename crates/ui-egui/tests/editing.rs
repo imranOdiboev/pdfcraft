@@ -1041,6 +1041,7 @@ fn combining_files_opens_a_new_unsaved_tab() {
     });
     h.run_steps(3);
     h.get_by_label("Combine").click();
+    wait_for_combine(&mut h);
     h.run_steps(3);
     let app = h.state();
     assert_eq!(app.views.len(), 2);
@@ -1075,6 +1076,7 @@ fn combine_files_takes_chosen_pages_in_the_order_listed() {
     h.run_steps(2);
     h.get_by_label("2 of 3");
     h.get_by_label("Combine").click();
+    wait_for_combine(&mut h);
     h.run_steps(3);
     let app = h.state();
     assert_eq!(texts_of(app, 1), ["Page 1", "Page 2", "Page 3", "Page 1"]);
@@ -1390,6 +1392,7 @@ fn images_and_text_files_join_the_combine_list_as_pdfs() {
     assert!(draft.iter().all(|f| f.bytes.starts_with(b"%PDF-") && f.problem.is_none()), "made into PDFs");
     assert_eq!(draft.iter().map(|f| f.pages).collect::<Vec<_>>(), [2, 1, 1]);
     h.get_by_label("Combine").click();
+    wait_for_combine(&mut h);
     h.run_steps(3);
     assert_eq!(texts_of(h.state(), 1), ["Page 1", "Page 2", "", "Some notes"]);
 }
@@ -1416,6 +1419,7 @@ fn files_that_cannot_be_read_are_listed_and_left_out_once_the_user_agrees() {
     assert!(!h.get_by_label("Combine").accesskit_node().is_disabled());
     // Combine asks first, naming the files left out; Cancel leaves everything as it was.
     h.get_by_label("Combine").click();
+    wait_for_combine(&mut h);
     h.run_steps(3);
     h.get_by_label("Leave out files that can't be read?");
     h.get_by_label("• broken.jpg");
@@ -1427,8 +1431,10 @@ fn files_that_cannot_be_read_are_listed_and_left_out_once_the_user_agrees() {
     assert_eq!(combine_names(&h).len(), 4);
     // Asked again: Combine the rest.
     h.get_by_label("Combine").click();
+    wait_for_combine(&mut h);
     h.run_steps(3);
     h.get_by_label("Combine the rest").click();
+    wait_for_combine(&mut h);
     h.run_steps(3);
     assert_eq!(texts_of(h.state(), 1), ["Page 1", "Page 2", "Page 1"]);
 }
@@ -1469,6 +1475,7 @@ fn a_password_protected_file_is_unlocked_with_its_password_and_combined() {
     // Never printed: debug output ends up in logs.
     assert!(!format!("{:?} {:?}", h.state().combine_draft, h.state().combine_tab).contains("pw\""));
     h.get_by_label("Combine").click();
+    wait_for_combine(&mut h);
     h.run_steps(3);
     assert_eq!(texts_of(h.state(), 1), ["Page 1", "Page 1", "Page 2"]);
 }
@@ -2015,6 +2022,47 @@ fn split_before_selected_pages() {
     names.sort();
     assert_eq!(names, ["doc (pages 1-2).pdf", "doc (pages 3-4).pdf"]);
     let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn explicit_ranges_split_in_order_and_preserve_the_source() {
+    let dir = temp_path("split-explicit-ranges");
+    std::fs::create_dir_all(&dir).unwrap();
+    let mut h = organize(4);
+    let before = h.state().session.get(h.state().views[0].id).unwrap().bytes.clone();
+    h.state_mut().export_dir_override = Some(dir.to_string_lossy().into_owned());
+    h.state_mut().split_draft.mode = pdfcraft_ui_egui::SplitMode::Ranges;
+    h.state_mut().split_draft.ranges = "1-2, 3-4".into();
+    h.state_mut().run_command("page.split");
+    h.run_steps(3);
+    h.get_by_label_contains("Creates 2 files from 4 pages");
+    h.get_all_by_label("Split").last().unwrap().click();
+    h.run_steps(4);
+    for (name, expected) in [("doc (pages 1-2).pdf", vec!["Page 1", "Page 2"]), ("doc (pages 3-4).pdf", vec!["Page 3", "Page 4"])] {
+        let mut app = PdfCraftApp::new();
+        app.open_bytes(name, None, std::fs::read(dir.join(name)).unwrap()).unwrap();
+        assert_eq!(texts_of(&app, 0), expected);
+    }
+    assert_eq!(h.state().session.get(h.state().views[0].id).unwrap().bytes, before);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn labelled_organize_move_preserves_selection_order_and_undo_redo() {
+    let mut h = organize(4);
+    h.state_mut().views[0].select_pages(&[1, 2]);
+    h.run_steps(3);
+    h.get_by_label("Move selected pages earlier").focus();
+    h.run_steps(1);
+    h.key_press(Key::Enter);
+    h.run_steps(4);
+    assert_eq!(texts_of(h.state(), 0), ["Page 2", "Page 3", "Page 1", "Page 4"]);
+    h.state_mut().run_command("edit.undo");
+    h.run_steps(3);
+    assert_eq!(texts_of(h.state(), 0), ["Page 1", "Page 2", "Page 3", "Page 4"]);
+    h.state_mut().run_command("edit.redo");
+    h.run_steps(3);
+    assert_eq!(texts_of(h.state(), 0), ["Page 2", "Page 3", "Page 1", "Page 4"]);
 }
 
 // ── Encrypted documents ───────────────────────────────────────────────────────────────────────
@@ -4848,12 +4896,13 @@ fn organize_panel_comes_with_the_grid_and_closes_it() {
     let mut h = organize(3);
     h.get_by_label("Insert");
     h.get_by_label("Bates numbering");
-    h.get_by_label("Page properties");
+    h.get_by_label("Move selected pages earlier");
+    assert!(h.query_by_label("Page properties").is_none(), "unsupported placeholders are hidden");
     h.get_by_label("Close panel").click();
     h.run_steps(3);
     assert!(!h.state().views[0].organize, "Close ends Organize");
     assert_eq!(h.state().left, pdfcraft_ui_egui::LeftPanel::AllTools);
-    assert!(h.query_by_label("Page properties").is_none(), "the panel is gone");
+    assert!(h.query_by_label("Move selected pages earlier").is_none(), "the panel is gone");
 }
 
 /// Leaving Organize (a page opened from the grid, or the grid's Close) goes back to the
@@ -4910,4 +4959,17 @@ fn read_mode_shortcut_applies_the_open_paragraph() {
     assert_eq!(s.quick_tool, QuickTool::Select);
     assert!(s.views[0].line_editor.is_none(), "no editor stays open in Read mode");
     assert_eq!(s.session.get(s.views[0].id).unwrap().text_lines(0)[0].text, "Chapter One", "the edit is applied");
+}
+
+/// Pump real frames while the bounded native PDF worker finishes.
+fn wait_for_combine(h: &mut Harness<'static, PdfCraftApp>) {
+    h.run_steps(3);
+    for _ in 0..600 {
+        if !h.state().combine_pending() {
+            return;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        h.run_steps(1);
+    }
+    panic!("Combine worker did not finish");
 }

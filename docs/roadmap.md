@@ -276,3 +276,8 @@ ODIBO Windows rebranding (2026-10-22): test ZIP and automated gates verified, PR
 ODIBO Home stage 3.3 (2026-10-23): candidate in [PR #4](https://github.com/imranOdiboev/pdfcraft/pull/4); fork workflows re-enabled by owner, final cloud checks and artifacts tracked in that PR. See [scope and verification report](uiux/STAGE_3_3_REPORT.md). No new maturity/parity claim.
 
 ODIBO editor workspace stage 3.4 (2026-10-23): candidate in [PR #5](https://github.com/imranOdiboev/pdfcraft/pull/5); [scope and compatibility report](uiux/STAGE_3_4_REPORT.md). Restored docking layouts stay authoritative, with fresh editor defaults and render-only compact drawers. No new maturity/parity claim.
+
+
+### ODIBO stage 3.5 (2026-10-24)
+
+M4 / core document tools: UX implementation and cloud acceptance tracked in PR #6; see [scope and validation](uiux/STAGE_3_5_PLAN.md). Upstream parity estimates unchanged.

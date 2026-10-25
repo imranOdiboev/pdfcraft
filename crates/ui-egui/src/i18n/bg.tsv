@@ -2406,3 +2406,18 @@ animation effects	Off	Изключени
 	Open-source code: MIT OR Apache-2.0. ODIBO brand materials have separate terms.	Отворен код: MIT OR Apache-2.0. Материалите на марката ODIBO имат отделни условия.
 	ODIBO PDF project	Проект ODIBO PDF
 	Feedback	Обратна връзка
+
+	Undo restores recent page changes. Save As keeps the original file.	Отмяната възстановява последните промени на страниците. „Запиши като“ запазва оригиналния файл.
+	Choose an output folder next. Originals stay unchanged; existing files will not be replaced.	Изберете изходна папка. Оригиналите не се променят; съществуващите файлове няма да бъдат заменени.
+	Combining PDFs…	Обединяване на PDF…
+	Creates a new PDF. Your source files stay unchanged. Use Save As to choose where to keep the result.	Създава нов PDF без промяна на изходните файлове. Изберете място за резултата чрез „Запиши като“.
+	Enter consecutive ranges covering every page, for example 1-3, 4-6.	Въведете последователни диапазони за всички страници, например 1-3, 4-6.
+	Move selected pages earlier	Преместване на избраните страници по-рано
+	Move selected pages later	Преместване на избраните страници по-късно
+	Originals stay unchanged. Cancelling discards the result; the current PDF step may take time to finish.	Оригиналите не се променят. Отмяната отхвърля резултата; текущата PDF стъпка може да изисква време за завършване.
+	Page ranges	Диапазони от страници
+	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Предишната PDF стъпка още приключва. Може да продължите работа; опитайте обединяването отново след малко.
+	{name} already exists. Choose another folder; no files were written.	{name} вече съществува. Изберете друга папка; не са записани файлове.
+	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Не може да се запише {name}: {e}. В {dir} остават {n} завършени файла; оригиналите не са заменени.
+	Couldn't combine files: the PDF worker stopped	Файловете не могат да се обединят: PDF процесът спря
+	Print pages	Печат на страници
