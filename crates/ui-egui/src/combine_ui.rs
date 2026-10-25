@@ -1998,7 +1998,9 @@ impl PdfCraftApp {
             }
             Err(std::sync::mpsc::TryRecvError::Empty) => {}
         }
-        if run.cancelled {
+        // Named UI fonts are installed for the next pass. A job present during the first
+        // frame must not draw a custom-font progress button before that pass has happened.
+        if run.cancelled || !self.fonts_ready {
             ctx.request_repaint_after(std::time::Duration::from_millis(50));
             return;
         }
@@ -2744,10 +2746,9 @@ mod tests {
             let mut app = PdfCraftApp::new();
             app.set_option("language", "en").unwrap();
             app.open_combine_tab();
+            app.combine_run = Some(CombineRun { receiver, count: 2, cancelled: false });
             app
         });
-        h.run_steps(4);
-        h.state_mut().combine_run = Some(CombineRun { receiver, count: 2, cancelled: false });
         h.run_steps(3);
         h.get_by_label("Cancel").click();
         h.run_steps(2);
