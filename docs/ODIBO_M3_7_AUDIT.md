@@ -1,6 +1,6 @@
 # ODIBO PDF M3.7 — quality and beta preparation
 
-Status: implementation and isolated verification in progress, 2026-10-25.
+Status: implementation and isolated verification in progress, 2026-10-26.
 Base main `8e0cd08b44819a0a6e9c932b96eb257655e925a6` contains merged PR #7.
 Product branch: `feature/odibo-beta-readiness`; independent documentation worktree/branch:
 `feature/odibo-readme-showcase`. No merge, official release or stage 4 work.
@@ -38,6 +38,10 @@ Passing and failing-before-fix runtime evidence will be linked in the final PR r
 
 Independent draft reviews caught a duplicate visibility token, an incorrect test command ID,
 and a palette focus/arrow regression; those were corrected before the first CI submission.
+The full CI then detected eight existing wide Print interaction regressions and a missing
+Enter activation on a focused custom palette row. The wide layout now keeps its original
+bounded `horizontal_top` behavior; compact scrolling is isolated from it. Custom rows
+explicitly handle Enter/Space. Existing test assertions were retained; rerun results are pending.
 
 ## Preservation and limits
 
@@ -66,6 +70,11 @@ licensing and performance work. No nonfunctional language option was added.
   50/500-page synthetic vector PDFs, elapsed time, Linux max RSS, all raw samples and source hashes.
   These are shared-runner CLI observations, not native GUI latency or an improvement claim;
   Windows memory is not measured by this harness. Large scanned/gigabyte files are not covered.
+- A separate debug-profile headless egui/wgpu diagnostic records one warm-up and five fresh
+  settled captures of a font/image-free 500-page vector fixture. It requires a successful page
+  raster and no page errors. The interval includes harness/GPU/font setup and settling frames,
+  excludes Cargo/process startup and PNG encoding/writing, and is not native Windows first paint.
+  Retained raster surfaces are reported separately and are not process RSS.
 - Genuine Linux egui screenshots and separate Windows package identity/startup captures;
   never label Linux captures as native Windows. Permanent README PNGs receive SHA-256 and
   attribution, generated `ATTRIBUTION.md`, asset and link checks in the documentation branch.

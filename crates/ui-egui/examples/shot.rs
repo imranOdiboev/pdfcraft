@@ -97,11 +97,23 @@ fn main() -> Result<(), String> {
     let mut image = harness.render()?;
     let first_capture_seconds = capture_start.elapsed().as_secs_f64();
     if let Some(path) = metrics_path {
-        let (open_seconds, input_bytes) = opening.lock().unwrap_or_else(std::sync::PoisonError::into_inner).ok_or("metrics requires a successfully opened PDF")?;
-        if harness.state().render_pending() { return Err("first-page rendering did not settle within the bounded wait".into()); }
+        let (open_seconds, input_bytes) =
+            opening.lock().unwrap_or_else(std::sync::PoisonError::into_inner).ok_or("metrics requires a successfully opened PDF")?;
+        if harness.state().render_pending() {
+            return Err("first-page rendering did not settle within the bounded wait".into());
+        }
+        let view = harness.state().views.first().ok_or("metrics requires a document view")?;
+        if !view.page_errors().is_empty() {
+            return Err(format!("first-page render failed: {:?}", view.page_errors()));
+        }
+        let raster = view.raster_memory();
+        if raster.page_count == 0 && raster.tile_count == 0 {
+            return Err("metrics requires a rendered document page, not just thumbnails".into());
+        }
         let report = serde_json::json!({"source": std::env::var("GITHUB_SHA").unwrap_or_default(), "file_read_and_open_seconds": open_seconds,
             "first_ready_capture_seconds": first_capture_seconds, "input_bytes": input_bytes, "viewport": [size.x, size.y], "pixels_per_point": scale,
-            "method": "Fresh headless egui_kittest/wgpu app; first settled capture includes app creation, font setup, layout and rendering. Not native Windows window startup."});
+            "profile": if cfg!(debug_assertions) { "debug" } else { "release" }, "retained_raster_surfaces_not_rss": raster,
+            "method": "Fresh headless egui_kittest/wgpu app; first settled capture includes app creation, GPU/font setup, layout, rendering and settle frames. Excludes Cargo/process startup and PNG encoding/write. Not native Windows window startup."});
         std::fs::write(path, serde_json::to_vec_pretty(&report).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
     }
     if let Some(w) = width.filter(|w| *w < image.width()) {
