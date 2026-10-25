@@ -403,7 +403,7 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
             }
         }
     }
-    let compact = app.active.is_some() && ui.available_width() < 940.0;
+    let compact = (app.active.is_some() || app.combine_showing()) && ui.available_width() < 940.0;
     ui.data_mut(|data| data.insert_temp(egui::Id::new("odibo-compact-editor"), compact));
     let requested = app.pending_panel_reveals.last().copied();
     let drawer_id = egui::Id::new("odibo-editor-context-drawer");

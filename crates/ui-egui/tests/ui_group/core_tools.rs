@@ -7,6 +7,26 @@ use pdfcraft_ui_egui::{Dialog, PdfCraftApp, SplitMode, i18n};
 const PDF: &[u8] = b"%PDF-1.7\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >> endobj\n3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 300 300] >> endobj\n4 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 300 300] >> endobj\n5 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 300 300] >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF";
 
 #[test]
+fn compact_combine_keeps_files_reachable_without_changing_saved_panels() {
+    let mut h = Harness::builder().with_size(egui::vec2(820.0, 520.0)).build_eframe(|_| {
+        let mut app = PdfCraftApp::new();
+        app.set_option("language", "ru").unwrap();
+        app.use_files(pdfcraft_ui_egui::FilePurpose::Combine, vec![("First.pdf".into(), PDF.to_vec()), ("Second.pdf".into(), PDF.to_vec())]);
+        app
+    });
+    h.run_steps(5);
+    let saved = serde_json::to_value(&h.state().docking).unwrap();
+    let body: egui::Rect = h.ctx.data(|d| d.get_temp(egui::Id::new("odibo-editor-document-body"))).unwrap();
+    assert!(body.width() > 760.0, "Combine must use the compact full-width projection");
+    h.get_by_label("Second.pdf").scroll_to_me();
+    h.run_steps(5);
+    h.get_by_label("Second.pdf").click();
+    h.run_steps(3);
+    assert_eq!(h.state().combine_selection(), vec![1]);
+    assert_eq!(serde_json::to_value(&h.state().docking).unwrap(), saved);
+}
+
+#[test]
 fn split_ranges_validate_and_cancel_with_keyboard_in_both_themes_and_languages() {
     for language in ["en", "ru"] {
         let lang = i18n::Lang::from_code(language).unwrap();

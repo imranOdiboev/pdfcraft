@@ -218,7 +218,12 @@ fn row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability: Ava
     let icon_rect = Rect::from_min_size(body.min + vec2(6.0, 8.0), vec2(18.0, 18.0));
     icons::paint(ui, icon_rect, icon, 17.0, fg);
     let font = theme::regular(13.5);
-    let shown = widgets::fit_line(label, (body.width() - 52.0).max(1.0), |s| widgets::text_width(ui, s, &font));
+    let caption = match icon {
+        "chevron-left" => tl!("Move earlier"),
+        "chevron-right" => tl!("Move later"),
+        _ => label,
+    };
+    let shown = widgets::fit_line(caption, (body.width() - 52.0).max(1.0), |s| widgets::text_width(ui, s, &font));
     let width = crate::widgets::text_width(ui, &shown, &font);
     ui.painter().text(body.left_center() + vec2(34.0, 0.0), Align2::LEFT_CENTER, shown, font, fg);
     if menu {

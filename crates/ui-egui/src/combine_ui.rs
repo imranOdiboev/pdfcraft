@@ -714,8 +714,10 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
         app.combine_tab.zoom_request = None;
     }
     let mut combine = false;
-
+    let page_height = ui.available_height();
+    egui::ScrollArea::vertical().id_salt("combine-page").auto_shrink([false, false]).show(ui, |ui| {
     egui::Frame::NONE.inner_margin(egui::Margin::symmetric(28, 20)).show(ui, |ui| {
+        let body_top = ui.cursor().min.y;
         // Title and Combine.
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new(tl!("Combine files")).font(theme::semibold(20.0)));
@@ -836,7 +838,10 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
 
         // The list, in a card that highlights while files are dragged over the window.
         let footer_h = 34.0;
-        let card_h = (ui.available_height() - footer_h).max(120.0);
+        // Keep a whole default thumbnail card reachable on short windows. The outer page
+        // scrolls rather than clipping the file names below a compressed thumbnail viewport.
+        let used = ui.cursor().min.y - body_top;
+        let card_h = (page_height - 40.0 - used - footer_h).max(if grid { 290.0 } else { 120.0 });
         let stroke = if files_hovering { Stroke::new(2.0, t.accent) } else { Stroke::new(1.0, t.border) };
         egui::Frame::NONE.fill(t.card).stroke(stroke).corner_radius(CornerRadius::same(t.radius)).inner_margin(egui::Margin::symmetric(8, 6)).show(
             ui,
@@ -903,7 +908,7 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             });
         }
     });
-
+    });
     // A Pages field taking the keyboard remembers the list; its first change makes the undo step.
     if events.range_focused {
         app.combine_tab.range_edit = Some(app.combine_snapshot());

@@ -1819,7 +1819,7 @@
 	Rename	Переименовать
 	Set to current page ({n})	Установить текущей страницей ({n})
 	Move up	Переместить вверх
-	Move down	Переместить вdownarrow
+	Move down	Переместить вниз
 	Indent	Отступ
 	Outdent	Убрать отступ
 	This document has no form fields.	В этом документе нет полей формы.
@@ -2374,3 +2374,5 @@ animation effects	Off	Выкл
 	Couldn't write {name}: {e}. {n} completed files remain in {dir}; originals were not replaced.	Не удалось записать {name}: {e}. Готовых файлов в папке {dir}: {n}; исходные файлы не заменены.
 
 	The previous PDF step is still finishing. You can keep working; try Combine again shortly.	Предыдущий шаг PDF ещё выполняется. Можно продолжать работу; повторите объединение чуть позже.
+
+	Print pages	Печать страниц
