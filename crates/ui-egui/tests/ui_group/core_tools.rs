@@ -9,30 +9,33 @@ const PDF: &[u8] = b"%PDF-1.7\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\
 #[test]
 fn compact_combine_keeps_files_reachable_without_changing_saved_panels() {
     for language in ["en", "ru"] {
-    let lang = i18n::Lang::from_code(language).unwrap();
-    for theme in ["light", "dark"] {
-    for scale in [1.0, 1.5, 2.0] {
-    let mut h = Harness::builder().with_size(egui::vec2(820.0, 520.0)).with_pixels_per_point(scale).build_eframe(move |_| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", language).unwrap();
-        app.set_option("theme", theme).unwrap();
-        app.right = Some(pdfcraft_ui_egui::RightPanel::Comments);
-        app.use_files(pdfcraft_ui_egui::FilePurpose::Combine, vec![("First.pdf".into(), PDF.to_vec()), ("Second.pdf".into(), PDF.to_vec())]);
-        app
-    });
-    h.run_steps(5);
-    let saved = serde_json::to_value(&h.state().docking).unwrap();
-    let body: egui::Rect = h.ctx.data(|d| d.get_temp(egui::Id::new("odibo-editor-document-body"))).unwrap();
-    assert!(body.width() > 760.0, "Combine must use the compact full-width projection");
-    assert!(h.query_by_role_and_label(Role::Button, i18n::tr(lang, "Inspector")).is_none(), "no document inspector button on Combine");
-    h.get_by_label("Second.pdf").scroll_to_me();
-    h.run_steps(5);
-    h.get_by_label("Second.pdf").click();
-    h.run_steps(3);
-    assert_eq!(h.state().combine_selection(), vec![1]);
-    assert_eq!(serde_json::to_value(&h.state().docking).unwrap(), saved);
-    }
-    }
+        let lang = i18n::Lang::from_code(language).unwrap();
+        for theme in ["light", "dark"] {
+            for scale in [1.0, 1.5, 2.0] {
+                let mut h = Harness::builder().with_size(egui::vec2(820.0, 520.0)).with_pixels_per_point(scale).build_eframe(move |_| {
+                    let mut app = PdfCraftApp::new();
+                    app.set_option("language", language).unwrap();
+                    app.set_option("theme", theme).unwrap();
+                    app.right = Some(pdfcraft_ui_egui::RightPanel::Comments);
+                    app.use_files(
+                        pdfcraft_ui_egui::FilePurpose::Combine,
+                        vec![("First.pdf".into(), PDF.to_vec()), ("Second.pdf".into(), PDF.to_vec())],
+                    );
+                    app
+                });
+                h.run_steps(5);
+                let saved = serde_json::to_value(&h.state().docking).unwrap();
+                let body: egui::Rect = h.ctx.data(|d| d.get_temp(egui::Id::new("odibo-editor-document-body"))).unwrap();
+                assert!(body.width() > 760.0, "Combine must use the compact full-width projection");
+                assert!(h.query_by_role_and_label(Role::Button, i18n::tr(lang, "Inspector")).is_none(), "no document inspector button on Combine");
+                h.get_by_label("Second.pdf").scroll_to_me();
+                h.run_steps(5);
+                h.get_by_label("Second.pdf").click();
+                h.run_steps(3);
+                assert_eq!(h.state().combine_selection(), vec![1]);
+                assert_eq!(serde_json::to_value(&h.state().docking).unwrap(), saved);
+            }
+        }
     }
 }
 

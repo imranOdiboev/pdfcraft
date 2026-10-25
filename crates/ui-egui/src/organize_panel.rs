@@ -95,9 +95,7 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         let targets = view.target_pages();
         let last = targets.last().copied().unwrap_or(0);
         widgets::section_title(ui, tl!("Page options"));
-        ui.label(
-            egui::RichText::new(tl!("Undo restores recent page changes. Save As keeps the original file.")).color(t.text_muted),
-        );
+        ui.label(egui::RichText::new(tl!("Undo restores recent page changes. Save As keeps the original file.")).color(t.text_muted));
         ui.add_enabled_ui(editable, |ui| {
             let first = targets.first().copied().unwrap_or(0);
             ui.vertical(|ui| {
