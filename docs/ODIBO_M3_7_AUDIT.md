@@ -22,8 +22,9 @@ product changes and coordinates manifests/generated files and GitHub checks.
 
 | Priority | Agent | Evidence and reproduction | Change / verification |
 |---|---|---|---|
-| P1 | Reliability | `files.rs::extract_selection`: separate extraction into an existing destination, including Windows `Report.pdf` alias of source `report.pdf`, atomically replaces it without asking | Existing no-clobber writer and batch preflight; deletion callback only after successful publication; source/output byte regressions and Windows alias test |
-| P1 | Performance/security | `ocr_ui.rs::ocr_files_to`: batch OCR chooses original folder, writes same names through replace-capable writer | Preflight plain filenames and existing outputs, then no-clobber publication; model-independent source collision test |
+| P0 | Reliability | `files.rs::extract_selection`: separate extraction into an existing destination, including Windows `Report.pdf` alias of source `report.pdf`, atomically replaces it without asking | Existing no-clobber writer and batch preflight; deletion callback only after successful publication; source/output byte regressions and Windows alias test |
+| P0 | Performance/security | `ocr_ui.rs::ocr_files_to`: batch OCR chooses original folder, writes same names through replace-capable writer | Preflight plain filenames and existing outputs, then no-clobber publication; model-independent source collision test |
+| P1 | Reliability, final review | `ocr_ui.rs::poll_ocr`: background job recognizes old page indexes, then applies after a user edit/reorder | Capture edit generation with the job and refuse stale/closed-document results with a localized persistent message; model-free injected completion checks unchanged, edited, undone and closed cases; production-guard negative control |
 | P1 | UX/accessibility | `print_ui.rs::body`, `dialogs.rs`: fixed 820-point settings+preview exceed 820x520 window | Bounded scrolling, stacked compact preview, footer outside scroll; RU/EN themes/DPI matrix and genuine captures |
 | P2 | Reliability | `files.rs::split_active`: valid long source/bookmark names generate overlong components; truncation can merge names | Existing Unicode-safe 200-byte stem helper, then case-insensitive deduplication; long Cyrillic output regression |
 | P2 | Performance/security | `ocr_ui.rs`: spawn error discarded or worker panic never publishes completion | Spawn error returns without storing a run; guarded worker publishes failure; injected panic regression |
@@ -54,6 +55,8 @@ applies to separate page extraction and batch OCR. Multi-file operations are not
 completed new files may remain after a later failure; existing files are never silently replaced.
 Split remains synchronous; Combine cancellation drains its current engine step; Undo retains
 100 recent actions. Large files still use full-buffer paths; a broader engine redesign is deferred.
+Batch OCR has no cancellation; no user-facing invocation of the existing single-job
+`cancel_ocr` helper was found. No new UI cancellation capability is claimed.
 
 Russian UI/paths/comments are distinct from OCR: shipped models cover English/basic Latin and
 do not recognize Cyrillic. Russian OCR requires a separately evaluated model/backend, quality,

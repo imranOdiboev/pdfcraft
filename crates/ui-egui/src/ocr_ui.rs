@@ -65,6 +65,8 @@ pub struct BatchProgress {
 
 pub struct OcrRun {
     pub doc: DocId,
+    /// The document snapshot read by the worker; never apply old page indexes to a new edit.
+    pub generation: u64,
     pub progress: Arc<Mutex<OcrProgress>>,
 }
 
@@ -172,6 +174,7 @@ impl PdfCraftApp {
             OcrPages::Range => (d.from.saturating_sub(1)..d.to).collect(),
         };
         let settings = d.settings();
+        let Some(generation) = self.session.get(id).map(|d| d.edit_generation()) else { return };
         let Some(job) = self.session.ocr_job(id, &pages, settings) else { return };
         let progress = Arc::new(Mutex::new(OcrProgress { total: job.pages.len(), ..Default::default() }));
         let p = progress.clone();
@@ -203,7 +206,7 @@ impl PdfCraftApp {
         }
         #[cfg(target_arch = "wasm32")]
         work();
-        self.ocr_run = Some(OcrRun { doc: id, progress });
+        self.ocr_run = Some(OcrRun { doc: id, generation, progress });
         self.poll_ocr();
     }
 
@@ -352,7 +355,7 @@ impl PdfCraftApp {
             }
         }
         let Some(run) = self.ocr_run.as_ref() else { return };
-        let (doc, progress) = (run.doc, run.progress.clone());
+        let (doc, generation, progress) = (run.doc, run.generation, run.progress.clone());
         let Ok(mut s) = progress.lock() else { return };
         let Some(result) = s.result.take() else {
             let msg = crate::i18n::fmt(
@@ -377,6 +380,10 @@ impl PdfCraftApp {
                 return;
             }
         };
+        if self.session.get(doc).is_none_or(|d| d.edit_generation() != generation) {
+            self.operation_failed("The document changed or closed during text recognition. No results were applied. Run recognition again on the current document.", &[]);
+            return;
+        }
         let read = found.iter().filter(|p| p.skipped.is_none()).count();
         let skipped = found.len() - read;
         match self.session.apply_ocr(doc, &found) {
@@ -423,10 +430,59 @@ mod beta_worker_tests {
                 progress.lock().unwrap().result = Some(Err(error));
             },
         );
-        app.ocr_run = Some(OcrRun { doc, progress });
+        let generation = app.session.get(doc).unwrap().edit_generation();
+        app.ocr_run = Some(OcrRun { doc, generation, progress });
         app.poll_ocr();
         assert!(app.ocr_run.is_none());
         assert_eq!(app.session.get(doc).unwrap().bytes.as_slice(), bytes.as_slice());
         assert!(app.toast.is_some());
+    }
+
+    #[test]
+    fn stale_ocr_results_never_edit_changed_or_closed_documents() {
+        for changed in 0..4 {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "ru").unwrap();
+            let bytes = app.session.create_from_text("demo", "Safe original").unwrap();
+            app.open_bytes("Документ.pdf", None, bytes.to_vec()).unwrap();
+            let doc = app.views[0].id;
+            let generation = app.session.get(doc).unwrap().edit_generation();
+            let found = vec![OcrPage {
+                page: 0,
+                words: vec![pdfcraft_engine::ocr::PlacedWord {
+                    text: "Recognized".into(),
+                    origin: [20.0, 20.0],
+                    across: [90.0, 0.0],
+                    up: [0.0, 12.0],
+                }],
+                already_on_page: 0,
+                skipped: None,
+            }];
+            app.ocr_run = Some(OcrRun {
+                doc,
+                generation,
+                progress: Arc::new(Mutex::new(OcrProgress { result: Some(Ok(found)), ..Default::default() })),
+            });
+            if changed == 3 {
+                app.session.close(doc);
+            } else if changed != 0 {
+                app.session.apply(doc, pdfcraft_engine::Edit::RotatePages { pages: vec![0], degrees: 90 }).unwrap();
+                if changed == 2 {
+                    app.session.undo(doc).unwrap();
+                }
+            }
+            let before = app.session.get(doc).map(|d| (d.bytes.clone(), d.edit_generation()));
+            app.poll_ocr();
+            assert!(app.ocr_run.is_none());
+            if changed == 0 {
+                assert!(app.operation_error.is_none());
+                assert_eq!(app.session.get(doc).unwrap().can_undo(), Some("Recognize text"));
+                assert!(app.session.get(doc).unwrap().edit_generation() > generation);
+            } else {
+                assert!(app.operation_error.as_deref().unwrap().contains("Документ"));
+                let after = app.session.get(doc).map(|d| (d.bytes.clone(), d.edit_generation()));
+                assert_eq!(before, after, "late OCR must preserve current document and undo history");
+            }
+        }
     }
 }

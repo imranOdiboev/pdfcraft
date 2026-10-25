@@ -56,7 +56,7 @@ jobs:
       - name: UI tests
         run: |
           cargo test --locked -p pdfcraft-ocr --lib
-          cargo test --locked -p pdfcraft-ui-egui --test bookmarks --test ocr --no-fail-fast
+          cargo test --locked -p pdfcraft-ui-egui --test bookmarks --test ocr --test print --no-fail-fast
           cargo test --locked -p pdfcraft-ui-egui --test ui_group --no-fail-fast
           cargo test --locked -p pdfcraft-ui-egui --lib --test commands --test create --test ui --test control --test dialog_chrome --test accessibility --test actions --test editing --test javascript --test signing --test prepare --test viewer --test view --test pickers --test folders --test combine_grid --no-fail-fast
       - name: Prove no-clobber regression with the old writer
@@ -169,6 +169,27 @@ jobs:
           test "$status" -ne 0
           grep -F 'hostile_dimensions_and_mismatched_buffers_fail_before_backend_access ... FAILED' dist/beta-qa/ocr-negative-control.log
           cargo test --locked -p pdfcraft-ocr --lib hostile_dimensions_and_mismatched_buffers_fail_before_backend_access
+      - name: Prove stale OCR results cannot overwrite newer edits
+        run: |
+          cp crates/ui-egui/src/ocr_ui.rs "$RUNNER_TEMP/beta-ocr-generation-fixed.rs"
+          trap 'cp "$RUNNER_TEMP/beta-ocr-generation-fixed.rs" crates/ui-egui/src/ocr_ui.rs' EXIT
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('crates/ui-egui/src/ocr_ui.rs')
+          s = p.read_text()
+          marker = 'if self.session.get(doc).is_none_or(|d| d.edit_generation() != generation) {'
+          assert s.count(marker) == 1
+          p.write_text(s.replace(marker, marker.replace(') {', ') && false {')))
+          PY
+          set +e
+          cargo test --locked -p pdfcraft-ui-egui --lib stale_ocr_results_never_edit_changed_or_closed_documents > dist/beta-qa/ocr-generation-negative-control.log 2>&1
+          status=$?
+          set -e
+          cp "$RUNNER_TEMP/beta-ocr-generation-fixed.rs" crates/ui-egui/src/ocr_ui.rs
+          trap - EXIT
+          test "$status" -ne 0
+          grep -F 'stale_ocr_results_never_edit_changed_or_closed_documents ... FAILED' dist/beta-qa/ocr-generation-negative-control.log
+          cargo test --locked -p pdfcraft-ui-egui --lib stale_ocr_results_never_edit_changed_or_closed_documents
       - name: Real egui editor screenshots using a synthetic document
         if: ${{ !cancelled() }}
         env:
