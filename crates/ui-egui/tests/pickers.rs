@@ -880,7 +880,7 @@ fn files_written_from_an_attachment_tab_stay_inside_the_chosen_folder() {
         assert_eq!(extracted.len(), 1);
         assert_eq!(extracted[0].parent(), Some(extract_dir.as_path()));
         let bytes = std::sync::Arc::new(std::fs::read(&extracted[0]).unwrap());
-        assert_eq!(pdfcraft_render::PageRenderer::new(bytes, Default::default()).info().pages.len(), 1);
+        assert_eq!(pdfcraft_render::PageRenderer::new(bytes, Default::default()).page_count(), 1);
         assert_eq!(files_under(&dir.0).len(), 3);
         for (path, bytes) in written.iter().zip(&split_bytes) {
             assert_eq!(&std::fs::read(path).unwrap(), bytes);

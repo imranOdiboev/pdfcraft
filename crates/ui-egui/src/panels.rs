@@ -1051,8 +1051,11 @@ fn outline_item(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, item: &OutlineIte
             }
             if !cx.searching {
                 let owns_keyboard = ui.memory(|m| m.has_focus(disclosure.id) || m.had_focus_last_frame(disclosure.id));
-                let activate = owns_keyboard && !ui.ctx().text_edit_focused()
-                    && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Enter) || i.consume_key(egui::Modifiers::NONE, egui::Key::Space));
+                let activate = owns_keyboard
+                    && !ui.ctx().text_edit_focused()
+                    && ui.input_mut(|i| {
+                        i.consume_key(egui::Modifiers::NONE, egui::Key::Enter) || i.consume_key(egui::Modifiers::NONE, egui::Key::Space)
+                    });
                 let next = if disclosure.clicked() || activate {
                     Some(!open)
                 } else if focused && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowRight)) {
@@ -1076,7 +1079,8 @@ fn outline_item(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, item: &OutlineIte
             ui.painter().galley(pos, g, t.text_faint);
         }
         let owns_keyboard = ui.memory(|m| m.has_focus(resp.id) || m.had_focus_last_frame(resp.id));
-        let activate = owns_keyboard && !ui.ctx().text_edit_focused()
+        let activate = owns_keyboard
+            && !ui.ctx().text_edit_focused()
             && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Enter) || i.consume_key(egui::Modifiers::NONE, egui::Key::Space));
         if (theme::hand(resp.clone()).clicked() || activate)
             && let Some(p) = item.page

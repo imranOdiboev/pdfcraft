@@ -222,8 +222,13 @@ pub fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
                             (rect.width() - 36.0 - detail_w - 24.0).max(0.0),
                         );
                         let owns_keyboard = ui.memory(|m| m.has_focus(resp.id) || m.had_focus_last_frame(resp.id));
-                        let keyboard = chosen.is_none() && h.ready && owns_keyboard && !ctx.text_edit_focused()
-                            && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Enter) || i.consume_key(egui::Modifiers::NONE, egui::Key::Space));
+                        let keyboard = chosen.is_none()
+                            && h.ready
+                            && owns_keyboard
+                            && !ctx.text_edit_focused()
+                            && ui.input_mut(|i| {
+                                i.consume_key(egui::Modifiers::NONE, egui::Key::Enter) || i.consume_key(egui::Modifiers::NONE, egui::Key::Space)
+                            });
                         if theme::hand(resp).clicked() || keyboard {
                             chosen = Some((h.command, h.group));
                         }
