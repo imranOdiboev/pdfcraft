@@ -3,7 +3,7 @@ name: ODIBO Windows test build
 on:
   pull_request:
     branches: [main]
-    paths: ['**/Cargo.toml', Cargo.lock, deny.toml, NOTICE, 'LICENSE-*', 'ATTRIBUTION.*', 'apps/**', 'crates/**', 'xtask/**', 'assets/**', 'vendor/**', '.github/workflows/odibo-foundation.yml', '.github/odibo/**']
+    paths: ['**/Cargo.toml', Cargo.lock, deny.toml, NOTICE, 'LICENSE-*', 'ATTRIBUTION.*', 'apps/**', 'crates/**', 'xtask/**', 'assets/**', 'vendor/**', 'packaging/**', 'README*', 'docs/ODIBO_WINDOWS*', 'docs/ODIBO_M4*', '.github/workflows/odibo-foundation.yml', '.github/odibo/**']
   workflow_dispatch:
 
 permissions:
@@ -20,6 +20,7 @@ env:
   CARGO_PROFILE_DEV_DEBUG: line-tables-only
   CARGO_PROFILE_TEST_DEBUG: line-tables-only
   CARGO_BUILD_JOBS: '2'
+  ODIBO_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
   security:
@@ -156,6 +157,10 @@ jobs:
         run: cargo xtask layers
       - name: Asset licences and hashes
         run: cargo xtask assets
+      - name: Distribution verifier regressions and documentation links
+        run: |
+          python3 -m unittest discover -s packaging/windows -p 'test_verify_odibo_payload.py' -v
+          python3 packaging/check_odibo_readme.py
       - name: Prove the texture regression fails before the fix and passes after it
         run: |
           cp assets/odibo/logo-light.png "$RUNNER_TEMP/odibo-runtime-logo.png"
@@ -194,7 +199,7 @@ jobs:
 
   windows:
     name: Windows x64 build and acceptance
-    needs: security
+    needs: [security, checks]
     runs-on: windows-2025
     timeout-minutes: 120
     env:
@@ -206,6 +211,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+          fetch-depth: 2
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: storytold/craft-fonts
@@ -276,6 +282,40 @@ jobs:
             $relative = [IO.Path]::GetRelativePath($dest, $_.FullName).Replace('\','/')
             '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $relative
           } | Set-Content -LiteralPath (Join-Path $dest 'SHA256SUMS.txt') -Encoding utf8
+      - name: Prepare pinned and authenticated Inno compiler on this disposable runner
+        id: inno
+        run: pwsh -NoProfile -File packaging/windows/install-inno-toolchain.ps1
+      - name: Build and verify Setup and independent portable ZIP
+        id: beta
+        run: |
+          pwsh -NoProfile -File packaging/windows/build-odibo-beta.ps1 -PayloadDir "$PWD/dist/windows-x64" -OutputDir "$env:RUNNER_TEMP/odibo-beta-${{ github.run_id }}-${{ github.run_attempt }}" -ISCC '${{ steps.inno.outputs.iscc }}'
+      - name: Capture actual installer only when every visible font is proven permitted
+        run: |
+          pwsh -NoProfile -File packaging/windows/capture-odibo-installer.ps1 -SetupPath '${{ steps.beta.outputs.setup }}' -QaDir "$PWD/dist/installer-qa"
+      - name: Real install, installed PDF operations, settings, portable isolation and removal
+        run: |
+          pwsh -NoProfile -File packaging/windows/test-odibo-installer.ps1 -SetupPath '${{ steps.beta.outputs.setup }}' -PayloadDir '${{ steps.beta.outputs.payload }}' -PortableZip '${{ steps.beta.outputs.portable }}' -QaDir "$PWD/dist/installer-qa"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: odibo-windows-installer-qa-${{ github.sha }}
+          path: dist/installer-qa
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Preserve verified compiler provenance with test packages
+        run: |
+          Copy-Item -LiteralPath '${{ steps.inno.outputs.toolchain-provenance }}' -Destination '${{ steps.beta.outputs.distribution }}/VERIFIED_COMPILER.json'
+          $dest = '${{ steps.beta.outputs.distribution }}'
+          Get-ChildItem -LiteralPath $dest -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object {
+            '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $_.Name
+          } | Set-Content -LiteralPath (Join-Path $dest 'SHA256SUMS.txt') -Encoding utf8
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: odibo-windows-beta-${{ github.sha }}
+          path: ${{ steps.beta.outputs.distribution }}
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 0
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: odibo-rebranding-windows-x64-${{ github.sha }}
