@@ -289,6 +289,9 @@ jobs:
         id: beta
         run: |
           pwsh -NoProfile -File packaging/windows/build-odibo-beta.ps1 -PayloadDir "$PWD/dist/windows-x64" -OutputDir "$env:RUNNER_TEMP/odibo-beta-${{ github.run_id }}-${{ github.run_attempt }}" -ISCC '${{ steps.inno.outputs.iscc }}'
+      - name: Capture actual installer only when every visible font is proven permitted
+        run: |
+          pwsh -NoProfile -File packaging/windows/capture-odibo-installer.ps1 -SetupPath '${{ steps.beta.outputs.setup }}' -QaDir "$PWD/dist/installer-qa"
       - name: Real install, installed PDF operations, settings, portable isolation and removal
         run: |
           pwsh -NoProfile -File packaging/windows/test-odibo-installer.ps1 -SetupPath '${{ steps.beta.outputs.setup }}' -PayloadDir '${{ steps.beta.outputs.payload }}' -PortableZip '${{ steps.beta.outputs.portable }}' -QaDir "$PWD/dist/installer-qa"

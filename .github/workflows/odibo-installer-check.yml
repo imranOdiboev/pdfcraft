@@ -1,0 +1,45 @@
+name: ODIBO installer preflight
+on:
+  pull_request:
+    paths: ['packaging/windows/**', '.github/workflows/odibo-installer-check.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: odibo-installer-preflight-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  compiler-and-lifecycle-fixture:
+    name: Inno syntax and lifecycle fixture (not application acceptance)
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Verified pinned compiler on disposable runner
+        id: inno
+        run: pwsh -NoProfile -File packaging/windows/install-inno-toolchain.ps1
+      - name: Compile exact installer source with explicit non-executable fixture payload
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $payload = Join-Path $env:RUNNER_TEMP 'inno-syntax-fixture'
+          $output = Join-Path $env:RUNNER_TEMP 'inno-syntax-output'
+          New-Item -ItemType Directory -Path $payload,$output | Out-Null
+          'Non-executable installer lifecycle fixture, never run as an application.' | Set-Content -LiteralPath (Join-Path $payload 'odibo-pdf.exe')
+          'Non-executable CLI fixture, never run.' | Set-Content -LiteralPath (Join-Path $payload 'odibo-pdf-cli.exe')
+          & '${{ steps.inno.outputs.iscc }}' '/Qp' "/DPayloadDir=$payload" "/DOutputDir=$output" '/DAppVersion=0.10.1' '/DBuildNumber=1' '/DBuildCommit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' packaging/windows/odibo.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Inno source compilation failed.' }
+          $setup = Join-Path $output 'ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe'
+          $install = Join-Path $env:RUNNER_TEMP 'Проверка установщика'
+          $process = Start-Process -FilePath $setup -ArgumentList @('/CURRENTUSER','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/DIR="' + $install + '"')) -WindowStyle Hidden -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Fixture installation failed: $($process.ExitCode)" }
+          if ((Get-FileHash -LiteralPath (Join-Path $install 'odibo-pdf.exe')).Hash -ne (Get-FileHash -LiteralPath (Join-Path $payload 'odibo-pdf.exe')).Hash) { throw 'Fixture payload differs.' }
+          $sentinel = Join-Path $install 'unknown-user-data.txt'
+          'Must survive uninstall' | Set-Content -LiteralPath $sentinel
+          $uninstaller = Join-Path $install 'unins000.exe'
+          $process = Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -WindowStyle Hidden -Wait -PassThru
+          if ($process.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $sentinel)) { throw 'Fixture uninstall failed to preserve unknown data.' }
+          if (Test-Path -LiteralPath (Join-Path $install 'odibo-pdf.exe')) { throw 'Fixture executable remains after uninstall.' }
+          'Passed installer syntax and fixture install/uninstall. This is not GUI/CLI/PDF acceptance, a beta package or a release.'
