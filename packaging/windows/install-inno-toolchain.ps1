@@ -45,13 +45,19 @@ if ($process.ExitCode -ne 0) { throw "Pinned Inno compiler installation failed (
 $compiler = Join-Path $compilerDir 'ISCC.exe'
 if (-not (Test-Path -LiteralPath $compiler -PathType Leaf)) { throw 'Verified Inno installer did not produce ISCC.exe.' }
 $compilerVersion = (Get-Item -LiteralPath $compiler).VersionInfo.FileVersion
-if ($compilerVersion -notmatch '^7\.1\.0(?:\.0)?$') { throw "Unexpected ISCC version: $compilerVersion" }
+# ISCC's launcher has FileVersion 0.0.0.0 in this signed official distribution;
+# the compiler engine reports its authoritative version through its documented help.
+$compilerHelp = (& $compiler '/?' 2>&1 | Out-String)
+if ($LASTEXITCODE -ne 0 -or $compilerHelp -notmatch 'Compiler engine version:\s*(?:Inno Setup\s+)?7\.1\.0\b') {
+  throw 'The verified ISCC does not report the pinned 7.1.0 compiler engine.'
+}
 $record = [ordered]@{
   compiler = 'Inno Setup'; version = $version; url = $url; sha256 = $expectedSha256
   bytes = $expectedBytes; authenticode = $signature.Status.ToString()
   publisher = $signature.SignerCertificate.Subject
   certificateThumbprint = $signature.SignerCertificate.Thumbprint
-  iscc = $compiler; fileVersion = $compilerVersion
+  iscc = $compiler; fileVersion = $compilerVersion; reportedEngineVersion = $version
+  isccSha256 = (Get-FileHash -LiteralPath $compiler -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 $record | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $toolRoot 'VERIFIED_COMPILER.json') -Encoding utf8
 if (-not $env:GITHUB_OUTPUT -or -not $env:GITHUB_ENV) { throw 'GitHub output files are required.' }

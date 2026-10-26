@@ -13,7 +13,7 @@ The Windows Setup uses **Inno Setup 7.1.0, x64 compiler**, released by Jordan Ru
 | Size | 14,304,168 bytes |
 | SHA-256 | `0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f` |
 | Authenticode requirement | Valid Windows-trusted signature, publisher `Pyrsys B.V.` |
-| Compiler version | `7.1.0` / PE `7.1.0.0` |
+| Compiler engine version | `7.1.0`, verified through ISCC help; the official launcher PE reports `0.0.0.0` |
 | Licence text source | <https://github.com/jrsoftware/issrc/blob/is-7_1_0/license.txt> |
 | Local licence | `packaging/windows/INNO-LICENSE.txt` |
 | Local licence SHA-256 | `0c81595601bce47eeef8d865d5da7f9ca2c6a12235b7482b29f5ab23ed02ee5a` |
