@@ -40,6 +40,15 @@ def verify(root, repository, source_sha, checkout_sha, version, portable=False):
                      'compile.bat.txt', 'LzmaDecode.h', 'LzmaDecodeInno.c',
                      'LzmaDecodeSize.c', 'LzmaTypes.h'}
     source_dir = repository / 'packaging/windows/installer-runtime-source/lzma-loader'
+    source_inventory = tomllib.loads((source_dir / 'SOURCES.toml').read_text(encoding='utf-8'))
+    if source_inventory.get('upstream_commit') != '7d634620f1d1caca6c76e8398da7133153db9e7b':
+        raise ValueError('Unexpected installer source revision')
+    source_entries = source_inventory.get('files', [])
+    if {entry['path'] for entry in source_entries} != runtime_names - {'NOTICE.md', 'SOURCES.toml'}:
+        raise ValueError('Incomplete installer source provenance')
+    for entry in source_entries:
+        if digest(source_dir / entry['path']) != entry['sha256']:
+            raise ValueError('Pinned installer source hash mismatch')
     for name in runtime_names:
         path = 'licences/installer/lzma-loader-source/' + name
         required.add(path)

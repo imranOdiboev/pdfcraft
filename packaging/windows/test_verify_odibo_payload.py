@@ -54,6 +54,13 @@ class InventoryTests(unittest.TestCase):
             source.parent.mkdir(parents=True, exist_ok=True)
             source.write_bytes(b'synthetic corresponding source fixture')
             self.write('licences/installer/lzma-loader-source/' + name, source.read_bytes())
+        names = ['CPL-1.0.txt', 'INNO-LICENSE.txt', 'compile.bat.txt',
+                 'LzmaDecode.h', 'LzmaDecodeInno.c', 'LzmaDecodeSize.c', 'LzmaTypes.h']
+        text = 'upstream_commit="7d634620f1d1caca6c76e8398da7133153db9e7b"\n'
+        for name in names:
+            text += f'[[files]]\npath="{name}"\nsha256="{hashlib.sha256(b"synthetic corresponding source fixture").hexdigest()}"\n'
+        (self.repo / 'packaging/windows/installer-runtime-source/lzma-loader/SOURCES.toml').write_bytes(text.encode())
+        self.write('licences/installer/lzma-loader-source/SOURCES.toml', text.encode())
         self.publish()
 
     def write(self, name, data):
