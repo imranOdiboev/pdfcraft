@@ -41,7 +41,10 @@ foreach ($name in @('odibo-pdf.exe', 'odibo-pdf-cli.exe')) {
     if ([BitConverter]::ToUInt16($bytes, $pe + 0x5c) -ne $subsystem) { throw 'Wrong GUI/CLI subsystem.' }
     if ((Get-AuthenticodeSignature -LiteralPath $exe).Status -ne 'NotSigned') { throw 'This candidate workflow requires explicitly unsigned inputs; signing needs its separate reviewed process.' }
     $reported = (& $exe --version | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0 -or $reported -notmatch ('\b' + [regex]::Escape($version) + '\b')) { throw 'Executable version mismatch.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Executable version command failed.' }
+    # Windows GUI subsystem intentionally has no terminal stdout; its exact version
+    # is checked from PE above. The console CLI must also report its version.
+    if ($name -eq 'odibo-pdf-cli.exe' -and $reported -notmatch ('\b' + [regex]::Escape($version) + '\b')) { throw 'CLI version mismatch.' }
 }
 # Fresh staging, never recursively remove an existing application or user directory.
 $installed = Join-Path $output 'installed-payload'

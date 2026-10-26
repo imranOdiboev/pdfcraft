@@ -269,17 +269,19 @@ begin
   Result := False;
   if not Digits('{#BuildNumber}') or not StrToVersion('{#AppVersion}', Version) or
     (Length('{#BuildCommit}') <> 40) then begin
-    MsgBox(CustomMessage('BadMetadata'), mbError, MB_OK); Exit;
+    Log(CustomMessage('BadMetadata'));
+    SuppressibleMsgBox(CustomMessage('BadMetadata'), mbError, MB_OK, IDOK); Exit;
   end;
   if MachineInstall(HKLM64) or MachineInstall(HKLM32) or
     FileExists(ExpandConstant('{commonpf64}\ODIBO PDF\odibo-pdf.exe')) or
     FileExists(ExpandConstant('{commonpf32}\ODIBO PDF\odibo-pdf.exe')) or
     FileExists(ExpandConstant('{commonpf64}\ODIBOPDF\odibo-pdf.exe')) or
     FileExists(ExpandConstant('{commonpf32}\ODIBOPDF\odibo-pdf.exe')) then begin
-    MsgBox(CustomMessage('LegacyInstall'), mbError, MB_OK); Exit;
+    Log(CustomMessage('LegacyInstall'));
+    SuppressibleMsgBox(CustomMessage('LegacyInstall'), mbError, MB_OK, IDOK); Exit;
   end;
   Error := VersionProblem();
-  if Error <> '' then begin MsgBox(Error, mbError, MB_OK); Exit; end;
+  if Error <> '' then begin Log(Error); SuppressibleMsgBox(Error, mbError, MB_OK, IDOK); Exit; end;
   Result := True;
 end;
 
@@ -313,7 +315,10 @@ function InitializeUninstall(): Boolean;
 begin
   Result := not LockedExecutable(ExpandConstant('{app}\odibo-pdf.exe')) and
     not LockedExecutable(ExpandConstant('{app}\odibo-pdf-cli.exe'));
-  if not Result then MsgBox(CustomMessage('CloseApp'), mbError, MB_OK);
+  if not Result then begin
+    Log(CustomMessage('CloseApp'));
+    SuppressibleMsgBox(CustomMessage('CloseApp'), mbError, MB_OK, IDOK);
+  end;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

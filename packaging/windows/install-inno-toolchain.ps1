@@ -46,9 +46,9 @@ $compiler = Join-Path $compilerDir 'ISCC.exe'
 if (-not (Test-Path -LiteralPath $compiler -PathType Leaf)) { throw 'Verified Inno installer did not produce ISCC.exe.' }
 $compilerVersion = (Get-Item -LiteralPath $compiler).VersionInfo.FileVersion
 # ISCC's launcher has FileVersion 0.0.0.0 in this signed official distribution;
-# the compiler engine reports its authoritative version through its documented help.
-$compilerHelp = (& $compiler '/?' 2>&1 | Out-String)
-if ($LASTEXITCODE -ne 0 -or $compilerHelp -notmatch 'Compiler engine version:\s*(?:Inno Setup\s+)?7\.1\.0\b') {
+# the compiler engine reports its authoritative version through --version.
+$reportedVersion = (& $compiler '--version' 2>&1 | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or $reportedVersion -cne $version) {
   throw 'The verified ISCC does not report the pinned 7.1.0 compiler engine.'
 }
 $record = [ordered]@{
@@ -56,7 +56,7 @@ $record = [ordered]@{
   bytes = $expectedBytes; authenticode = $signature.Status.ToString()
   publisher = $signature.SignerCertificate.Subject
   certificateThumbprint = $signature.SignerCertificate.Thumbprint
-  iscc = $compiler; fileVersion = $compilerVersion; reportedEngineVersion = $version
+  iscc = $compiler; fileVersion = $compilerVersion; reportedEngineVersion = $reportedVersion
   isccSha256 = (Get-FileHash -LiteralPath $compiler -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 $record | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $toolRoot 'VERIFIED_COMPILER.json') -Encoding utf8
