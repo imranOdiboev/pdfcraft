@@ -128,6 +128,7 @@ fn beta_palette_tab_focus_is_not_stolen_and_activates_the_focused_result() {
     h.key_press(egui::Key::ArrowDown);
     h.run_steps(5);
     assert_eq!(h.ctx.data(|d| d.get_temp::<usize>(egui::Id::new("palette_selected"))), Some(1));
+    assert!(h.get_by_role_and_label(Role::Button, "Use system setting").is_focused(), "the command row itself must own focus before Enter");
     h.key_press(egui::Key::Enter);
     h.run_steps(3);
     assert!(!h.state().palette_open);

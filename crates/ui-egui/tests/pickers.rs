@@ -861,11 +861,30 @@ fn files_written_from_an_attachment_tab_stay_inside_the_chosen_folder() {
         let written = files_under(&dir.0);
         assert_eq!(written.len(), 2, "{name}: two split parts, got {written:?}");
         assert!(written.iter().all(|p| p.parent() == Some(out.as_path())), "{name}: {written:?}");
-        // Extract writes page 1 under the name Split gave it.
+        let split_bytes: Vec<_> = written.iter().map(|p| std::fs::read(p).unwrap()).collect();
+        // Extract must refuse the same generated name without replacing Split's result.
         h.state_mut().extract_draft = pdfcraft_ui_egui::ExtractDraft { separate: true, ..Default::default() };
         h.state_mut().extract_selection();
-        assert!(h.state().toast.as_ref().is_some_and(|t| t.0.starts_with("Wrote 1 file")), "{name}: {:?}", h.state().toast);
+        assert!(h.state().operation_error.is_some(), "{name}: collision must be reported");
         assert_eq!(files_under(&dir.0), written, "{name}");
+        for (path, bytes) in written.iter().zip(&split_bytes) {
+            assert_eq!(&std::fs::read(path).unwrap(), bytes);
+        }
+        let extract_dir = out.join("extracted");
+        std::fs::create_dir(&extract_dir).unwrap();
+        h.state_mut().operation_error = None;
+        h.state_mut().export_dir_override = Some(extract_dir.to_string_lossy().into_owned());
+        h.state_mut().extract_selection();
+        assert!(h.state().toast.as_ref().is_some_and(|t| t.0.starts_with("Wrote 1 file")), "{name}: {:?}", h.state().toast);
+        let extracted = files_under(&extract_dir);
+        assert_eq!(extracted.len(), 1);
+        assert_eq!(extracted[0].parent(), Some(extract_dir.as_path()));
+        let bytes = std::sync::Arc::new(std::fs::read(&extracted[0]).unwrap());
+        assert_eq!(pdfcraft_render::PageRenderer::new(bytes, Default::default()).info().pages.len(), 1);
+        assert_eq!(files_under(&dir.0).len(), 3);
+        for (path, bytes) in written.iter().zip(&split_bytes) {
+            assert_eq!(&std::fs::read(path).unwrap(), bytes);
+        }
         std::fs::remove_dir_all(dir.0.join("a")).unwrap();
     }
 }

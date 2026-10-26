@@ -181,7 +181,8 @@ pub fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
                 ui.separator();
                 egui::ScrollArea::vertical().id_salt("palette-results").max_height((screen.height() - 180.0).max(36.0)).show(ui, |ui| {
                     for (index, (_, h)) in hits.iter().enumerate() {
-                        let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 36.0), Sense::click());
+                        let (_, rect) = ui.allocate_space(vec2(ui.available_width(), 36.0));
+                        let resp = ui.interact(rect, ui.make_persistent_id(("palette-result", h.command, h.group)), Sense::click());
                         if index == selected {
                             ctx.data_mut(|d| d.insert_temp(egui::Id::new("palette-selected-rect"), rect));
                         }
@@ -193,6 +194,9 @@ pub fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
                         }
                         if resp.has_focus() && !down && !up && !query_changed {
                             ctx.data_mut(|d| d.insert_temp(egui::Id::new("palette_selected"), index));
+                        }
+                        if resp.has_focus() {
+                            ui.memory_mut(|m| m.set_focus_lock_filter(resp.id, egui::EventFilter { vertical_arrows: true, ..Default::default() }));
                         }
                         let press = theme::Press::track(ui, &resp);
                         press.wash(ui, rect, 6, index == selected);
@@ -217,7 +221,9 @@ pub fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
                             fg,
                             (rect.width() - 36.0 - detail_w - 24.0).max(0.0),
                         );
-                        let keyboard = resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter) || i.key_pressed(egui::Key::Space));
+                        let owns_keyboard = ui.memory(|m| m.has_focus(resp.id) || m.had_focus_last_frame(resp.id));
+                        let keyboard = chosen.is_none() && h.ready && owns_keyboard && !ctx.text_edit_focused()
+                            && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Enter) || i.consume_key(egui::Modifiers::NONE, egui::Key::Space));
                         if theme::hand(resp).clicked() || keyboard {
                             chosen = Some((h.command, h.group));
                         }

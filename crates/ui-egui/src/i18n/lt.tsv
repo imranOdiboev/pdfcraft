@@ -2714,3 +2714,4 @@ theme	Appearance	Išvaizda
 	Use a folder that supports hard links, such as a local NTFS folder.	Naudokite aplanką, palaikantį griežtąsias nuorodas, pavyzdžiui, vietinį NTFS aplanką.
 	The file picker stopped unexpectedly. Your document is unchanged. Please try again.	Failų parinkiklis netikėtai sustojo. Dokumentas nepakeistas. Bandykite dar kartą.
 	Try a local NTFS folder with write access and free space.	Bandykite vietinį NTFS aplanką su rašymo teise ir laisva vieta.
+	The document changed or closed during text recognition. No results were applied. Run recognition again on the current document.	Dokumentas buvo pakeistas arba uždarytas atpažįstant tekstą. Rezultatai nepritaikyti. Paleiskite atpažinimą iš naujo dabartiniam dokumentui.

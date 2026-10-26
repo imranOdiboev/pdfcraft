@@ -443,6 +443,9 @@ mod beta_worker_tests {
 
     #[test]
     fn stale_ocr_results_never_edit_changed_or_closed_documents() {
+        let previous_language = crate::i18n::current();
+        // Direct unit calls have no shell frame to install the app's drawing language.
+        crate::i18n::set_current(crate::i18n::Lang::from_code("ru").unwrap());
         for changed in 0..4 {
             let mut app = PdfCraftApp::new();
             app.set_option("language", "ru").unwrap();
@@ -479,10 +482,11 @@ mod beta_worker_tests {
                 assert_eq!(app.session.get(doc).unwrap().can_undo(), Some("Recognize text"));
                 assert!(app.session.get(doc).unwrap().edit_generation() > generation);
             } else {
-                assert!(app.operation_error.as_deref().unwrap().contains("Документ"));
                 let after = app.session.get(doc).map(|d| (d.bytes.clone(), d.edit_generation()));
                 assert_eq!(before, after, "late OCR must preserve current document and undo history");
+                assert!(app.operation_error.as_deref().unwrap().contains("Документ"));
             }
         }
+        crate::i18n::set_current(previous_language);
     }
 }

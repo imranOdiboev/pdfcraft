@@ -55,10 +55,12 @@ jobs:
         run: cargo xtask models "$PDFCRAFT_MODELS"
       - name: UI tests
         run: |
-          cargo test --locked -p pdfcraft-ocr --lib
-          cargo test --locked -p pdfcraft-ui-egui --test bookmarks --test ocr --test print --no-fail-fast
-          cargo test --locked -p pdfcraft-ui-egui --test ui_group --no-fail-fast
-          cargo test --locked -p pdfcraft-ui-egui --lib --test commands --test create --test ui --test control --test dialog_chrome --test accessibility --test actions --test editing --test javascript --test signing --test prepare --test viewer --test view --test pickers --test folders --test combine_grid --no-fail-fast
+          status=0
+          cargo test --locked -p pdfcraft-ocr --lib || status=1
+          cargo test --locked -p pdfcraft-ui-egui --test bookmarks --test ocr --test print --no-fail-fast || status=1
+          cargo test --locked -p pdfcraft-ui-egui --test ui_group --no-fail-fast || status=1
+          cargo test --locked -p pdfcraft-ui-egui --lib --test commands --test create --test ui --test control --test dialog_chrome --test accessibility --test actions --test editing --test javascript --test signing --test prepare --test viewer --test view --test pickers --test folders --test combine_grid --no-fail-fast || status=1
+          exit "$status"
       - name: Prove no-clobber regression with the old writer
         run: |
           cp crates/ui-egui/src/files.rs "$RUNNER_TEMP/core-files-fixed.rs"
