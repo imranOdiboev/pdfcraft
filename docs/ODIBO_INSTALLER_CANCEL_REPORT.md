@@ -6,7 +6,7 @@ Reviewed: 2026-10-27. This report does not authorize a release or merge.
 ## Observed failure and exact cause
 
 Main [run 40371883731, job 121770835349](https://github.com/imranOdiboev/pdfcraft/actions/runs/40371883731/job/121770835349)
-compiled the GUI/CLI, passed their tests and GUI startup checks, and built/verifed
+compiled the GUI/CLI, passed their tests and GUI startup checks, and built/verified
 Setup and Portable. It then failed before installation with
 `Could not activate the real setup Cancel button.` Final distribution upload was skipped.
 
@@ -55,9 +55,11 @@ evidence, not full installed GUI/PDF acceptance or a distributable package.
 The existing full workflow still requires real GUI/CLI compilation, core/PDF tests,
 package inventory/licence checks and Setup -> install -> installed PDF/GUI ->
 settings/reinstall/running-editor refusal -> uninstall -> Portable isolation checks.
-They are not replaced by the fixture. Current full run:
-[40389487644](https://github.com/imranOdiboev/pdfcraft/actions/runs/40389487644).
-No successful final package or checksum from that run is claimed yet.
+They are not replaced by the fixture. Follow the latest full workflow in
+[PR #11 checks](https://github.com/imranOdiboev/pdfcraft/pull/11/checks); superseded
+commit runs can be cancelled by the existing workflow concurrency policy.
+No successful final package or checksum is claimed in this preparation snapshot.
+Completed acceptance and received-package verification belong in the PR report.
 
 Clean Windows 10/11, ordinary non-admin accounts/UAC, physical DPI and mid-copy
 rollback remain separate manual checks. This test proves pre-install cancellation.
