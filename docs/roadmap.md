@@ -1,5 +1,7 @@
 # PdfCraft roadmap: milestones and what's next
 
+> **Fork update:** 2026-10-27 · M4.0 installer cancellation: UIA Pane/Button mismatch reproduced and corrected discovery passed nine exact-source fixture cancellations, including EN/RU wizard confirmation. Full Windows acceptance pending; beta distribution remains blocked. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
+
 > **Fork update:** 2026-10-26 · M4.0: four-agent Windows distribution audit and per-user installer/portable preparation in progress. Cloud verification pending; clean Windows 10/11 acceptance remains separate. [Audit](ODIBO_M4_0_AUDIT.md).
 
 > **Fork update:** 2026-10-25 · M3.7 quality/beta preparation: four-agent audit, targeted safety/UX fixes, observational performance protocol and limited user-test plan. CI pending; no beta-readiness claim. See [audit](ODIBO_M3_7_AUDIT.md).
