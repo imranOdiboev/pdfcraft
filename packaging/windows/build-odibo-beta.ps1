@@ -54,7 +54,8 @@ Get-ChildItem -LiteralPath $payload -Force | Where-Object { $_.Name -notin @('po
 }
 $innoNotices = Join-Path $installed 'licences/installer'
 New-Item -ItemType Directory -Path $innoNotices -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'INNO-LICENSE.txt'), (Join-Path $PSScriptRoot 'INNO_SETUP_PROVENANCE.md') -Destination $innoNotices
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'INNO-LICENSE.txt'), (Join-Path $PSScriptRoot 'CPL-1.0.txt'), (Join-Path $PSScriptRoot 'INNO_SETUP_PROVENANCE.md') -Destination $innoNotices
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'installer-runtime-source/lzma-loader') -Destination (Join-Path $innoNotices 'lzma-loader-source') -Recurse
 @("Version: $version", "Build number: $build", "Commit: $checkout", "Source commit: $source", "Tree: $tree", "Run: $env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID", 'Target: x86_64-pc-windows-msvc', 'Unsigned engineering test build; not an official stable release.') | Set-Content -LiteralPath (Join-Path $installed 'BUILD_INFO.txt') -Encoding utf8
 $manifestFiles = @(Get-ChildItem -LiteralPath $installed -Recurse -File | Sort-Object FullName | ForEach-Object {
     [ordered]@{path = [IO.Path]::GetRelativePath($installed, $_.FullName).Replace('\','/'); size = $_.Length; sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
@@ -84,6 +85,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
 $stem = "ODIBO-PDF-$version-$($source.Substring(0,7))"
 $setup = Join-Path $deliverables "$stem-Setup-x64.exe"
 if (-not (Test-Path -LiteralPath $setup) -or (Get-AuthenticodeSignature -LiteralPath $setup).Status -ne 'NotSigned') { throw 'Missing explicitly unsigned test Setup.' }
+$setupBytes = [IO.File]::ReadAllBytes($setup)
+if ($setupBytes.Length -lt 256) { throw 'Invalid Setup PE.' }
+$setupPe = [BitConverter]::ToInt32($setupBytes, 0x3c)
+if ($setupPe -lt 0 -or $setupPe -gt $setupBytes.Length - 96 -or [BitConverter]::ToUInt32($setupBytes, $setupPe) -ne 0x4550 -or [BitConverter]::ToUInt16($setupBytes, $setupPe + 4) -ne 0x8664) { throw 'Setup itself must be an x64 PE, as well as its payload.' }
 $portable = Join-Path $output 'portable-payload'
 Copy-Item -LiteralPath $installed -Destination $portable -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'portable.txt') -Destination $portable

@@ -31,7 +31,23 @@ def verify(root, repository, source_sha, checkout_sha, version, portable=False):
                 'BUILD_INFO.txt', 'TEST_BUILD.txt', 'BRAND_PROVENANCE.md',
                 'licences/assets/odibo/LICENSE-ODIBO-BRAND.txt',
                 'licences/installer/INNO-LICENSE.txt',
+                'licences/installer/CPL-1.0.txt',
                 'licences/installer/INNO_SETUP_PROVENANCE.md', 'models/ATTRIBUTION.txt'}
+    # The loader decoder selects upstream's CPL option and linking exception.
+    # Supply its complete corresponding source on the same medium, as inert legal
+    # material; it is never compiled into the Rust engine or executed by Setup.
+    runtime_names = {'CPL-1.0.txt', 'INNO-LICENSE.txt', 'NOTICE.md', 'SOURCES.toml',
+                     'compile.bat.txt', 'LzmaDecode.h', 'LzmaDecodeInno.c',
+                     'LzmaDecodeSize.c', 'LzmaTypes.h'}
+    source_dir = repository / 'packaging/windows/installer-runtime-source/lzma-loader'
+    for name in runtime_names:
+        path = 'licences/installer/lzma-loader-source/' + name
+        required.add(path)
+        if digest(root / path) != digest(source_dir / name):
+            raise ValueError(f'Installer corresponding source changed: {name}')
+    for name in ['CPL-1.0.txt', 'INNO-LICENSE.txt', 'INNO_SETUP_PROVENANCE.md']:
+        if digest(root / 'licences/installer' / name) != digest(repository / 'packaging/windows' / name):
+            raise ValueError('Installer notice changed')
     attribution = tomllib.loads((repository / 'ATTRIBUTION.toml').read_text(encoding='utf-8'))
     models = [f for f in attribution.get('fetched', []) if f['kind'] == 'model']
     if len(models) != 2:

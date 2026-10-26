@@ -1,0 +1,89 @@
+schema_version = 1
+purpose = "Corresponding source for the third-party Inno Setup loader decoder only; not compiled into ODIBO Rust code"
+upstream_repository = "https://github.com/jrsoftware/issrc"
+upstream_commit = "7d634620f1d1caca6c76e8398da7133153db9e7b"
+upstream_release = "is-7_1_0"
+retrieval = "Official GitHub Git tree and blob API; exact decoded bytes checked against original Git blob IDs"
+source_code_modified = false
+scripts_executed = false
+
+[[files]]
+path = "compile.bat.txt"
+source_filename = "compile.bat"
+source_path = "Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/compile.bat"
+url = "https://raw.githubusercontent.com/jrsoftware/issrc/7d634620f1d1caca6c76e8398da7133153db9e7b/Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/compile.bat"
+author = "Jordan Russell and Martijn Laan"
+license_chosen = "InnoSetup"
+sha256 = "4b41ff12ff8ee8ac879d0fa1ef0c19f48463d59ba40f99bdfd3daf4402b87a94"
+git_blob_sha1 = "b5704bc3068125cba7d12a4a64ac8a87503041b4"
+bytes = 1439
+byte_identical = true
+stored_as_inert_text = true
+restore_filename_for_voluntary_rebuild = "compile.bat"
+
+[[files]]
+path = "LzmaDecode.h"
+source_filename = "LzmaDecode.h"
+source_path = "Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/LzmaDecode.h"
+url = "https://raw.githubusercontent.com/jrsoftware/issrc/7d634620f1d1caca6c76e8398da7133153db9e7b/Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/LzmaDecode.h"
+author = "Igor Pavlov"
+license_chosen = "CPL-1.0"
+sha256 = "920b2462201edbe05c0c79db6729f6965e4f135455771488d29942aff27d73eb"
+git_blob_sha1 = "8382fa854c34a17adc76f8f092560559afe0b458"
+bytes = 2807
+byte_identical = true
+additional_permission = "Original LZMA linking exception preserved in source header and NOTICE.md"
+
+[[files]]
+path = "LzmaDecodeInno.c"
+source_filename = "LzmaDecodeInno.c"
+source_path = "Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/LzmaDecodeInno.c"
+url = "https://raw.githubusercontent.com/jrsoftware/issrc/7d634620f1d1caca6c76e8398da7133153db9e7b/Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/LzmaDecodeInno.c"
+author = "Jordan Russell and Martijn Laan"
+license_chosen = "InnoSetup"
+sha256 = "56e680b6569ee429134db34709b0f8e32ad06dc84d281807284df7f149578733"
+git_blob_sha1 = "a1c50b8badbf1aa3fcf7c0ca2d1475baf75280fb"
+bytes = 1044
+byte_identical = true
+
+[[files]]
+path = "LzmaDecodeSize.c"
+source_filename = "LzmaDecodeSize.c"
+source_path = "Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/LzmaDecodeSize.c"
+url = "https://raw.githubusercontent.com/jrsoftware/issrc/7d634620f1d1caca6c76e8398da7133153db9e7b/Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/LzmaDecodeSize.c"
+author = "Igor Pavlov"
+license_chosen = "CPL-1.0"
+sha256 = "54d7395db7e426b2d2a313806cadd3601060ac593b60c46045992ef540898277"
+git_blob_sha1 = "cbb512c460661dc2145c2e707a5434d91cd3a7e9"
+bytes = 18997
+byte_identical = true
+additional_permission = "Original LZMA linking exception preserved in source header and NOTICE.md"
+
+[[files]]
+path = "LzmaTypes.h"
+source_filename = "LzmaTypes.h"
+source_path = "Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/LzmaTypes.h"
+url = "https://raw.githubusercontent.com/jrsoftware/issrc/7d634620f1d1caca6c76e8398da7133153db9e7b/Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/LzmaTypes.h"
+author = "Igor Pavlov"
+license_chosen = "Public domain"
+sha256 = "786bc430e564edce5667f47db3ea16d7457fa06affaacd866e831925697cd48c"
+git_blob_sha1 = "4a1f7db49e53d5c9f6ac86792179c5d2e13ef051"
+bytes = 894
+byte_identical = true
+
+[[files]]
+path = "CPL-1.0.txt"
+source_filename = "CPL-1.0.txt"
+url = "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/CPL-1.0.txt"
+author = "IBM; Eclipse Foundation as agreement steward"
+license_chosen = "CPL-1.0"
+sha256 = "9698f2ba346a875a47a9cc6bb602e3d126758774dde1f575b4f3369dc3f2574f"
+
+[[files]]
+path = "INNO-LICENSE.txt"
+source_filename = "license.txt"
+url = "https://raw.githubusercontent.com/jrsoftware/issrc/7d634620f1d1caca6c76e8398da7133153db9e7b/license.txt"
+author = "Jordan Russell and Martijn Laan"
+license_chosen = "InnoSetup"
+sha256 = "0c81595601bce47eeef8d865d5da7f9ca2c6a12235b7482b29f5ab23ed02ee5a"
+normalization = "Licence text only: CRLF normalized to LF with a final newline; original terms retained"

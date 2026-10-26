@@ -42,6 +42,18 @@ class InventoryTests(unittest.TestCase):
         self.manifest = dict(schema_version=1, version='0.10.1', source_sha=self.source,
                              checkout_sha=self.checkout, checkout_tree='c' * 40,
                              build_number=7, target='x86_64-pc-windows-msvc', unsigned=True)
+        for name in ['CPL-1.0.txt', 'INNO-LICENSE.txt', 'INNO_SETUP_PROVENANCE.md']:
+            source = self.repo / 'packaging/windows' / name
+            source.parent.mkdir(parents=True, exist_ok=True)
+            source.write_bytes(b'synthetic installer notice')
+            self.write('licences/installer/' + name, source.read_bytes())
+        for name in ['CPL-1.0.txt', 'INNO-LICENSE.txt', 'NOTICE.md', 'SOURCES.toml',
+                     'compile.bat.txt', 'LzmaDecode.h', 'LzmaDecodeInno.c',
+                     'LzmaDecodeSize.c', 'LzmaTypes.h']:
+            source = self.repo / 'packaging/windows/installer-runtime-source/lzma-loader' / name
+            source.parent.mkdir(parents=True, exist_ok=True)
+            source.write_bytes(b'synthetic corresponding source fixture')
+            self.write('licences/installer/lzma-loader-source/' + name, source.read_bytes())
         self.publish()
 
     def write(self, name, data):
@@ -103,6 +115,12 @@ class InventoryTests(unittest.TestCase):
         self.write('licences/unexpected.txt', b'-----BEGIN PRIVATE KEY-----\nnot a real key')
         self.publish()
         with self.assertRaisesRegex(ValueError, 'credential pattern'):
+            self.check()
+
+    def test_missing_corresponding_source_rejected_even_with_rebuilt_inventory(self):
+        (self.payload / 'licences/installer/lzma-loader-source/LzmaDecodeSize.c').unlink()
+        self.publish()
+        with self.assertRaises((ValueError, FileNotFoundError)):
             self.check()
 
     def test_wrong_version_and_source_rejected(self):

@@ -13,7 +13,7 @@ The Windows Setup uses **Inno Setup 7.1.0, x64 compiler**, released by Jordan Ru
 | Size | 14,304,168 bytes |
 | SHA-256 | `0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f` |
 | Authenticode requirement | Valid Windows-trusted signature, publisher `Pyrsys B.V.` |
-| Compiler engine version | `7.1.0`, verified through ISCC `--version`; the official launcher PE reports `0.0.0.0` |
+| Compiler version | `7.1.0` / PE `7.1.0.0` |
 | Licence text source | <https://github.com/jrsoftware/issrc/blob/is-7_1_0/license.txt> |
 | Local licence | `packaging/windows/INNO-LICENSE.txt` |
 | Local licence SHA-256 | `0c81595601bce47eeef8d865d5da7f9ca2c6a12235b7482b29f5ab23ed02ee5a` |
@@ -37,7 +37,7 @@ Copy `INNO-LICENSE.txt` into the shared verified application payload, for exampl
 The pinned upstream [7.1.0 SBOM](https://github.com/jrsoftware/issrc/blob/is-7_1_0/SBOM.spdx.json) distinguishes compiler-only and optional components from Setup/SetupLdr dependencies. Do not assume the whole distribution has one licence:
 
 - Setup includes the public-domain LZMA SDK 26.02 and RemObjects Pascal Script. The latter's original notice is reproduced below from [the tagged source](https://github.com/jrsoftware/issrc/blob/is-7_1_0/Components/UniPs/LICENSE.md).
-- SetupLdr includes the older size-optimized LZMA SDK 4.40 decoder, with an express linking exception. Its own LGPL/CPL terms are not changed to MIT/Apache by packaging; the exception preserves separate licensing of linked ODIBO code. We do not modify or copy decoder source into ODIBO. Preserve the original exception notice and the exact upstream source reference below. A distribution should retain applicable runtime notices, not simply declare all embedded runtime code public domain.
+- SetupLdr includes the older size-optimized LZMA SDK 4.40 decoder, with an express linking exception. This distribution selects its CPL alternative without modifying the source; the exception preserves separate licensing of linked code. Corresponding source accompanies the package solely as installer licence material and is not compiled into the ODIBO Rust application. Preserve the original notices and exception; do not declare all embedded runtime code public domain.
 - The optional 7-Zip/unRAR extraction DLLs have separate LGPL, BSD and unRAR conditions. This Setup does not enable archive extraction or download functions and must not package `is7z*.dll`, `is7zxa*.dll` or `is7zxr*.dll`. Verify actual compiled output rather than assuming every compiler dependency ships.
 - Scintilla is an IDE dependency and is not copied into ODIBO. Optional zlib/bzip2 compression is not selected (`Compression=lzma2`). If compiler options or embedded components change, re-review the pinned SBOM and original notices before distribution.
 
@@ -81,6 +81,21 @@ Igor Pavlov, as the author of this code, expressly permits you to statically or 
 ```
 
 This inventory is a documented engineering assessment of the pinned compiler configuration, not a legal guarantee for arbitrary future compiler outputs. Keep the source links and original notices available to recipients; re-review if runtime inspection shows additional components.
+
+### Required decision for redistribution of the loader decoder
+
+The old LZMA decoder's linking exception permits separately licensed linked code; it does **not** erase the decoder's own licence or justify describing the complete Setup as permissive-only. For this unmodified decoder, this distribution selects its offered **CPL-1.0 alternative together with the original linking exception**. ODIBO's Rust application remains MIT OR Apache-2.0 and its approved graphics retain their separate terms. No LZMA source is compiled into the PDF application.
+
+The original [CPL section 3](https://www.eclipse.org/legal/cpl/cpl-v10.html) requires reasonable access to the Program source and preservation of its licensing information. A mere header quotation and an external source URL are not the proposed compliance mechanism. Before distributing Setup, include in the delivered package:
+
+1. `licences/installer/CPL-1.0.txt`, the complete licence copied from [SPDX's pinned licence text](https://github.com/spdx/license-list-data/blob/v3.27.0/text/CPL-1.0.txt). The repository copy `packaging/windows/CPL-1.0.txt` has SHA-256 `9698f2ba346a875a47a9cc6bb602e3d126758774dde1f575b4f3369dc3f2574f` (LF text with final newline).
+2. A `licences/installer/lzma-loader-source/` directory holding the exact corresponding decoder source from Inno commit `7d634620f1d1caca6c76e8398da7133153db9e7b`, not merely a link or empty source offer. These materials are prepared under `packaging/windows/installer-runtime-source/lzma-loader/` for copying into that distribution location. Required original files under `Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/` are `LzmaDecodeInno.c`, `LzmaDecodeSize.c`, `LzmaDecode.h`, `LzmaTypes.h` and `compile.bat` (stored inertly as `compile.bat.txt`, with identical bytes and its original filename recorded). Retain the original notices and include both full CPL text and Inno licence text with this source copy. `SOURCES.toml` records original upstream paths, commit, individual SHA-256 values, original Git blob identities and filename mapping. Do not copy precompiled OBJ files or unrelated upstream images/fonts into the application source tree.
+3. A plain-text source inventory/readme stating that this is unchanged third-party installer-runtime source, available directly from the accompanying directory, selected under CPL-1.0 with the existing linking exception where applicable; Inno helper files retain their original Inno terms and `LzmaTypes.h` retains its public-domain notice. Identify IMR4N as distributor, not author of those components. If any distinct terms are offered by the distributor, they are offered by that distributor alone, not by original contributors. Preserve the licence's warranty and liability disclaimers for every contributor; make no warranty on their behalf.
+4. Original build instructions: the upstream `compile.bat` expects Visual Studio C/C++ build tools and a local `compilesettings.bat` pointing to the user's `VSTOOLSROOT`. Its decoder command is `cl.exe /c /O2 /D_LZMA_OUT_READ /D_LZMA_IN_CB LzmaDecodeInno.c /FoLzmaDecodeInno-x64.obj` after selecting the matching MSVC environment. This rebuilds the decoder object, not the complete Delphi installer; proprietary compiler/toolchain binaries are not part of the source bundle. Keep exact upstream version/build facts rather than promising bit-for-bit reproducibility.
+
+This source directory belongs to the **distribution's licence material**, not a new dependency or copied implementation inside the ODIBO PDF engine. The checked-in source copies were obtained from the official GitHub Git tree/blob API and verified byte-for-byte by recomputing each original Git blob ID; no source or batch file was compiled or executed. Copy only that exact recorded inventory into the canonical payload, verify the reviewed hashes, reject unexpected files, and include them in the canonical payload/checksum inventory before compiling Setup. Keep the same notices/source material in portable ZIP for consistent distribution documentation. Until the full licence and actual source inventory are present in the delivered files and verified, runtime redistribution checks must remain incomplete.
+
+An alternative is `UseSetupLdr=no`, which avoids this old loader decoder, but the [official directive](https://jrsoftware.org/ishelp/topic_setup_usesetupldr.htm) produces at least `Setup.exe`, `Setup-0.bin` and `Setup-1.bin` instead of a single executable and changes loader-dependent version-resource behavior. It is not an interchangeable emergency flag: it requires an explicitly reviewed packaging/UI/download/metadata change and renewed acceptance. It is not enabled by this implementation.
 
 ## Installation contract
 

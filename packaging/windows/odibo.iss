@@ -20,6 +20,7 @@
 [Setup]
 AppId={{A7A4DC1B-3255-4BC6-9F6F-1DA0B61B6524}
 AppName=ODIBO PDF
+SetupArchitecture=x64
 AppVersion={#AppVersion}
 AppVerName=ODIBO PDF {#AppVersion} (test build {#BuildNumber})
 AppPublisher=IMR4N
