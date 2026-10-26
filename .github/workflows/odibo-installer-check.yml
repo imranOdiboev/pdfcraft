@@ -45,6 +45,18 @@ jobs:
           'Passed installer syntax and fixture install/uninstall. This is not GUI/CLI/PDF acceptance, a beta package or a release.'
       - name: Observe real wizard accessibility (diagnostics only, not cancellation acceptance)
         run: pwsh -NoProfile -File packaging/windows/trace-odibo-setup.ps1 -SetupPath "$env:RUNNER_TEMP/inno-syntax-output/ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe" -QaDir "$PWD/dist/cancel-diagnostics"
+      - name: Prove old discovery fails and actual Cancel succeeds repeatedly (fixture only)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = "$env:RUNNER_TEMP/inno-syntax-output/ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe"
+          pwsh -NoProfile -File packaging/windows/test-odibo-setup-cancel.ps1 -SetupPath $setup -CancelRoot "$env:RUNNER_TEMP/legacy-cancel" -QaDir "$PWD/dist/cancel-diagnostics/negative-control" -Iterations 1 -LegacyButtonFilter
+          if ($LASTEXITCODE -eq 0) { throw 'The original discovery unexpectedly passed; negative control invalid.' }
+          $negative = Get-Content "$PWD/dist/cancel-diagnostics/negative-control/setup-cancellation.json" -Raw | ConvertFrom-Json
+          if ($negative.status -ne 'failed' -or $negative.error -cne 'Could not activate the real setup Cancel button.' -or -not $negative.attempts[0].legacy_filtered_visible_cancel) { throw 'Negative control did not reproduce the intended visible Pane-button discovery failure.' }
+          'Confirmed negative control: the old Button-only filter missed the real visible enabled Cancel.'
+          pwsh -NoProfile -File packaging/windows/test-odibo-setup-cancel.ps1 -SetupPath $setup -CancelRoot "$env:RUNNER_TEMP/repeated-cancel" -QaDir "$PWD/dist/cancel-diagnostics/positive" -Iterations 3
+          if ($LASTEXITCODE -ne 0) { throw 'Real repeated cancellation failed.' }
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:

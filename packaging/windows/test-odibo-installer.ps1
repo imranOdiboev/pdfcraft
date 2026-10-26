@@ -228,75 +228,13 @@ function Uninstall {
     Assert-True ($links.Count -eq 0) 'Start menu shortcut remains after uninstall.'
 }
 function Test-WizardCancellation {
-    # Genuine button activation. No process killing is counted as cancellation. This proves
-    # cancellation before file installation, not mid-copy rollback or physical desktop UX.
-    try {
-        Add-Type -AssemblyName UIAutomationClient
-        Add-Type -AssemblyName UIAutomationTypes
-        Add-Type -TypeDefinition @'
-using System;
-using System.Runtime.InteropServices;
-public static class OdiboSetupButtons {
-    [DllImport("user32.dll", SetLastError=true)] public static extern bool PostMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
-    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
-}
-'@
-    } catch {
-        $checks.Add([pscustomobject]@{ name = 'wizard Cancel before installation'; status = 'manual-required'; details = 'Windows UI Automation assemblies unavailable on this runner.' })
-        return
-    }
-    $cancelDir = Join-Path $testRoot 'Отменённая установка'
-    $start = [Diagnostics.ProcessStartInfo]::new($SetupPath)
-    $start.UseShellExecute = $false
-    # Visible only in the disposable CI desktop: this is the actual wizard under test,
-    # whose accessible controls must exist. Nothing is opened on the owner's machine.
-    $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Normal
-    foreach ($argument in @('/CURRENTUSER', '/NORESTART', '/SP-', ('/DIR=' + $cancelDir), ('/LOG=' + (Join-Path $testRoot 'cancel-wizard.log')))) { [void]$start.ArgumentList.Add($argument) }
-    $process = [Diagnostics.Process]::Start($start)
-    $owned = [Collections.Generic.HashSet[int]]::new()
-    [void]$owned.Add($process.Id)
-    $cancelClicked = $false
-    $deadline = [DateTime]::UtcNow.AddSeconds(45)
-    try {
-        while (-not $process.HasExited -and [DateTime]::UtcNow -lt $deadline) {
-            # Inno's bootstrap may create a child temporary executable. Restrict all UI
-            # actions to this launch and descendants, never another program's Yes button.
-            $snapshot = @(Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId)
-            for ($depth = 0; $depth -lt 4; $depth++) {
-                foreach ($entry in $snapshot) { if ($owned.Contains([int]$entry.ParentProcessId)) { [void]$owned.Add([int]$entry.ProcessId) } }
-            }
-            $windows = [Windows.Automation.AutomationElement]::RootElement.FindAll([Windows.Automation.TreeScope]::Children, [Windows.Automation.Condition]::TrueCondition)
-            foreach ($window in $windows) {
-                if (-not $owned.Contains($window.Current.ProcessId)) { continue }
-                $buttons = $window.FindAll([Windows.Automation.TreeScope]::Descendants, [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::Button))
-                foreach ($button in $buttons) {
-                    $name = $button.Current.Name.Replace('&', '').Trim()
-                    if ((-not $cancelClicked -and $name -cmatch '^(Cancel|Отмена)$') -or ($cancelClicked -and $name -cmatch '^(Yes|Да)$')) {
-                        if ($button.Current.IsEnabled) {
-                            # Post the actual button click asynchronously: a synchronous
-                            # UIA Invoke can block while the confirmation modal is open.
-                            $handle = [IntPtr]$button.Current.NativeWindowHandle
-                            Assert-True ($handle -ne [IntPtr]::Zero) 'The real Cancel/Yes button did not expose a native window.'
-                            [void][OdiboSetupButtons]::SetForegroundWindow([IntPtr]$window.Current.NativeWindowHandle)
-                            Assert-True ([OdiboSetupButtons]::PostMessage($handle, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)) 'Could not post a click to the owned setup button.'
-                            $cancelClicked = $true
-                            break
-                        }
-                    }
-                }
-            }
-            Start-Sleep -Milliseconds 250
-        }
-        Assert-True $cancelClicked 'Could not activate the real setup Cancel button.'
-        Assert-True ($process.WaitForExit(10000)) 'Setup did not exit after Cancel confirmation.'
-        Assert-True ($process.ExitCode -ne 0) 'Cancelled setup reported successful installation.'
-        Assert-True (-not (Test-Path -LiteralPath $registryPath)) 'Cancelled setup registered the application.'
-        Assert-True (-not (Test-Path -LiteralPath (Join-Path $cancelDir 'odibo-pdf.exe'))) 'Cancelled setup installed the executable.'
-        Passed 'real wizard Cancel before installation' @{ exit_code = $process.ExitCode; method = 'UI Automation identifies own native Cancel/Yes button; bounded asynchronous BM_CLICK activates its real handler' }
-    } finally {
-        if (-not $process.HasExited) { $process.Kill($true); [void]$process.WaitForExit(5000) }
-        $process.Dispose()
-    }
+    # The same mandatory real-button test also runs against the exact-source fixture.
+    # No process termination or manual-required fallback is counted as cancellation.
+    $result = & (Join-Path $PSScriptRoot 'test-odibo-setup-cancel.ps1') `
+        -SetupPath $SetupPath -CancelRoot (Join-Path $testRoot 'Отменённые установки') `
+        -QaDir (Join-Path $QaDir 'cancellation') -Iterations 3
+    Assert-True ($result.status -ceq 'passed' -and $result.passed -eq 9) 'All nine real cancellation scenarios must pass.'
+    Passed 'real wizard Cancel before installation, three repetitions in language selection, EN and RU' $result
 }
 
 try {
