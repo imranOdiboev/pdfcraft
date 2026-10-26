@@ -861,11 +861,83 @@ fn files_written_from_an_attachment_tab_stay_inside_the_chosen_folder() {
         let written = files_under(&dir.0);
         assert_eq!(written.len(), 2, "{name}: two split parts, got {written:?}");
         assert!(written.iter().all(|p| p.parent() == Some(out.as_path())), "{name}: {written:?}");
-        // Extract writes page 1 under the name Split gave it.
+        let split_bytes: Vec<_> = written.iter().map(|p| std::fs::read(p).unwrap()).collect();
+        // Extract must refuse the same generated name without replacing Split's result.
         h.state_mut().extract_draft = pdfcraft_ui_egui::ExtractDraft { separate: true, ..Default::default() };
         h.state_mut().extract_selection();
-        assert!(h.state().toast.as_ref().is_some_and(|t| t.0.starts_with("Wrote 1 file")), "{name}: {:?}", h.state().toast);
+        assert!(h.state().operation_error.is_some(), "{name}: collision must be reported");
         assert_eq!(files_under(&dir.0), written, "{name}");
+        for (path, bytes) in written.iter().zip(&split_bytes) {
+            assert_eq!(&std::fs::read(path).unwrap(), bytes);
+        }
+        let extract_dir = out.join("extracted");
+        std::fs::create_dir(&extract_dir).unwrap();
+        h.state_mut().operation_error = None;
+        h.state_mut().export_dir_override = Some(extract_dir.to_string_lossy().into_owned());
+        h.state_mut().extract_selection();
+        assert!(h.state().toast.as_ref().is_some_and(|t| t.0.starts_with("Wrote 1 file")), "{name}: {:?}", h.state().toast);
+        let extracted = files_under(&extract_dir);
+        assert_eq!(extracted.len(), 1);
+        assert_eq!(extracted[0].parent(), Some(extract_dir.as_path()));
+        let bytes = std::sync::Arc::new(std::fs::read(&extracted[0]).unwrap());
+        assert_eq!(pdfcraft_render::PageRenderer::new(bytes, Default::default()).page_count(), 1);
+        assert_eq!(files_under(&dir.0).len(), 3);
+        for (path, bytes) in written.iter().zip(&split_bytes) {
+            assert_eq!(&std::fs::read(path).unwrap(), bytes);
+        }
         std::fs::remove_dir_all(dir.0.join("a")).unwrap();
     }
+}
+
+#[test]
+fn beta_extract_collision_preserves_existing_output_and_does_not_delete_pages() {
+    let dir = scratch("beta-extract-collision");
+    let original = fixture(3);
+    std::fs::write(dir.join("report.pdf"), &original).unwrap();
+    let sentinel = fixture(2);
+    std::fs::write(dir.join("Archive.pdf"), &sentinel).unwrap();
+    let mut h = harness(&[]);
+    h.state_mut().open_bytes("report.pdf", Some(dir.join("report.pdf").to_string_lossy().into_owned()), original.clone()).unwrap();
+    h.state_mut().extract_draft = pdfcraft_ui_egui::ExtractDraft { name: "Archive".into(), separate: true, delete: true };
+    h.state_mut().pick_override = Some(vec![dir.to_string_lossy().into_owned()]);
+    h.state_mut().extract_selection();
+    h.run_steps(3);
+    assert_eq!(std::fs::read(dir.join("report.pdf")).unwrap(), original);
+    assert_eq!(std::fs::read(dir.join("Archive.pdf")).unwrap(), sentinel);
+    assert_eq!(pages(h.state(), 0), 3);
+    assert!(h.state().operation_error.is_some());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[cfg(windows)]
+#[test]
+fn beta_extract_case_alias_cannot_replace_the_source() {
+    let dir = scratch("beta-extract-case");
+    let original = fixture(3);
+    std::fs::write(dir.join("report.pdf"), &original).unwrap();
+    let mut h = harness(&[]);
+    h.state_mut().open_bytes("report.pdf", Some(dir.join("report.pdf").to_string_lossy().into_owned()), original.clone()).unwrap();
+    h.state_mut().extract_draft = pdfcraft_ui_egui::ExtractDraft { name: "Report".into(), separate: true, delete: true };
+    h.state_mut().export_dir_override = Some(dir.to_string_lossy().into_owned());
+    h.state_mut().extract_selection();
+    assert_eq!(std::fs::read(dir.join("report.pdf")).unwrap(), original);
+    assert_eq!(pages(h.state(), 0), 3);
+    assert!(h.state().operation_error.is_some());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn beta_batch_ocr_refuses_existing_outputs_before_loading_models() {
+    let dir = scratch("beta-ocr-collision");
+    let original = fixture(3);
+    std::fs::write(dir.join("Документ.pdf"), &original).unwrap();
+    let mut h = harness(&[]);
+    h.state_mut().run_inline = true;
+    h.state_mut().export_dir_override = Some(dir.to_string_lossy().into_owned());
+    h.state_mut().ocr_files(vec![("Документ.pdf".into(), original.clone())]);
+    h.run_steps(3);
+    assert_eq!(std::fs::read(dir.join("Документ.pdf")).unwrap(), original);
+    assert!(h.state().operation_error.is_some());
+    assert!(h.state().ocr_batch.is_none());
+    std::fs::remove_dir_all(dir).unwrap();
 }

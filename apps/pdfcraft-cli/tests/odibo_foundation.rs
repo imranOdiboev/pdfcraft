@@ -172,3 +172,37 @@ fn a_failed_save_preserves_the_destination_and_the_original() {
     assert_eq!(std::fs::read(dir.0.join("blocked")).unwrap(), b"SENTINEL");
     assert_eq!(std::fs::read(dir.0.join("source.pdf")).unwrap(), original);
 }
+
+#[test]
+fn beta_organize_annotation_and_cyrillic_signature_survive_save_reopen() {
+    let dir = Workdir::new();
+    let root = dir.0.join("Проверка беты");
+    std::fs::create_dir(&root).unwrap();
+    let original = fixture(&["LEFT-1", "LEFT-2", "LEFT-3", "LEFT-4"]);
+    std::fs::write(root.join("Исходный документ.pdf"), &original).unwrap();
+    let steps = json!([
+        {"tool":"doc_open","args":{"path":"Исходный документ.pdf"}},
+        {"tool":"page_move","args":{"doc":1,"pages":[4],"to":1}},
+        {"tool":"page_rotate","args":{"doc":1,"pages":[2],"degrees":90}},
+        {"tool":"page_delete","args":{"doc":1,"pages":[3]}},
+        {"tool":"comment_add","args":{"doc":1,"page":1,"type":"note","at":[25,30],"contents":"Проверено: учебный документ","author":"Тест"}},
+        {"tool":"fill_sign_add","args":{"doc":1,"page":1,"type":"signature","at":[30,100],"text":"Иван"}},
+        {"tool":"doc_save","args":{"doc":1,"path":"Проверенная копия.pdf"}},
+        {"tool":"doc_close","args":{"doc":1}},
+        {"tool":"doc_open","args":{"path":"Проверенная копия.pdf"}},
+        {"tool":"comment_list","args":{"doc":2}},
+        {"tool":"page_render","args":{"doc":2,"page":2,"dpi":72},"out":"rotated.png"}
+    ]);
+    std::fs::write(root.join("steps.json"), serde_json::to_vec(&steps).unwrap()).unwrap();
+    let output = success(&root, &["run", "--script", "steps.json", "--root", ".", "--report"]);
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["ok"], true);
+    let comments = report["steps"][9]["result"].to_string();
+    assert!(comments.contains("Проверено: учебный документ"), "{comments}");
+    assert!(report["steps"][9]["result"][0]["count"].as_u64().unwrap() >= 2, "note and typed signature must survive reopening: {comments}");
+    verify(&root, "Проверенная копия.pdf", &["LEFT-4", "LEFT-1", "LEFT-3"]);
+    let info = pdfcraft_render::inspect(std::sync::Arc::new(std::fs::read(root.join("Проверенная копия.pdf")).unwrap()), None).unwrap();
+    assert_eq!(info.pages[1].rotation, 90);
+    assert!(std::fs::read(root.join("rotated.png")).unwrap().starts_with(b"\x89PNG\r\n\x1a\n"));
+    assert_eq!(std::fs::read(root.join("Исходный документ.pdf")).unwrap(), original);
+}

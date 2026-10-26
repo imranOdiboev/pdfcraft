@@ -802,16 +802,19 @@ pub(crate) fn body(
     labels: &[String],
     thumb: &mut dyn FnMut(usize) -> Option<egui::TextureId>,
 ) -> (bool, bool) {
-    ui.set_width(820.0);
+    let width = (ui.ctx().content_rect().width() - 64.0).clamp(320.0, 820.0);
+    let compact = width < 820.0 || ui.ctx().content_rect().height() < 780.0;
+    ui.set_width(width);
     ui.label(egui::RichText::new(tl!("Print")).font(theme::semibold(18.0)));
     ui.add_space(8.0);
     let settings = d.settings(sizes.len(), labels);
     let sheets = settings.as_ref().ok().and_then(|s| print::layout(sizes, s).ok()).unwrap_or_default();
     d.sheet = d.sheet.min(sheets.len().saturating_sub(1));
-    ui.horizontal_top(|ui| {
+    let max_height = (ui.ctx().content_rect().height() - 170.0).max(120.0);
+    let contents = |ui: &mut egui::Ui| {
         // Settings.
         ui.vertical(|ui| {
-            ui.set_width(470.0);
+            ui.set_width(if compact { width } else { 470.0 });
             egui::Grid::new("print-top").num_columns(2).spacing([10.0, 8.0]).show(ui, |ui| {
                 ui.label(tl!("Printer:"));
                 let before = d.printer.clone();
@@ -1219,12 +1222,23 @@ pub(crate) fn body(
                     ui.label(crate::i18n::fmt(tl!("PDF scale: {scale}%"), &[("scale", &format!("{scale:.2}"))]));
                     ui.label(egui::RichText::new(tl!("Printer paper and scaling may differ. Check driver settings.")).small().color(t.text_muted));
                     if (scale - 100.0).abs() > 0.01 {
-                        ui.label(egui::RichText::new(tl!("Drawing scale changes. Use Actual size for full-scale plans.")).small().color(t.text_muted));
+                        ui.label(
+                            egui::RichText::new(tl!("Drawing scale changes. Use Actual size for full-scale plans.")).small().color(t.text_muted),
+                        );
                     }
                 }
             }
         });
-    });
+    };
+    if compact {
+        egui::ScrollArea::both().id_salt("print-options").max_height(max_height).max_width(width).show(ui, |ui| {
+            ui.vertical(contents);
+        });
+    } else {
+        // Keep the bounded horizontal layout: an unconstrained horizontal scroll
+        // scope can move controls after hit testing when the printer text grows.
+        ui.horizontal_top(contents);
+    }
     ui.add_space(12.0);
     let (mut go, mut cancel) = (false, false);
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {

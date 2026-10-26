@@ -1031,16 +1031,44 @@ fn outline_item(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, item: &OutlineIte
         let wrap_w = (ui.available_width() - indent - 20.0 - label_w - 12.0).max(60.0);
         let galley = ui.fonts_mut(|f| f.layout(item.title.clone(), font, t.text, wrap_w));
         let h = (galley.size().y + 12.0).max(28.0);
-        let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), h), Sense::click());
+        let (_, rect) = ui.allocate_space(vec2(ui.available_width(), h));
+        let resp = ui.interact(rect, id.with("row"), Sense::click());
         resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &item.title));
         theme::Press::track(ui, &resp).wash(ui, rect, 6, false);
+        widgets::focus_ring(ui, &resp);
         let x0 = rect.left() + indent;
         if !item.children.is_empty() {
             let tri = Rect::from_min_size(pos2(x0, rect.top() + 6.0), vec2(16.0, 16.0));
             icons::paint(ui, tri, if open { "chevron-down" } else { "chevron-right" }, 14.0, t.text_muted);
-            if !cx.searching && ui.interact(tri, id.with("tri"), Sense::click()).clicked() {
-                open = !open;
-                ui.data_mut(|d| d.insert_temp(id, open));
+            let disclosure = ui.interact(tri, id.with("tri"), Sense::click());
+            let action = if open { tl!("Collapse") } else { tl!("Expand") };
+            disclosure.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, !cx.searching, open, format!("{action}: {}", item.title)));
+            widgets::focus_ring(ui, &disclosure);
+            let focused = resp.has_focus() || disclosure.has_focus();
+            if focused {
+                let focused_id = if resp.has_focus() { resp.id } else { disclosure.id };
+                ui.memory_mut(|m| m.set_focus_lock_filter(focused_id, egui::EventFilter { horizontal_arrows: true, ..Default::default() }));
+            }
+            if !cx.searching {
+                let owns_keyboard = ui.memory(|m| m.has_focus(disclosure.id) || m.had_focus_last_frame(disclosure.id));
+                let activate = owns_keyboard
+                    && !ui.ctx().text_edit_focused()
+                    && ui.input_mut(|i| {
+                        i.consume_key(egui::Modifiers::NONE, egui::Key::Enter) || i.consume_key(egui::Modifiers::NONE, egui::Key::Space)
+                    });
+                let next = if disclosure.clicked() || activate {
+                    Some(!open)
+                } else if focused && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowRight)) {
+                    Some(true)
+                } else if focused && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowLeft)) {
+                    Some(false)
+                } else {
+                    None
+                };
+                if let Some(next) = next {
+                    open = next;
+                    ui.data_mut(|d| d.insert_temp(id, open));
+                }
             }
         }
         ui.painter().galley(pos2(x0 + 20.0, rect.top() + 6.0), galley, t.text);
@@ -1050,7 +1078,11 @@ fn outline_item(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, item: &OutlineIte
             let pos = pos2(rect.right() - 6.0 - g.size().x, rect.top() + 14.0 - g.size().y / 2.0);
             ui.painter().galley(pos, g, t.text_faint);
         }
-        if theme::hand(resp.clone()).clicked()
+        let owns_keyboard = ui.memory(|m| m.has_focus(resp.id) || m.had_focus_last_frame(resp.id));
+        let activate = owns_keyboard
+            && !ui.ctx().text_edit_focused()
+            && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Enter) || i.consume_key(egui::Modifiers::NONE, egui::Key::Space));
+        if (theme::hand(resp.clone()).clicked() || activate)
             && let Some(p) = item.page
         {
             *cx.nav = Some(Nav::Dest(p, item.view));

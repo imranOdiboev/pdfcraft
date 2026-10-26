@@ -26,6 +26,22 @@ pub const ALPHABET: &str = " 0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~€ABCD
 /// The languages the models read (ISO 639-1); all use the Latin alphabet without accents.
 pub const LANGUAGES: &[(&str, &str)] = &[("en", "English")];
 
+fn image_channels(len: usize, width: u32, height: u32) -> Result<usize, OcrError> {
+    if width == 0 || height == 0 || len == 0 {
+        return Err(OcrError::EmptyImage);
+    }
+    let pixels = usize::try_from(width).ok().and_then(|w| usize::try_from(height).ok().and_then(|h| w.checked_mul(h)));
+    let Some(pixels) = pixels.filter(|n| *n <= 64 * 1024 * 1024) else {
+        return Err(OcrError::Recognize("image dimensions exceed the 64 megapixel limit".into()));
+    };
+    for channels in [1, 3, 4] {
+        if pixels.checked_mul(channels) == Some(len) {
+            return Ok(channels);
+        }
+    }
+    Err(OcrError::Recognize("image buffer length does not match its dimensions and channels".into()))
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum OcrError {
     /// Shown to end users (release packages ship the models; a source build fetches them with
@@ -128,15 +144,10 @@ impl Ocr {
 
     /// Recognise the text in an RGBA (or RGB, or grey) image, `width` × `height` pixels.
     pub fn recognize(&self, pixels: &[u8], width: u32, height: u32) -> Result<Vec<Line>, OcrError> {
-        if width == 0 || height == 0 || pixels.is_empty() {
-            return Err(OcrError::EmptyImage);
-        }
+        let channels = image_channels(pixels.len(), width, height)?;
         // ocrs wants 1 or 3 channels.
-        let rgb: std::borrow::Cow<[u8]> = if pixels.len() == (width * height * 4) as usize {
-            pixels.as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect::<Vec<u8>>().into()
-        } else {
-            pixels.into()
-        };
+        let rgb: std::borrow::Cow<[u8]> =
+            if channels == 4 { pixels.as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect::<Vec<u8>>().into() } else { pixels.into() };
         let err = |e: &dyn std::fmt::Display| OcrError::Recognize(e.to_string());
         let source = ocrs::ImageSource::from_bytes(&rgb, (width, height)).map_err(|e| err(&e))?;
         let input = self.engine.prepare_input(source).map_err(|e| err(&e))?;
@@ -418,6 +429,20 @@ mod tests {
                 }
             }
             (w, h, px)
+        }
+    }
+}
+
+#[cfg(test)]
+mod beta_input_tests {
+    use super::*;
+    #[test]
+    fn hostile_dimensions_and_mismatched_buffers_fail_before_backend_access() {
+        for (len, w, h) in [(1, 0, 1), (1, 65536, 65536), (1, u32::MAX, u32::MAX), (11, 2, 2), (15, 2, 2)] {
+            assert!(image_channels(len, w, h).is_err());
+        }
+        for channels in [1, 3, 4] {
+            assert_eq!(image_channels(4 * channels, 2, 2).unwrap(), channels);
         }
     }
 }
