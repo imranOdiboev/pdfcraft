@@ -61,7 +61,7 @@ ODIBO PDF is under active development. Windows x64 is the current product target
 - Bundled OCR recognizes **English/basic Latin text**. Russian OCR is **not supported** by the current recognition model; a Russian interface does not imply Russian OCR.
 - Batch OCR runs in the background on desktop and currently has no cancellation control.
 - Explicit split ranges must cover the whole document consecutively without gaps or overlap. Use the existing Extract operation for selected subsets.
-- Safe split output requires a destination with hard-link support, such as NTFS. The M3.7 test candidate extends this requirement to separate-file extraction and batch OCR output; that candidate must be reviewed and merged separately. Unsupported destinations fail safely. If a later output fails, previously completed new files can remain; batch output is not an all-or-nothing transaction.
+- Safe output for Split, separate-file extraction and batch OCR requires a destination with hard-link support, such as NTFS. Unsupported destinations fail safely. If a later output fails, previously completed new files can remain; batch output is not an all-or-nothing transaction.
 - Split processing is synchronous and may pause the interface on large documents. Cancelling Combine discards its result, but does not interrupt an engine step already running.
 - Undo retains up to 100 recent changes. Test important files on copies and check saved results by reopening them.
 
