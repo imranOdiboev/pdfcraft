@@ -150,7 +150,12 @@ function Assert-Payload([string]$Destination) {
 function Assert-NoBackgroundRegistration {
     $services = @(Get-CimInstance Win32_Service | Where-Object { $_.Name -match '(?i)odibo' -or $_.PathName -like ('*' + $installDir + '*') })
     Assert-True ($services.Count -eq 0) 'Setup registered an unexpected service.'
-    $tasks = @(Get-ScheduledTask | Where-Object { $_.TaskName -match '(?i)odibo' -or @($_.Actions | Where-Object { $_.Execute -like ('*' + $installDir + '*') }).Count -gt 0 })
+    $tasks = @(Get-ScheduledTask | Where-Object {
+        $_.TaskName -match '(?i)odibo' -or @($_.Actions | Where-Object {
+            $execute = $_.PSObject.Properties['Execute']
+            $null -ne $execute -and [string]$execute.Value -like ('*' + $installDir + '*')
+        }).Count -gt 0
+    })
     Assert-True ($tasks.Count -eq 0) 'Setup registered an unexpected scheduled task.'
     foreach ($runKey in @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Run', 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Run')) {
         if (Test-Path -LiteralPath $runKey) {
@@ -228,6 +233,14 @@ function Test-WizardCancellation {
     try {
         Add-Type -AssemblyName UIAutomationClient
         Add-Type -AssemblyName UIAutomationTypes
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class OdiboSetupButtons {
+    [DllImport("user32.dll", SetLastError=true)] public static extern bool PostMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
+}
+'@
     } catch {
         $checks.Add([pscustomobject]@{ name = 'wizard Cancel before installation'; status = 'manual-required'; details = 'Windows UI Automation assemblies unavailable on this runner.' })
         return
@@ -260,8 +273,12 @@ function Test-WizardCancellation {
                     $name = $button.Current.Name.Replace('&', '').Trim()
                     if ((-not $cancelClicked -and $name -cmatch '^(Cancel|Отмена)$') -or ($cancelClicked -and $name -cmatch '^(Yes|Да)$')) {
                         if ($button.Current.IsEnabled) {
-                            $invoke = $button.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern)
-                            $invoke.Invoke()
+                            # Post the actual button click asynchronously: a synchronous
+                            # UIA Invoke can block while the confirmation modal is open.
+                            $handle = [IntPtr]$button.Current.NativeWindowHandle
+                            Assert-True ($handle -ne [IntPtr]::Zero) 'The real Cancel/Yes button did not expose a native window.'
+                            [void][OdiboSetupButtons]::SetForegroundWindow([IntPtr]$window.Current.NativeWindowHandle)
+                            Assert-True ([OdiboSetupButtons]::PostMessage($handle, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)) 'Could not post a click to the owned setup button.'
                             $cancelClicked = $true
                             break
                         }
@@ -275,7 +292,7 @@ function Test-WizardCancellation {
         Assert-True ($process.ExitCode -ne 0) 'Cancelled setup reported successful installation.'
         Assert-True (-not (Test-Path -LiteralPath $registryPath)) 'Cancelled setup registered the application.'
         Assert-True (-not (Test-Path -LiteralPath (Join-Path $cancelDir 'odibo-pdf.exe'))) 'Cancelled setup installed the executable.'
-        Passed 'real wizard Cancel before installation' @{ exit_code = $process.ExitCode; method = 'Windows UI Automation InvokePattern on own setup process only' }
+        Passed 'real wizard Cancel before installation' @{ exit_code = $process.ExitCode; method = 'UI Automation identifies own native Cancel/Yes button; bounded asynchronous BM_CLICK activates its real handler' }
     } finally {
         if (-not $process.HasExited) { $process.Kill($true); [void]$process.WaitForExit(5000) }
         $process.Dispose()

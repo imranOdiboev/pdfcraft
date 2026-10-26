@@ -29,6 +29,7 @@ $fonts = @('Inter-Regular.ttf', 'Inter-Medium.ttf', 'Inter-SemiBold.ttf') | ForE
     [pscustomobject]@{ path = $path; sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant(); licence = 'OFL-1.1' }
 }
 $records = [Collections.Generic.List[object]]::new()
+try {
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
@@ -47,6 +48,11 @@ public static class OdiboInstallerCapture {
     [DllImport("gdi32.dll", CharSet=CharSet.Unicode)] public static extern int AddFontResourceEx(string file, uint flags, IntPtr reserved);
     [DllImport("gdi32.dll", CharSet=CharSet.Unicode)] public static extern bool RemoveFontResourceEx(string file, uint flags, IntPtr reserved);
     [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll")] private static extern IntPtr SendMessageTimeout(IntPtr window, uint message, IntPtr wParam, IntPtr lParam, uint flags, uint timeout, out IntPtr result);
+    public static void NotifyFontChange() {
+        IntPtr result;
+        SendMessageTimeout(new IntPtr(0xFFFF), 0x001D, IntPtr.Zero, IntPtr.Zero, 2, 2000, out result);
+    }
     [DllImport("user32.dll")] public static extern bool EnumChildWindows(IntPtr parent, EnumProc callback, IntPtr parameter);
     [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr window);
     [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr window, StringBuilder text, int count);
@@ -102,6 +108,10 @@ public static class OdiboInstallerCapture {
     }
 }
 '@
+} catch {
+    @([ordered]@{status='skipped'; reason='Native screenshot support unavailable: ' + $_.Exception.Message; note='No image is published without font verification.'}) | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $QaDir 'installer-capture-evidence.json') -Encoding utf8NoBOM
+    return
+}
 
 $registered = [Collections.Generic.List[string]]::new()
 try {
@@ -110,7 +120,7 @@ try {
         $registered.Add($font.path)
     }
     # Notify the desktop about this session-only registration, with no permanent registry entry.
-    [void][OdiboInstallerCapture]::SendMessage([IntPtr]0xFFFF, 0x001D, [IntPtr]::Zero, [IntPtr]::Zero)
+    [OdiboInstallerCapture]::NotifyFontChange()
     $probe = [Drawing.Font]::new('Inter', 9)
     try { if ($probe.Name -cne 'Inter') { throw 'System.Drawing resolved Inter to a fallback family.' } }
     finally { $probe.Dispose() }
@@ -205,7 +215,7 @@ try {
     $records.Add([ordered]@{ status = 'skipped'; reason = $_.Exception.Message; note = 'No screenshot is supplied without complete font verification.' })
 } finally {
     foreach ($font in $registered) { [void][OdiboInstallerCapture]::RemoveFontResourceEx($font, 0, [IntPtr]::Zero) }
-    [void][OdiboInstallerCapture]::SendMessage([IntPtr]0xFFFF, 0x001D, [IntPtr]::Zero, [IntPtr]::Zero)
+    [OdiboInstallerCapture]::NotifyFontChange()
     ConvertTo-Json -InputObject @($records.ToArray()) -Depth 25 | Set-Content -LiteralPath (Join-Path $QaDir 'installer-capture-evidence.json') -Encoding utf8NoBOM
     Copy-Item -LiteralPath (Join-Path $root 'assets/fonts/OFL-Inter.txt') -Destination (Join-Path $QaDir 'OFL-Inter.txt')
     Copy-Item -LiteralPath (Join-Path $root 'assets/odibo/LICENSE-ODIBO-BRAND.txt') -Destination (Join-Path $QaDir 'LICENSE-ODIBO-BRAND.txt')
