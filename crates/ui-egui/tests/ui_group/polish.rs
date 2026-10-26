@@ -85,10 +85,11 @@ fn polish_failure_survives_success_and_time_until_explicit_dismissal() {
 
 #[test]
 fn beta_print_footer_stays_visible_at_minimum_size() {
+    for width in [820.0, 1280.0] {
     for language in ["en", "ru"] {
         for theme in ["light", "dark"] {
             for scale in [1.0, 1.5, 2.0] {
-                let mut h = Harness::builder().with_size(egui::vec2(820.0, 520.0)).with_pixels_per_point(scale).build_eframe(move |_| {
+                let mut h = Harness::builder().with_size(egui::vec2(width, 520.0)).with_pixels_per_point(scale).build_eframe(move |_| {
                     let mut app = PdfCraftApp::new();
                     app.set_option("language", language).unwrap();
                     app.set_option("theme", theme).unwrap();
@@ -102,13 +103,15 @@ fn beta_print_footer_stays_visible_at_minimum_size() {
                 assert_eq!(h.state().dialog, Some(pdfcraft_ui_egui::Dialog::Print));
                 let lang = i18n::Lang::from_code(language).unwrap();
                 let cancel = h.get_by_role_and_label(Role::Button, i18n::tr(lang, "Cancel")).rect();
-                assert!(cancel.left() >= 0.0 && cancel.right() <= 820.0 && cancel.top() >= 0.0 && cancel.bottom() <= 520.0, "{cancel:?}");
+                assert!(cancel.left() >= 0.0 && cancel.right() <= width && cancel.top() >= 0.0 && cancel.bottom() <= 520.0, "{width}: {cancel:?}");
                 h.key_press(egui::Key::Escape);
                 h.run_steps(3);
                 assert!(h.state().dialog.is_none());
             }
         }
     }
+}
+
 }
 
 #[test]

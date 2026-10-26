@@ -803,7 +803,7 @@ pub(crate) fn body(
     thumb: &mut dyn FnMut(usize) -> Option<egui::TextureId>,
 ) -> (bool, bool) {
     let width = (ui.ctx().content_rect().width() - 64.0).clamp(320.0, 820.0);
-    let compact = width < 820.0;
+    let compact = width < 820.0 || ui.ctx().content_rect().height() < 780.0;
     ui.set_width(width);
     ui.label(egui::RichText::new(tl!("Print")).font(theme::semibold(18.0)));
     ui.add_space(8.0);
