@@ -1,5 +1,7 @@
 # PdfCraft roadmap
 
+> **Fork update:** 2026-10-26 · M4.0: owner accepted Windows M3.7; PRs #8/#9 merged. Four-agent audit and per-user Setup/portable candidate in progress; cloud verification pending. No stable-release or readiness increase. [Audit](docs/ODIBO_M4_0_AUDIT.md).
+
 > **Fork update:** 2026-10-25 · M3.7: four real subagents, source-preserving extraction/OCR, bounded print and keyboard workflows, measured CLI baseline and independent README showcase. Verification in progress; upstream readiness estimates unchanged. See [audit](docs/ODIBO_M3_7_AUDIT.md).
 
 > **Fork update:** 2026-10-25 · ODIBO stage 3.6: three independent read-only subagent audits, bounded command search, keyboard focus, readable primary controls and actionable operation errors. Verification in progress; upstream estimates unchanged. See [audit](docs/uiux/STAGE_3_6_AUDIT.md).

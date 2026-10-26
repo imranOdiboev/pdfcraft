@@ -10,6 +10,10 @@ root = Path(__file__).resolve().parent.parent
 manifest = tomllib.loads((root / "ATTRIBUTION.toml").read_text(encoding="utf-8"))
 assets = {a["path"]: a for a in manifest["asset"]}
 documents = [root / "README.md", root / "README.ru.md", root / "docs/screenshots/odibo/PROVENANCE.md"]
+documents += sorted((root / 'docs').glob('ODIBO_WINDOWS*.md'))
+documents += [root / 'docs' / name for name in ['ODIBO_M4_0_MANUAL_CHECKLIST.md',
+              'ODIBO_RELEASE_NOTES_TEMPLATE.md', 'ODIBO_BUG_REPORT.md']
+              if (root / 'docs' / name).is_file()]
 checked = []; external = set(); images = set()
 for document in documents:
     text = document.read_text(encoding="utf-8")

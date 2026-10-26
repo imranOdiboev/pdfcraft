@@ -1,17 +1,32 @@
 ODIBO PDF — unsigned Windows x64 engineering test build
 
-Extract the whole ZIP to a writable folder and run odibo-pdf.exe.
+M4.0 offers a per-user Setup and an independent Portable ZIP. Check the candidate
+PR for actual CI results and owner acceptance; this notice is not test evidence.
+For Portable, extract the whole inner ZIP to a new writable folder and run odibo-pdf.exe.
 The CLI is odibo-pdf-cli.exe. Keep models/, licences/, THIRD_PARTY_CARGO.html,
 LICENSE-MIT, LICENSE-APACHE, NOTICE and attribution files with the executables.
 portable.txt keeps settings, logs, recovery and new digital IDs in ODIBOPDFData.
-Without that marker, ODIBO uses its own per-user directories; PdfCraft data is not migrated.
+Without that marker, including the installed copy, ODIBO uses its existing per-user
+directories; PdfCraft data is not migrated. Keep the marker for portable isolation.
+Windows may still maintain its own caches or metadata.
 
-Updates are disabled: no ODIBO update service is configured. No installer, signing
-identity or official release is included. Do not use irreplaceable originals for testing.
+Setup is intended for the current user without administrator rights, under
+%LOCALAPPDATA%\Programs\ODIBO PDF. It must preserve user documents and application data
+on update/uninstall. Save and close documents before setup. Uninstall through Windows
+Settings > Apps. No automatic app launch, MCP server, service or autostart is enabled.
+
+No automatic update service or official release is configured. Setup and application
+are unsigned; do not describe them as publisher-verified. Do not disable Defender or
+SmartScreen. If blocked or verification fails, stop and report the result voluntarily.
+Do not use irreplaceable originals for testing. Updates require your explicit action.
 
 Code retains MIT OR Apache-2.0 and upstream copyright notices. ODIBO graphics have
 separate terms in licences/assets/odibo/LICENSE-ODIBO-BRAND.txt. Fonts, components
 and OCR models retain their own licences. No exclusive AI copyright is claimed.
 
 BUILD_INFO.txt records the source commit. SHA256SUMS.txt covers the package files.
+The outer beta artifact also includes package checksums and BUILD_MANIFEST.json.
+A matching SHA-256 checks integrity, not independent publisher authenticity.
 The GitHub Actions artifact ZIP requires GitHub sign-in and expires after seven days.
+See the repository's docs/ODIBO_WINDOWS_INSTALLATION.md and
+docs/ODIBO_WINDOWS_UPDATES.md for instructions; no personal PDFs or raw logs are requested.

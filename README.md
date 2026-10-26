@@ -8,7 +8,7 @@
 
 Built with Rust and egui. Maintained by **IMR4N**, independently branded and developed from [PdfCraft](https://github.com/storytold/pdfcraft).
 
-[Русский](README.ru.md) · [Try the Windows test build](#windows-x64-test-build) · [Known limitations](#status-and-limitations) · [Build from source](#build-from-source)
+[Русский](README.ru.md) · [Download](#windows-x64-test-build) · [Known limitations](#status-and-limitations) · [Build from source](#build-from-source)
 
 ![ODIBO PDF Home with real quick actions, in Russian and the light theme](docs/screenshots/odibo/home-ru-light.png)
 
@@ -42,16 +42,23 @@ Screenshots show the real application with permitted embedded fonts and syntheti
 
 ## Windows x64 test build
 
-**This is an unsigned test application, not an official stable release.** There is currently no permanent binary download URL, installer or configured automatic update service.
+**Unsigned Windows x64 test builds; not a stable release or a verified publisher.** M4.0 adds a per-user Setup alongside Portable. Availability and test results must be confirmed in the candidate PR; this document alone does not establish that a build has passed. There is no permanent download or automatic update service.
 
 1. Open [Actions → ODIBO Windows test build](https://github.com/imranOdiboev/pdfcraft/actions/workflows/odibo-foundation.yml).
-2. Select a **successful** run for the branch or PR you intend to test. For a candidate build, use the run linked in that PR; a successful build alone does not mean the owner has accepted it.
-3. Sign in to GitHub and download the `odibo-rebranding-windows-x64-…` artifact under **Artifacts**. The legacy artifact name is retained. Artifacts expire after **seven days**; if none is available, there is no current download to offer.
-4. Extract the **entire ZIP** into a writable folder, then start `odibo-pdf.exe`. Keep `models/`, `licences/`, both executables, notices and licence files together.
+2. Select the **successful run linked in the candidate PR**, and confirm its source commit. A successful build does not mean the owner has accepted it.
+3. Sign in to GitHub and download `odibo-windows-beta-…` under **Artifacts**. Extract the artifact ZIP to get the packages, `SHA256SUMS.txt` and `BUILD_MANIFEST.json`. Artifacts expire after **seven days**; if no verified artifact is available, there is no current download to offer.
+4. Check the package hash and recorded source/build identity using the [installation guide](docs/ODIBO_WINDOWS_INSTALLATION.md). Choose one package below. Version `0.10.1` comes from Cargo; the short commit identifies a particular test build, rather than a new stable version.
 
-Windows may show an unsigned-application warning. Verify the repository, run, commit and checksums before deciding whether to run the build; these instructions do not require disabling Windows protection. The archive includes build information and checksum files for verification.
+| Package | How to use it |
+|---|---|
+| `ODIBO-PDF-0.10.1-<commit7>-Setup-x64.exe` | Install for the current Windows user, then open **ODIBO PDF** from Start. The default application folder is `%LOCALAPPDATA%\Programs\ODIBO PDF`; administrator rights are not requested by the intended per-user setup. |
+| `ODIBO-PDF-0.10.1-<commit7>-Portable-x64.zip` | Extract the **entire ZIP** into a new writable folder and start `odibo-pdf.exe`. Keep both executables, `models/`, `licences/`, notices and licence files together. |
 
-`portable.txt` stores application data in `ODIBOPDFData` beside the executables. Remove that marker before starting if you prefer the separate ODIBO per-user directories. Start with copies of non-sensitive test documents. Use **Save As** to keep the original file when experimenting.
+Windows may warn about an unsigned or unrecognized application, or block it. **Do not disable Defender or SmartScreen.** If verification fails, or Windows blocks the file, stop and report the result. A matching SHA-256 detects changed bytes; it does **not** authenticate the publisher or replace a digital signature.
+
+Setup uses ODIBO's existing per-user application data. Portable includes `portable.txt`, keeping application settings, logs, recovery and new digital IDs in `ODIBOPDFData` beside its executables; do not remove that marker if you need isolation from the installed copy. Windows can still maintain its own caches or metadata. Neither package migrates upstream PdfCraft data. Use copies of non-sensitive documents and **Save As** when testing.
+
+[Install and uninstall](docs/ODIBO_WINDOWS_INSTALLATION.md) · [Manual updates](docs/ODIBO_WINDOWS_UPDATES.md) · [Windows acceptance checklist](docs/ODIBO_M4_0_MANUAL_CHECKLIST.md) · [Report a bug voluntarily](docs/ODIBO_BUG_REPORT.md)
 
 ## Status and limitations
 
