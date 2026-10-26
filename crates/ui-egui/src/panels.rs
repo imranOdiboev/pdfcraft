@@ -1031,7 +1031,8 @@ fn outline_item(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, item: &OutlineIte
         let wrap_w = (ui.available_width() - indent - 20.0 - label_w - 12.0).max(60.0);
         let galley = ui.fonts_mut(|f| f.layout(item.title.clone(), font, t.text, wrap_w));
         let h = (galley.size().y + 12.0).max(28.0);
-        let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), h), Sense::click());
+        let (_, rect) = ui.allocate_space(vec2(ui.available_width(), h));
+        let resp = ui.interact(rect, id.with("row"), Sense::click());
         resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &item.title));
         theme::Press::track(ui, &resp).wash(ui, rect, 6, false);
         widgets::focus_ring(ui, &resp);
@@ -1043,12 +1044,18 @@ fn outline_item(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, item: &OutlineIte
             let action = if open { tl!("Collapse") } else { tl!("Expand") };
             disclosure.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, !cx.searching, open, format!("{action}: {}", item.title)));
             widgets::focus_ring(ui, &disclosure);
+            let focused = resp.has_focus() || disclosure.has_focus();
+            if focused {
+                let focused_id = if resp.has_focus() { resp.id } else { disclosure.id };
+                ui.memory_mut(|m| m.set_focus_lock_filter(focused_id, egui::EventFilter { horizontal_arrows: true, ..Default::default() }));
+            }
             if !cx.searching {
-                let next = if disclosure.clicked() {
+                let activate = disclosure.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter) || i.key_pressed(egui::Key::Space));
+                let next = if disclosure.clicked() || activate {
                     Some(!open)
-                } else if resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::ArrowRight)) {
+                } else if focused && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowRight)) {
                     Some(true)
-                } else if resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::ArrowLeft)) {
+                } else if focused && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowLeft)) {
                     Some(false)
                 } else {
                     None
@@ -1066,7 +1073,8 @@ fn outline_item(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, item: &OutlineIte
             let pos = pos2(rect.right() - 6.0 - g.size().x, rect.top() + 14.0 - g.size().y / 2.0);
             ui.painter().galley(pos, g, t.text_faint);
         }
-        if theme::hand(resp.clone()).clicked()
+        let activate = resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter) || i.key_pressed(egui::Key::Space));
+        if (theme::hand(resp.clone()).clicked() || activate)
             && let Some(p) = item.page
         {
             *cx.nav = Some(Nav::Dest(p, item.view));

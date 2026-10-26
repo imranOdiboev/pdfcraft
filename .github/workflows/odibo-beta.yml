@@ -226,7 +226,7 @@ jobs:
           for language in en ru; do
             for theme in light dark; do
               cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/home-$language-$theme.png --scale 1 --language $language --theme $theme
-              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/editor-$language-$theme.png dist/beta-qa/fixture.pdf --scale 1 --language $language --theme $theme --panel pages
+              cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/editor-$language-$theme.png dist/beta-qa/fixture.pdf --scale 1 --language $language --theme $theme
               cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/print-$language-$theme.png dist/beta-qa/fixture.pdf --size 820x520 --scale 1.5 --language $language --theme $theme --invoke print.dialog
               cargo run --locked -p pdfcraft-ui-egui --example shot -- dist/beta-qa/print-wide-$language-$theme.png dist/beta-qa/fixture.pdf --size 1400x900 --scale 1 --language $language --theme $theme --invoke print.dialog
             done

@@ -282,6 +282,7 @@ fn beta_bookmark_keyboard_disclosure_does_not_edit_document() {
     h.state_mut().apply_edit(Edit::AddBookmark { parent: vec![0], index: 0, title: "Child".into(), page: 1 });
     h.run_steps(4);
     let before = h.state().session.get(h.state().views[0].id).unwrap().bytes.clone();
+    assert!(h.query_by_label("Child").is_some());
     h.get_by_role_and_label(Role::Button, "Parent").focus();
     h.run_steps(2);
     h.key_press(Key::ArrowLeft);
@@ -294,5 +295,6 @@ fn beta_bookmark_keyboard_disclosure_does_not_edit_document() {
     h.run_steps(3);
     h.key_press(Key::Enter);
     h.run_steps(3);
+    assert!(h.query_by_label("Child").is_none(), "Enter on the focused disclosure collapses its children");
     assert_eq!(h.state().session.get(h.state().views[0].id).unwrap().bytes.as_slice(), before.as_slice());
 }

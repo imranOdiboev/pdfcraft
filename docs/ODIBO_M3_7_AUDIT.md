@@ -44,6 +44,10 @@ The full CI then detected eight existing wide Print interaction regressions and 
 Enter activation on a focused custom palette row. The wide layout now keeps its original
 bounded `horizontal_top` behavior; compact scrolling is isolated from it. Custom rows
 explicitly handle Enter/Space. Existing test assertions were retained; rerun results are pending.
+The next run passed all 13 existing Print tests, but the bookmark keyboard regression
+showed that arrow focus navigation took the key before disclosure handled it. Bookmark
+rows now use stable IDs and the existing [egui focus event filter](https://docs.rs/egui/0.36.2/egui/struct.EventFilter.html)
+for horizontal arrows; Tab stays available and disclosure/row activation handles Enter/Space.
 
 ## Preservation and limits
 
