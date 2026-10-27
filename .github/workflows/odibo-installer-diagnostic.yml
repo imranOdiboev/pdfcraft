@@ -67,7 +67,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
-          name: odibo-prior-runtime-diagnostics-${{ github.sha }}
+          name: odibo-prior-runtime-diagnostics-${{ github.sha }}-attempt-${{ github.run_attempt }}
           path: dist/installer-diagnostic
           retention-days: 3
           if-no-files-found: warn

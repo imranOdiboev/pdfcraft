@@ -247,6 +247,22 @@ source. It uploads QA only, never executable packages. This temporary diagnostic
 depends on a prior artifact that expires; normal builds do not depend on it.
 It does not substitute for fresh current-source full Windows acceptance.
 
+Diagnostic run40527222222/job122269958653 passed all11 real lifecycle checks with
+the explicitly pinned prior runtime, including nine cancellations, settings,
+reinstall/uninstall and Portable isolation. Downloaded QA archive SHA-256
+`a2660324d9a1232306b39e3495879f1015de0cc6520419dbd638dbbf85cf005a`
+was independently verified. One Portable shutdown observation reported an EXE
+unavailable both before and after handle release, so disposal is not a proven
+lock correction. The original exit7 cannot be retrospectively classified from
+its missing private setup log. This single diagnostic success is not a fix claim.
+
+Further diagnostics record the base exception and its actual Win32 error rather
+than PowerShell's wrapper HRESULT, role/exit time, numbered Setup attempts and
+numeric exit status. Before each Setup, inspect only the two intended EXEs:
+attributes, exclusive availability and exactly matching live image-path PIDs,
+parents and sessions. No unrelated processes or full paths are published. Native
+version/folder/file-lock checks remain unchanged; no blind delay or Setup retry.
+
 - [Microsoft BM_CLICK](https://learn.microsoft.com/en-us/windows/win32/controls/bm-click)
   describes activation of the real button handler.
 - [Inno exit codes](https://jrsoftware.org/ishelp/topic_setupexitcodes.htm)

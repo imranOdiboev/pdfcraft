@@ -68,6 +68,8 @@ if (Test-Path -LiteralPath $buildInfo) {
 Assert-True ($expectedCommit -cmatch '^[0-9a-f]{40}$') 'Expected build commit must be recorded as a complete SHA.'
 Assert-True ($expectedBuild -cmatch '^\d+$') 'Expected build number must be present.'
 $checks = [Collections.Generic.List[object]]::new()
+$script:setupAttempt = 0
+$script:lastChildExitCode = $null
 $guiProcesses = [Collections.Generic.List[Diagnostics.Process]]::new()
 $report = [ordered]@{
     status = 'running'
@@ -120,6 +122,7 @@ function Run-Process([string]$File, [string[]]$Arguments, [int]$TimeoutSeconds =
             throw ('Acceptance child process timed out: ' + [IO.Path]::GetFileName($File))
         }
         $result = [pscustomobject]@{ ExitCode = $process.ExitCode; Out = $stdout.GetAwaiter().GetResult(); Error = $stderr.GetAwaiter().GetResult() }
+        $script:lastChildExitCode = $result.ExitCode
         if ($ExpectFailure) { Assert-True ($result.ExitCode -ne 0) 'A refused operation unexpectedly succeeded.' }
         elseif ($result.ExitCode -ne 0) { throw ('Acceptance child failed with exit ' + $result.ExitCode + ': ' + $result.Error) }
         return $result
@@ -128,6 +131,11 @@ function Run-Process([string]$File, [string[]]$Arguments, [int]$TimeoutSeconds =
 function Run-Setup([string]$Destination, [switch]$ExpectFailure) {
     Assert-Beneath $Destination $testRoot
     $log = Join-Path $testRoot ('setup-' + [Guid]::NewGuid().ToString('N') + '.log')
+    $script:setupAttempt++
+    $attempt = $script:setupAttempt
+    $script:lastChildExitCode = $null
+    . (Join-Path $PSScriptRoot 'observe-odibo-executables.ps1')
+    $before = @(Get-OdiboExecutableObservation $Destination)
     try {
         return Run-Process $SetupPath @('/CURRENTUSER', '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', ('/DIR=' + $Destination), ('/LOG=' + $log)) -ExpectFailure:$ExpectFailure
     } finally {
@@ -139,7 +147,7 @@ function Run-Setup([string]$Destination, [switch]$ExpectFailure) {
                 if ($line -match '(ODIBO_PREPARE_REFUSED: (version|folder|executable-in-use)|ODIBO_EXECUTABLE_LOCKED: odibo-pdf(?:-cli)?\.exe|ODIBO_BUILD_METADATA_WRITTEN)$') { $markers += $Matches[1] }
             }
         }
-        [ordered]@{ expected_refusal = [bool]$ExpectFailure; markers = @($markers | Select-Object -Last 20) } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $QaDir ('setup-outcome-' + [Guid]::NewGuid().ToString('N') + '.json')) -Encoding utf8NoBOM
+        [ordered]@{ attempt = $attempt; observed_at_utc = [DateTime]::UtcNow.ToString('o'); exit_code = $script:lastChildExitCode; expected_refusal = [bool]$ExpectFailure; before = $before; markers = @($markers | Select-Object -Last 20) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $QaDir ('setup-outcome-' + $attempt.ToString('D2') + '.json')) -Encoding utf8NoBOM
     }
 }
 function Assert-Payload([string]$Destination) {
@@ -228,7 +236,7 @@ function Start-Gui([string]$Folder, [string[]]$Options = @()) {
         Assert-True ([DateTime]::UtcNow -lt $deadline) 'Installed GUI startup timed out.'
         Start-Sleep -Milliseconds 250
     }
-    return [pscustomobject]@{ Process = $process; Control = $control; Cli = Join-Path $Folder 'odibo-pdf-cli.exe' }
+    return [pscustomobject]@{ Process = $process; Control = $control; Cli = Join-Path $Folder 'odibo-pdf-cli.exe'; Role = $(if ($Folder -ieq $installDir) { 'installed' } else { 'portable' }) }
 }
 function Ui($Session, [string[]]$Arguments) {
     $result = Run-Process $Session.Cli (@('ui', '--control', $Session.Control) + $Arguments) -TimeoutSeconds 60
@@ -238,7 +246,7 @@ function Stop-Gui($Session) {
     $quit = Ui $Session @('quit')
     Assert-True ($quit.quitting -eq $true) 'Clean GUI quit unexpectedly requires confirmation.'
     . (Join-Path $PSScriptRoot 'close-odibo-gui-process.ps1')
-    Close-OdiboGuiProcess $Session.Process (Join-Path $QaDir ('gui-shutdown-' + [Guid]::NewGuid().ToString('N') + '.json'))
+    Close-OdiboGuiProcess $Session.Process (Join-Path $QaDir ('gui-shutdown-' + [Guid]::NewGuid().ToString('N') + '.json')) $Session.Role
     [void]$guiProcesses.Remove($Session.Process)
     if (Test-Path -LiteralPath $Session.Control) { Remove-Item -LiteralPath $Session.Control -Force }
 }
