@@ -1,8 +1,21 @@
-# Release test-owned process handles after proving normal shutdown. A signalled
-# process object may outlive its executable; retaining its handle can retain the
-# image section and prevent an exclusive installer check from reopening the EXE.
-function Close-OdiboGuiProcess([Diagnostics.Process]$Process) {
+# Release test-owned administrative resources after proving normal shutdown.
+# Closing an exited handle is resource hygiene, not evidence of an image lock.
+function Close-OdiboGuiProcess([Diagnostics.Process]$Process, [string]$DiagnosticPath = '') {
     if (-not $Process.WaitForExit(15000)) { throw 'GUI did not finish normal shutdown.' }
     if ($Process.ExitCode -ne 0) { throw 'GUI returned an error during normal shutdown.' }
+    $executable = $Process.StartInfo.FileName
+    function Observe-ExclusiveAccess {
+        try {
+            $stream = [IO.File]::Open($executable, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+            $stream.Dispose()
+            return [ordered]@{ available = $true; hresult = 0 }
+        } catch { return [ordered]@{ available = $false; hresult = $_.Exception.HResult; error_type = $_.Exception.GetType().Name } }
+    }
+    $evidence = [ordered]@{ normal_exit = $true; exit_code = 0; executable = [IO.Path]::GetFileName($executable); forced_termination = $false }
+    if ($DiagnosticPath) { $evidence.before_handle_release = Observe-ExclusiveAccess }
     $Process.Dispose()
+    if ($DiagnosticPath) {
+        $evidence.after_handle_release = Observe-ExclusiveAccess
+        $evidence | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $DiagnosticPath -Encoding utf8NoBOM
+    }
 }

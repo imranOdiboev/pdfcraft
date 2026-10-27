@@ -228,7 +228,24 @@ normal shutdown. Existing 15-second shutdown and exact exit0 checks remain.
 Installer guards are unchanged; fixed version/folder/executable-refusal markers
 and an EXE basename are logged. Only these allowlisted markers, not raw setup
 logs, paths or process command lines, are included in published QA diagnostics.
-The probe and a fresh complete Windows acceptance remain required.
+The first short probe78b0940/run40525148060 explicitly **falsified** the ordinary
+retained-handle explanation: exclusive access was already available before
+disposal. It failed the proposed hypothesis assertion; this is not a product
+regression or a passing lock reproducer. Five strict checks now require the
+observed unlocked ordinary-process contract both before and after disposal.
+Prompt Process disposal is resource hygiene and is not claimed as this fix.
+
+A branch-only diagnostic workflow uses the project's own previously verified
+runtime (artifact12651029055, SHA-256
+8219c3db7c8318e2318f3f21ccf6e2b6898ffffc7a53f630ef0bca70869dd0a1).
+It checks archive, GUI/CLI and every inner-file hash before execution, and requires
+git diff to prove apps/crates/Cargo/assets remain unchanged from sourceaa9bc135.
+It compiles the current installer and runs the real lifecycle quickly, recording
+fixed refusal markers and exclusive access before/after normal GUI shutdown.
+Diagnostic manifests explicitly distinguish prior runtime from current installer
+source. It uploads QA only, never executable packages. This temporary diagnostic
+depends on a prior artifact that expires; normal builds do not depend on it.
+It does not substitute for fresh current-source full Windows acceptance.
 
 - [Microsoft BM_CLICK](https://learn.microsoft.com/en-us/windows/win32/controls/bm-click)
   describes activation of the real button handler.

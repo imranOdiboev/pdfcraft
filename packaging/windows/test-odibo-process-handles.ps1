@@ -43,9 +43,12 @@ try {
             $record.before_handle_release = Exclusive-Probe
             Close-OdiboGuiProcess $process
             $record.after_handle_release = Exclusive-Probe
-            Require (-not $record.before_handle_release.available) 'Retained process-handle lock hypothesis did not reproduce.'
+            # The first diagnostic falsified the proposed lock explanation.
+            # Assert the observed ordinary-process contract rather than claim
+            # a lock which Windows did not exhibit. Full GUI acceptance remains.
+            Require ($record.before_handle_release.available) 'Exited ordinary process unexpectedly retains an exclusive image lock.'
             Require ($record.after_handle_release.available) 'Exclusive access did not return after normal-exit handle release.'
-            Write-Host ('PASS process-handle regression iteration ' + $iteration)
+            Write-Host ('PASS ordinary exited process is unlocked before and after handle release: ' + $iteration)
         } finally { $process.Dispose() }
     }
     $report.status = 'passed'

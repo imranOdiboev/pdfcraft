@@ -238,7 +238,7 @@ function Stop-Gui($Session) {
     $quit = Ui $Session @('quit')
     Assert-True ($quit.quitting -eq $true) 'Clean GUI quit unexpectedly requires confirmation.'
     . (Join-Path $PSScriptRoot 'close-odibo-gui-process.ps1')
-    Close-OdiboGuiProcess $Session.Process
+    Close-OdiboGuiProcess $Session.Process (Join-Path $QaDir ('gui-shutdown-' + [Guid]::NewGuid().ToString('N') + '.json'))
     [void]$guiProcesses.Remove($Session.Process)
     if (Test-Path -LiteralPath $Session.Control) { Remove-Item -LiteralPath $Session.Control -Force }
 }
