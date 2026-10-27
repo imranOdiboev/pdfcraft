@@ -297,7 +297,13 @@ begin
   Result := True;
   if CurPageID = wpSelectDir then begin
     Error := FolderProblem(WizardDirValue());
-    if Error <> '' then begin MsgBox(Error, mbError, MB_OK); Result := False; end;
+    if Error <> '' then begin
+      Log('ODIBO_FOLDER_REFUSED: ' + Error);
+      { NextButtonClick also runs silently. Preserve the interactive error but
+        honor /SUPPRESSMSGBOXES so refusal exits instead of awaiting hidden input. }
+      SuppressibleMsgBox(Error, mbError, MB_OK, IDOK);
+      Result := False;
+    end;
   end;
 end;
 

@@ -7,7 +7,7 @@ Set-StrictMode -Version Latest
 if ($env:GITHUB_ACTIONS -cne 'true' -or -not $IsWindows -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted') { throw 'Disposable Windows CI only.' }
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
-Add-Type -TypeDefinition @'
+if (-not ('OdiboSetupTrace' -as [type])) { Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -36,6 +36,7 @@ public static class OdiboSetupTrace {
     public static string Class(IntPtr hwnd) { var text = new StringBuilder(128); GetClassName(hwnd, text, 128); return text.ToString(); }
 }
 '@
+}
 function Safe-Label([string]$Value) {
     # Only owned installer labels are inspected; redact paths even in its own labels.
     $value = $Value -replace '(?i)[a-z]:\\[^\r\n]*', '<path>'

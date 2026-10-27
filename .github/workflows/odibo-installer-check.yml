@@ -45,6 +45,30 @@ jobs:
           'Passed installer syntax and fixture install/uninstall. This is not GUI/CLI/PDF acceptance, a beta package or a release.'
       - name: Observe real wizard accessibility (diagnostics only, not cancellation acceptance)
         run: pwsh -NoProfile -File packaging/windows/trace-odibo-setup.ps1 -SetupPath "$env:RUNNER_TEMP/inno-syntax-output/ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe" -QaDir "$PWD/dist/cancel-diagnostics"
+      - name: Prove silent unsafe-folder regression and safe EN/RU refusal
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = [IO.File]::ReadAllText((Join-Path $PWD 'packaging/windows/odibo.iss'))
+          $begin = $source.IndexOf('function NextButtonClick(')
+          $end = $source.IndexOf('function PrepareToInstall(', $begin)
+          if ($begin -lt 0 -or $end -le $begin) { throw 'Folder-validation event not found.' }
+          $section = $source.Substring($begin, $end - $begin)
+          $fixed = 'SuppressibleMsgBox(Error, mbError, MB_OK, IDOK);'
+          if ([regex]::Matches($section, [regex]::Escape($fixed)).Count -ne 1) { throw 'Expected precisely one fixed directory-error dialog.' }
+          $baseline = $source.Substring(0, $begin) + $section.Replace($fixed, 'MsgBox(Error, mbError, MB_OK);') + $source.Substring($end)
+          $temporarySource = Join-Path $PWD ('packaging/windows/ci-baseline-' + [Guid]::NewGuid().ToString('N') + '.iss')
+          $baselineOutput = Join-Path $env:RUNNER_TEMP 'inno-unsuppressible-baseline'
+          New-Item -ItemType Directory -Path $baselineOutput | Out-Null
+          try {
+            [IO.File]::WriteAllText($temporarySource, $baseline)
+            & '${{ steps.inno.outputs.iscc }}' '/Qp' "/DPayloadDir=$env:RUNNER_TEMP/inno-syntax-fixture" "/DOutputDir=$baselineOutput" '/DAppVersion=0.10.1' '/DBuildNumber=1' '/DBuildCommit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' $temporarySource
+            if ($LASTEXITCODE -ne 0) { throw 'Baseline installer compilation failed.' }
+          } finally { if (Test-Path -LiteralPath $temporarySource) { Remove-Item -LiteralPath $temporarySource } }
+          pwsh -NoProfile -File packaging/windows/test-odibo-setup-refusal.ps1 -SetupPath "$baselineOutput/ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe" -WorkRoot "$env:RUNNER_TEMP/refusal-baseline" -QaDir "$PWD/dist/cancel-diagnostics/refusal-negative" -ExpectBlockingRegression
+          if ($LASTEXITCODE -ne 0) { throw 'Unsuppressible modal was not proven as the negative control.' }
+          pwsh -NoProfile -File packaging/windows/test-odibo-setup-refusal.ps1 -SetupPath "$env:RUNNER_TEMP/inno-syntax-output/ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe" -WorkRoot "$env:RUNNER_TEMP/refusal-fixed" -QaDir "$PWD/dist/cancel-diagnostics/refusal-positive"
+          if ($LASTEXITCODE -ne 0) { throw 'Silent folder-refusal regression failed.' }
       - name: Prove old discovery fails and actual Cancel succeeds repeatedly (fixture only)
         shell: pwsh
         run: |

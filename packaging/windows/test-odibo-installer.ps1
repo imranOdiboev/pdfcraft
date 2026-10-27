@@ -97,7 +97,28 @@ function Run-Process([string]$File, [string[]]$Arguments, [int]$TimeoutSeconds =
     try {
         $stdout = $process.StandardOutput.ReadToEndAsync()
         $stderr = $process.StandardError.ReadToEndAsync()
-        if (-not $process.WaitForExit($TimeoutSeconds * 1000)) { $process.Kill($true); throw 'Acceptance child process timed out.' }
+        if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+            # Diagnose only this launch tree before failed-test cleanup, never command
+            # lines, stdout/control tokens or unrelated desktop windows. A timeout fails.
+            try {
+                . (Join-Path $PSScriptRoot 'trace-odibo-setup.ps1') -LibraryOnly
+                $owned = [Collections.Generic.HashSet[int]]::new()
+                [void]$owned.Add($process.Id)
+                $snapshot = @(Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId, SessionId, Name)
+                do {
+                    $before = $owned.Count
+                    foreach ($entry in $snapshot) { if ($owned.Contains([int]$entry.ParentProcessId)) { [void]$owned.Add([int]$entry.ProcessId) } }
+                } while ($owned.Count -ne $before)
+                $diagnostic = Get-OdiboSetupSnapshot $owned ($TimeoutSeconds * 1000L)
+                $diagnostic.processes = @($snapshot | Where-Object { $owned.Contains([int]$_.ProcessId) })
+                $diagnostic.executable = [IO.Path]::GetFileName($File)
+                $diagnostic.status = 'failed timeout; cleanup is not a passing operation'
+                $diagnostic | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath (Join-Path $QaDir ('child-timeout-' + [Guid]::NewGuid().ToString('N') + '.json')) -Encoding utf8NoBOM
+            } catch { Write-Host ('Owned-child timeout diagnostic unavailable: ' + $_.Exception.GetType().Name) }
+            $process.Kill($true)
+            [void]$process.WaitForExit(5000)
+            throw ('Acceptance child process timed out: ' + [IO.Path]::GetFileName($File))
+        }
         $result = [pscustomobject]@{ ExitCode = $process.ExitCode; Out = $stdout.GetAwaiter().GetResult(); Error = $stderr.GetAwaiter().GetResult() }
         if ($ExpectFailure) { Assert-True ($result.ExitCode -ne 0) 'A refused operation unexpectedly succeeded.' }
         elseif ($result.ExitCode -ne 0) { throw ('Acceptance child failed with exit ' + $result.ExitCode + ': ' + $result.Error) }

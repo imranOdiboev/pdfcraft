@@ -1,5 +1,7 @@
 # PdfCraft roadmap
 
+> **Fork update:** 2026-10-27 · M4.0 follow-up: full application Setup passed all nine real Cancel cases. The next Portable-folder refusal hung on a custom `MsgBox` in silent mode; a scoped suppressible-dialog correction and old-dialog regression are awaiting CI. Full acceptance and Beta distribution remain blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
+
 > **Fork update:** 2026-10-27 · M4.0 Cancel acceptance: Inno `TNewButton` is exposed as UIA Pane, so the old Button-only filter missed it. Root cause reproduced; corrected real cancellation passed 9/9 fixture cases with an old-filter negative control. Full Windows acceptance pending. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
 
 > **Fork update:** 2026-10-26 · M4.0: owner accepted Windows M3.7; PRs #8/#9 merged. Four-agent audit and per-user Setup/portable candidate in progress; cloud verification pending. No stable-release or readiness increase. [Audit](docs/ODIBO_M4_0_AUDIT.md).
@@ -183,6 +185,8 @@ Ranked; detail and the full milestone table in [docs/roadmap.md](docs/roadmap.md
 | 8 | 1.0 polish: performance, right-to-left, missing languages, keyboard-only (M14) | 55–95 |
 
 ## Progress log
+
+- **2026-10-27 (M4.0, silent folder refusal):** Full run 40390282213 confirmed 9/9 Cancel passes, then exposed an unsuppressible folder-error dialog in silent setup. Two read-only auditors confirmed the path. Preserve refusal/data guards, honor suppression, add an observed-modal negative control and safe failure diagnostics. Full rerun pending; no release or merge.
 
 - **2026-10-27 (M4.0, installer Cancel):** Observed owned setup/child windows on hosted Windows, confirmed UIA Pane discovery mismatch, preserved real Cancel/Yes activation and strengthened mandatory repetition/exit/no-install evidence. Exact-source fixture: 9/9 passed; full application acceptance and verified final packages pending. No release or merge.
 

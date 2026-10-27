@@ -1,6 +1,6 @@
 # ODIBO installer cancellation investigation
 
-Status: **root cause reproduced; nine real fixture cancellations passed; full application acceptance pending**.
+Status: **Cancel passed nine times on the full application Setup; a subsequent silent-folder refusal hung and its correction is awaiting CI**.
 Reviewed: 2026-10-27. This report does not authorize a release or merge.
 
 ## Observed failure and exact cause
@@ -52,6 +52,33 @@ evidence, not full installed GUI/PDF acceptance or a distributable package.
 
 ## Full acceptance and distribution gate
 
+### Subsequent full-run result and independent audit
+
+[Full run 40390282213, Windows job 121834838121](https://github.com/imranOdiboev/pdfcraft/actions/runs/40390282213/job/121834838121)
+passed GUI/CLI compilation, release acceptance, real GUI startup, Windows core tests,
+package construction and **all nine real Cancel cases**. Its next scenario, refusing
+a Portable destination, timed out after 180 seconds. Overall acceptance failed;
+final package upload was correctly skipped. Prior generic CI also passed.
+
+The remaining `NextButtonClick(wpSelectDir)` error used ordinary `MsgBox`. Inno calls
+this event during silent installation too; `/SUPPRESSMSGBOXES` cannot suppress a
+custom `MsgBox`, so the safe folder rejection blocked waiting for acknowledgment.
+Two real read-only auditors, `installer_timeout_audit` and `silent_refusal_qa`,
+independently reviewed this path. The correction logs a stable refusal marker,
+uses `SuppressibleMsgBox`, and retains `Result := False` and all folder validation.
+Interactive users still see the same warning. Silent refusal must return native
+initialization exit **1**, separately from actual wizard Cancel's **2**.
+
+A fast regression temporarily compiles the exact source with only this dialog
+restored to `MsgBox`: it must observe the owned visible folder-error modal and OK
+button, prove the process remains blocked for 30 seconds, then acknowledge that
+specific button for diagnostic cleanup. This is not successful unattended refusal
+or cancellation. The corrected source must refuse EN/RU destinations autonomously,
+log the specific refusal, preserve marker/user-file hashes and full inventory, and
+create no payload or registration. All nine real Cancel cases remain mandatory.
+Future failed child-process timeouts also retain safe owned-window diagnostics.
+New regression and full-run results are pending, not inferred from source review.
+
 The existing full workflow still requires real GUI/CLI compilation, core/PDF tests,
 package inventory/licence checks and Setup -> install -> installed PDF/GUI ->
 settings/reinstall/running-editor refusal -> uninstall -> Portable isolation checks.
@@ -79,3 +106,7 @@ or automatic merge is included.
 Revision history: 2026-10-27 — original failing main log inspected, owned-window
 probe run, old filter reproduced as a negative control, nine corrected fixture
 cancellations passed. Full application acceptance remains pending.
+
+2026-10-27 — full application Setup passed nine real cancellations; subsequent
+silent unsafe-folder rejection blocked on an unsuppressible custom dialog.
+Independent audit and a separate old-dialog negative control added; full rerun pending.
