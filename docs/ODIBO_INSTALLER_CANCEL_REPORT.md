@@ -77,7 +77,39 @@ or cancellation. The corrected source must refuse EN/RU destinations autonomousl
 log the specific refusal, preserve marker/user-file hashes and full inventory, and
 create no payload or registration. All nine real Cancel cases remain mandatory.
 Future failed child-process timeouts also retain safe owned-window diagnostics.
-New regression and full-run results are pending, not inferred from source review.
+The [fast regression run 40453694197](https://github.com/imranOdiboev/pdfcraft/actions/runs/40453694197)
+passed: the original dialog blocked for 30 seconds, corrected EN/RU refusal exited
+autonomously with code 1, and all nine real Cancel cases passed again. The
+[full application run 40453694150](https://github.com/imranOdiboev/pdfcraft/actions/runs/40453694150/job/122033370407)
+also passed all nine Cancel cases and Portable-folder refusal. It then failed after
+installation because the registered `ODIBOAppVersion` value was missing. No final
+packages were uploaded; complete Windows acceptance remains blocked.
+
+### Installed build identity: preserve metadata after native registration
+
+The three custom values were declared in `[Registry]` within Inno's native uninstall
+key. In the pinned compiler's installation order, `CreateRegistryEntries` runs before
+`RegisterUninstallInfo`. The latter deletes an existing uninstall key and recreates
+it, removing our premature entries. This is an installer lifecycle error, not a
+reason to remove the version/commit checks or read a less specific fallback value.
+
+Keep the same key and field names. Write them during `ssPostInstall`, after native
+uninstall registration exists; fail explicitly on an absent key or failed write.
+The full application test still asserts every value, now with a clear missing-field
+diagnostic. Neither version/downgrade refusal nor payload/settings protection is relaxed.
+
+Expand the fast inert-payload fixture before another full run: temporarily restore
+the original three `[Registry]` entries and remove only the post-install write call.
+Require a normal install with native registration but all three custom fields absent,
+then uninstall it. This expected regression is not a successful identity check.
+The corrected exact source must preserve all fields through fresh install, same-build
+EN/RU reinstall, removal and same-folder installation; missing metadata and a simulated
+higher build must refuse without changing file inventory/hashes. Unknown synthetic
+user data must survive. The fixture never runs either inert application executable
+and does not replace actual PDF/GUI/settings/Portable acceptance. New results pending.
+
+References: [pinned Inno installation source](https://github.com/jrsoftware/issrc/blob/7d634620f1d1caca6c76e8398da7133153db9e7b/Projects/Src/Setup.Install.pas),
+[documented post-install event](https://jrsoftware.org/ishelp/topic_scriptevents.htm).
 
 The existing full workflow still requires real GUI/CLI compilation, core/PDF tests,
 package inventory/licence checks and Setup -> install -> installed PDF/GUI ->
@@ -110,3 +142,8 @@ cancellations passed. Full application acceptance remains pending.
 2026-10-27 — full application Setup passed nine real cancellations; subsequent
 silent unsafe-folder rejection blocked on an unsuppressible custom dialog.
 Independent audit and a separate old-dialog negative control added; full rerun pending.
+
+2026-10-27 — silent refusal and nine actual Setup cancellations passed on the full
+application package; installed build metadata was then erased by native uninstall-key
+recreation. Move writes to post-install and add an old-timing negative control plus
+metadata/reinstall/downgrade lifecycle fixture. Full rerun remains required.

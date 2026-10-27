@@ -84,6 +84,8 @@ en.Downgrade=This installer is older than the installed ODIBO PDF version or bui
 ru.Downgrade=Этот установщик старее установленной версии или сборки ODIBO PDF. Используйте ту же или более новую сборку.
 en.BadMetadata=The installed version information could not be verified. Setup stopped without changing the application. Contact the project with the setup log; do not send personal PDFs.
 ru.BadMetadata=Не удалось проверить сведения об установленной версии. Установка остановлена без изменения приложения. Передайте проекту журнал установки; не отправляйте личные PDF.
+en.BuildMetadataWriteFailed=Setup could not record the installed build information. The installation is incomplete. Remove ODIBO PDF using Windows Settings and try again. Keep your documents and settings.
+ru.BuildMetadataWriteFailed=Не удалось записать сведения об установленной сборке. Установка не завершена. Удалите ODIBO PDF через параметры Windows и повторите попытку. Сохраните документы и настройки.
 en.TestNotice=Unsigned engineering test build. No official release, background updater, telemetry or automatic MCP startup. Settings and documents are kept when uninstalling.
 ru.TestNotice=Неподписанная инженерная тестовая сборка. Это не официальный релиз. Нет фонового обновления, телеметрии и автоматического запуска MCP. При удалении приложения настройки и документы сохраняются.
 
@@ -97,11 +99,6 @@ Source: "{#PayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 [Icons]
 Name: "{userprograms}\ODIBO PDF"; Filename: "{app}\odibo-pdf.exe"; WorkingDir: "{app}"
 Name: "{userdesktop}\ODIBO PDF"; Filename: "{app}\odibo-pdf.exe"; WorkingDir: "{app}"; Tasks: desktopicon
-
-[Registry]
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\{{A7A4DC1B-3255-4BC6-9F6F-1DA0B61B6524}_is1"; ValueType: string; ValueName: "ODIBOBuildNumber"; ValueData: "{#BuildNumber}"
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\{{A7A4DC1B-3255-4BC6-9F6F-1DA0B61B6524}_is1"; ValueType: string; ValueName: "ODIBOBuildCommit"; ValueData: "{#BuildCommit}"
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\{{A7A4DC1B-3255-4BC6-9F6F-1DA0B61B6524}_is1"; ValueType: string; ValueName: "ODIBOAppVersion"; ValueData: "{#AppVersion}"
 
 [Code]
 const
@@ -328,8 +325,23 @@ begin
   end;
 end;
 
+procedure SaveInstalledBuildMetadata();
+begin
+  { Inno recreates its uninstall key after [Registry] entries are processed.
+    Persist our identity only after its native registration has completed.
+    Keep the same names/key used by fail-closed version and downgrade checks. }
+  if not RegKeyExists(HKCU64, OdiboKey) then
+    RaiseException(CustomMessage('BuildMetadataWriteFailed'));
+  if not RegWriteStringValue(HKCU64, OdiboKey, 'ODIBOAppVersion', '{#AppVersion}') or
+    not RegWriteStringValue(HKCU64, OdiboKey, 'ODIBOBuildCommit', '{#BuildCommit}') or
+    not RegWriteStringValue(HKCU64, OdiboKey, 'ODIBOBuildNumber', '{#BuildNumber}') then
+    RaiseException(CustomMessage('BuildMetadataWriteFailed'));
+  Log('ODIBO_BUILD_METADATA_WRITTEN');
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
+  if CurStep = ssPostInstall then SaveInstalledBuildMetadata();
   if CurStep = ssDone then begin
     { Written only after successful installation, outside the uninstall deletion log.
       Like uninsneveruninstall, this hint intentionally survives removal alongside

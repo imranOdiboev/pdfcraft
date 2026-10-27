@@ -155,6 +155,9 @@ function Assert-Payload([string]$Destination) {
         Assert-True ($info.ProductVersion -cin @($expectedVersion, ($expectedVersion + '.0'))) 'Wrong installed executable version.'
     }
     $properties = Get-ItemProperty -LiteralPath $registryPath
+    foreach ($name in @('ODIBOAppVersion', 'ODIBOBuildNumber', 'ODIBOBuildCommit')) {
+        Assert-True ($null -ne $properties.PSObject.Properties[$name]) ('Installed build metadata is missing: ' + $name)
+    }
     Assert-True ($properties.DisplayName.StartsWith('ODIBO PDF', [StringComparison]::Ordinal)) 'Wrong installed-programs name.'
     Assert-True ($properties.Publisher -ceq 'IMR4N') 'Wrong installed-programs publisher.'
     Assert-True ($properties.ODIBOAppVersion -ceq $expectedVersion) 'Wrong registered version.'

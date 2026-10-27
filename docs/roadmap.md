@@ -1,5 +1,7 @@
 # PdfCraft roadmap: milestones and what's next
 
+> **Fork update:** 2026-10-27 · M4.0: full run passed nine real Cancel cases and silent folder refusal, then exposed premature build-identity writes erased by native uninstall-key registration. Post-install correction and expanded fast lifecycle regression pending CI; Beta distribution remains blocked. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
+
 > **Fork update:** 2026-10-27 · M4.0 full Setup passed nine real cancellations; a later silent Portable-folder refusal hung on ordinary `MsgBox`. Scoped correction and independent audit recorded; regression/full rerun pending and distribution remains blocked. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
 
 > **Fork update:** 2026-10-27 · M4.0 installer cancellation: UIA Pane/Button mismatch reproduced and corrected discovery passed nine exact-source fixture cancellations, including EN/RU wizard confirmation. Full Windows acceptance pending; beta distribution remains blocked. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
