@@ -4,10 +4,12 @@
 
 Every asset PdfCraft includes, bundles or uses to build its published material, with its author, source and licence. The policy is in [AGENTS.md](AGENTS.md) §1. The machine-readable list, with SHA-256 hashes, is [ATTRIBUTION.toml](ATTRIBUTION.toml). Licence texts are kept beside the assets and summarised in [NOTICE](NOTICE).
 
-## In this repository (281)
+## In this repository (283)
 
 | Asset | Title | Author | Licence | Source | Used for |
 |---|---|---|---|---|---|
+| `vendor/ocrs-models/text-detection.rten` | Unmodified Ocrs text detection model, offline build input | Robert Knight (ocrs-models; trained on HierText, CC-BY-SA-4.0) | CC-BY-SA-4.0 | https://ocrs-models.s3-accelerate.amazonaws.com/text-detection.rten; exact-byte recovery from project build 40317028274, archive SHA-256 8219c3db7c8318e2318f3f21ccf6e2b6898ffffc7a53f630ef0bca70869dd0a1; vendor/ocrs-models/NOTICE.md | Windows packaging input, copied unchanged and SHA-256-verified against the canonical fetched model entry |
+| `vendor/ocrs-models/text-recognition.rten` | Unmodified Ocrs text recognition model, offline build input | Robert Knight (ocrs-models; trained on HierText, CC-BY-SA-4.0) | CC-BY-SA-4.0 | https://ocrs-models.s3-accelerate.amazonaws.com/text-recognition.rten; exact-byte recovery from project build 40317028274, archive SHA-256 8219c3db7c8318e2318f3f21ccf6e2b6898ffffc7a53f630ef0bca70869dd0a1; vendor/ocrs-models/NOTICE.md | Windows packaging input, copied unchanged and SHA-256-verified against the canonical fetched model entry |
 | `crates/ui-egui/src/i18n/el.tsv` | Greek interface translation catalog | Camthalion77 and contributors | MIT OR Apache-2.0 | Contributor-original: clean-room translations of PdfCraft English UI labels | Greek UI strings, compiled in by crates/ui-egui/src/i18n/mod.rs |
 | `crates/ui-egui/src/i18n/zh-hans.tsv` | Simplified Chinese interface translation catalog | PdfCraft contributors | MIT OR Apache-2.0 | Contributor-original: clean-room translations of PdfCraft's English UI labels, no proprietary localisation resources | Simplified Chinese UI strings, compiled in by crates/ui-egui/src/i18n/mod.rs |
 | `crates/ui-egui/src/i18n/zh-hant.tsv` | Traditional Chinese (Taiwan) interface translation catalog | PdfCraft contributors | MIT OR Apache-2.0 | Contributor-original: clean-room translations of PdfCraft's English UI labels, no proprietary localisation resources | Traditional Chinese UI strings, compiled in by crates/ui-egui/src/i18n/mod.rs |
@@ -303,7 +305,7 @@ Every asset PdfCraft includes, bundles or uses to build its published material, 
 
 ## Downloaded at build time (22)
 
-Fonts are fetched by `cargo xtask demo-pdf` into `target/demo-fonts/`, OCR models by `cargo xtask models` into `assets/models/`; each is verified by SHA-256 and never committed.
+Fonts are fetched by `cargo xtask demo-pdf` into `target/demo-fonts/`, OCR models by `cargo xtask models` into `assets/models/`; each is verified by SHA-256. Download directories are not committed; approved offline build-input copies are separately listed as repository assets above.
 
 | File | Title | Author | Licence | Source | Used for |
 |---|---|---|---|---|---|
