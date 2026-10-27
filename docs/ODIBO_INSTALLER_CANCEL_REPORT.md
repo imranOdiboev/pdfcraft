@@ -108,6 +108,16 @@ higher build must refuse without changing file inventory/hashes. Unknown synthet
 user data must survive. The fixture never runs either inert application executable
 and does not replace actual PDF/GUI/settings/Portable acceptance. New results pending.
 
+The [first expanded fixture 40467143851](https://github.com/imranOdiboev/pdfcraft/actions/runs/40467143851/job/122065183121)
+observed the original missing-field regression, then confirmed corrected metadata on
+three installations, invalid-metadata refusal and higher-build refusal. It failed on
+the final removal after immediate same-folder reinstall. The native first-phase
+uninstaller returns before its temporary second phase deletes the original EXE;
+reinstallation could race that pending deletion. Both fixture and full acceptance now
+wait, bounded to 15 seconds, for actual native self-removal before reinstalling. They
+never remove this EXE themselves or count process termination as success. Confirm the
+wait and the complete lifecycle in the next run; the failed fixture is not a pass.
+
 References: [pinned Inno installation source](https://github.com/jrsoftware/issrc/blob/7d634620f1d1caca6c76e8398da7133153db9e7b/Projects/Src/Setup.Install.pas),
 [documented post-install event](https://jrsoftware.org/ishelp/topic_scriptevents.htm).
 

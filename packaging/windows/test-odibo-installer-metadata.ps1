@@ -75,13 +75,13 @@ function Read-PublicMetadata {
     }
     return $metadata
 }
-function Assert-Metadata([string]$Name) {
+function Assert-Metadata([string]$CheckName) {
     $metadata = Read-PublicMetadata
     foreach ($name in $expected.Keys) { Require ($metadata[$name] -ceq $expected[$name]) ('Installed metadata missing or incorrect: ' + $name) }
     foreach ($name in @('odibo-pdf.exe','odibo-pdf-cli.exe')) {
         Require ((Hash (Join-Path $install $name)) -ceq (Hash (Join-Path $payload $name))) 'Installed fixture bytes differ.'
     }
-    Record $Name $metadata
+    Record $CheckName $metadata
 }
 function Inventory {
     $files = @{}
@@ -94,7 +94,17 @@ function Assert-SameInventory($Before) {
     foreach ($name in $Before.Keys) { Require ($after.ContainsKey($name) -and $after[$name] -ceq $Before[$name]) 'Refused install changed file bytes.' }
 }
 function Uninstall {
-    Run (Join-Path $install 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
+    $uninstaller = Join-Path $install 'unins000.exe'
+    Run $uninstaller @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
+    # Inno's first phase exits before its temporary second phase removes the
+    # original EXE. Reinstalling before that deletion races with the old cleanup.
+    # Observe actual self-removal, never delete it ourselves or count a kill.
+    $watch = [Diagnostics.Stopwatch]::StartNew()
+    while (Test-Path -LiteralPath $uninstaller) {
+        Require ($watch.Elapsed.TotalSeconds -lt 15) 'Uninstaller second-phase self-removal did not complete.'
+        Start-Sleep -Milliseconds 50
+    }
+    Record 'native second-phase uninstaller self-removal completed' ([ordered]@{ wait_ms = $watch.ElapsedMilliseconds; cleanup_termination = $false; executable_removed_by_test = $false })
     Require (-not (Test-Path -LiteralPath $registry)) 'Uninstall registration remains.'
     foreach ($name in @('odibo-pdf.exe','odibo-pdf-cli.exe')) { Require (-not (Test-Path -LiteralPath (Join-Path $install $name))) 'Fixture payload remains after uninstall.' }
 }

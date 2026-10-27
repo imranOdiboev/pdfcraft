@@ -240,6 +240,13 @@ function Uninstall {
     $uninstallers = @(Get-ChildItem -LiteralPath $installDir -Filter 'unins*.exe' -File)
     Assert-True ($uninstallers.Count -eq 1) 'Expected one registered Inno uninstaller.'
     [void](Run-Process $uninstallers[0].FullName @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'))
+    # The native first phase returns before its temporary second phase deletes
+    # this EXE. Wait for real self-removal before any same-folder reinstall.
+    $deadline = [DateTime]::UtcNow.AddSeconds(15)
+    while (Test-Path -LiteralPath $uninstallers[0].FullName) {
+        Assert-True ([DateTime]::UtcNow -lt $deadline) 'Uninstaller second-phase self-removal did not complete.'
+        Start-Sleep -Milliseconds 50
+    }
     Assert-True (-not (Test-Path -LiteralPath $registryPath)) 'Uninstall registration remains.'
     Assert-True (-not (Test-Path -LiteralPath (Join-Path $installDir 'odibo-pdf.exe'))) 'GUI remains after uninstall.'
     Assert-True (-not (Test-Path -LiteralPath (Join-Path $installDir 'odibo-pdf-cli.exe'))) 'CLI remains after uninstall.'
