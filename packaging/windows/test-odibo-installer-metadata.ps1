@@ -81,7 +81,41 @@ function Assert-Metadata([string]$CheckName) {
     foreach ($name in @('odibo-pdf.exe','odibo-pdf-cli.exe')) {
         Require ((Hash (Join-Path $install $name)) -ceq (Hash (Join-Path $payload $name))) 'Installed fixture bytes differ.'
     }
+    $programs = [Environment]::GetFolderPath([Environment+SpecialFolder]::Programs)
+    $links = @(Get-ChildItem -LiteralPath $programs -Filter 'ODIBO PDF.lnk' -Recurse -File)
+    Require ($links.Count -eq 1) 'Expected exactly one fixture Start menu shortcut.'
+    . (Join-Path $PSScriptRoot 'assert-odibo-shortcut.ps1')
+    $evidence = Assert-OdiboShortcut -LinkPath $links[0].FullName -ExpectedTarget (Join-Path $install 'odibo-pdf.exe') -DiagnosticPath (Join-Path $qa ('shortcut-' + [Guid]::NewGuid().ToString('N') + '.json'))
+    Record 'native shortcut target is the exact installed Unicode path, no arguments' $evidence
     Record $CheckName $metadata
+}
+function Test-WrongShortcut {
+    $programs = [Environment]::GetFolderPath([Environment+SpecialFolder]::Programs)
+    $links = @(Get-ChildItem -LiteralPath $programs -Filter 'ODIBO PDF.lnk' -Recurse -File)
+    Require ($links.Count -eq 1) 'Expected the fixture shortcut for negative controls.'
+    $path = $links[0].FullName
+    $original = [IO.File]::ReadAllBytes($path)
+    $shell = New-Object -ComObject WScript.Shell
+    try {
+        foreach ($mutation in @('wrong target','unexpected arguments')) {
+            $shortcut = $shell.CreateShortcut($path)
+            try {
+                if ($mutation -eq 'wrong target') { $shortcut.TargetPath = Join-Path $install 'odibo-pdf-cli.exe' }
+                else { $shortcut.Arguments = '--unexpected-fixture-option' }
+                $shortcut.Save()
+            } finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shortcut) }
+            $caught = $null
+            try { [void](Assert-OdiboShortcut -LinkPath $path -ExpectedTarget (Join-Path $install 'odibo-pdf.exe') -DiagnosticPath (Join-Path $qa ('shortcut-negative-' + [Guid]::NewGuid().ToString('N') + '.json'))) }
+            catch { $caught = $_.Exception.Message }
+            $expectedError = if ($mutation -eq 'wrong target') { 'Start menu shortcut points to another application.' } else { 'Start menu shortcut has unexpected command arguments.' }
+            Require ($caught -ceq $expectedError) ('Shortcut negative control did not fail for its intended reason: ' + $mutation)
+            Record ('negative control rejects ' + $mutation) $null
+            [IO.File]::WriteAllBytes($path, $original)
+        }
+    } finally {
+        [IO.File]::WriteAllBytes($path, $original)
+        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
+    }
 }
 function Inventory {
     $files = @{}
@@ -106,6 +140,8 @@ function Uninstall {
     }
     Record 'native second-phase uninstaller self-removal completed' ([ordered]@{ wait_ms = $watch.ElapsedMilliseconds; cleanup_termination = $false; executable_removed_by_test = $false })
     Require (-not (Test-Path -LiteralPath $registry)) 'Uninstall registration remains.'
+    $programs = [Environment]::GetFolderPath([Environment+SpecialFolder]::Programs)
+    Require (@(Get-ChildItem -LiteralPath $programs -Filter 'ODIBO PDF.lnk' -Recurse -File).Count -eq 0) 'Fixture shortcut remains after uninstall.'
     foreach ($name in @('odibo-pdf.exe','odibo-pdf-cli.exe')) { Require (-not (Test-Path -LiteralPath (Join-Path $install $name))) 'Fixture payload remains after uninstall.' }
 }
 try {
@@ -119,6 +155,8 @@ try {
         $report.status = 'observed registry regression; not successful metadata acceptance'
     } else {
         Assert-Metadata 'fresh EN install retains exact build metadata'
+        . (Join-Path $PSScriptRoot 'assert-odibo-shortcut.ps1')
+        Test-WrongShortcut
         $sentinel = Join-Path $install 'unknown-user-data.txt'
         [IO.File]::WriteAllText($sentinel, 'Synthetic user data must survive reinstall and uninstall.')
         $sentinelHash = Hash $sentinel

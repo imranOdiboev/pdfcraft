@@ -1,6 +1,6 @@
 # ODIBO installer cancellation investigation
 
-Status: **Cancel passed nine times on the full application Setup; a subsequent silent-folder refusal hung and its correction is awaiting CI**.
+Status: **Full run 40486018971 passed all nine real Cancel cases, folder refusal and payload/metadata checks, then failed the Start menu target assertion. Full acceptance remains blocked.**
 Reviewed: 2026-10-27. This report does not authorize a release or merge.
 
 ## Observed failure and exact cause
@@ -171,6 +171,31 @@ is recorded as a future coverage improvement; existing failure/data assertions a
 retained and are not claimed to prove every refusal reason.
 
 ## Reference behavior
+
+## Latest shortcut failure (2026-10-27)
+
+[Run 40486018971, Windows job 122146390714](https://github.com/imranOdiboev/pdfcraft/actions/runs/40486018971/job/122146390714)
+passed Windows compilation, CLI acceptance, GUI startup, core tests, offline model
+verification and both package constructions. All nine actual Setup cancellations
+and silent Portable-folder refusal passed. Installation passed payload hashes,
+versions and registered build metadata, then failed `Start menu shortcut points
+to another application.` Final distribution upload was correctly skipped.
+
+The failing assertion used WScript.Shell.TargetPath and did not record its actual
+value. An independent read-only audit found the installer explicitly targets the
+correct executable. Legacy reader conversion of the Cyrillic directory is a
+hypothesis until fresh Windows diagnostics distinguish the actual paths.
+
+Read the target using native Shell `System.Link.TargetParsingPath`; require the
+exact existing full installed target and empty arguments. Record native/legacy
+paths with runner roots redacted, with no link activation or application execution.
+The short exact-source lifecycle fixture now checks fresh EN, RU reinstall and
+reinstall after removal, shortcut removal on uninstall, and deliberate wrong-target
+and argument mutations. These controls must reject incorrect links. Fresh CI is
+required before this correction is considered verified.
+
+Microsoft documents the native target property in
+[System.Link.TargetParsingPath](https://learn.microsoft.com/en-us/windows/win32/properties/props-system-link-targetparsingpath).
 
 - [Microsoft BM_CLICK](https://learn.microsoft.com/en-us/windows/win32/controls/bm-click)
   describes activation of the real button handler.

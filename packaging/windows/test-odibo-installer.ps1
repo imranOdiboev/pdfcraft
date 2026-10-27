@@ -167,9 +167,8 @@ function Assert-Payload([string]$Destination) {
     $programs = [Environment]::GetFolderPath([Environment+SpecialFolder]::Programs)
     $links = @(Get-ChildItem -LiteralPath $programs -Filter '*.lnk' -Recurse -File | Where-Object { $_.BaseName -ceq 'ODIBO PDF' })
     Assert-True ($links.Count -eq 1) 'Expected exactly one per-user ODIBO PDF Start menu shortcut.'
-    $shell = New-Object -ComObject WScript.Shell
-    try { Assert-True ((Full-Path $shell.CreateShortcut($links[0].FullName).TargetPath) -ieq (Full-Path (Join-Path $Destination 'odibo-pdf.exe'))) 'Start menu shortcut points to another application.' }
-    finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
+    . (Join-Path $PSScriptRoot 'assert-odibo-shortcut.ps1')
+    [void](Assert-OdiboShortcut -LinkPath $links[0].FullName -ExpectedTarget (Join-Path $Destination 'odibo-pdf.exe') -DiagnosticPath (Join-Path $QaDir ('shortcut-' + [Guid]::NewGuid().ToString('N') + '.json')))
 }
 function Assert-NoBackgroundRegistration {
     $services = @(Get-CimInstance Win32_Service | Where-Object { $_.Name -match '(?i)odibo' -or $_.PathName -like ('*' + $installDir + '*') })
