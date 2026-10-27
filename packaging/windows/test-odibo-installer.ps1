@@ -128,7 +128,19 @@ function Run-Process([string]$File, [string[]]$Arguments, [int]$TimeoutSeconds =
 function Run-Setup([string]$Destination, [switch]$ExpectFailure) {
     Assert-Beneath $Destination $testRoot
     $log = Join-Path $testRoot ('setup-' + [Guid]::NewGuid().ToString('N') + '.log')
-    return Run-Process $SetupPath @('/CURRENTUSER', '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', ('/DIR=' + $Destination), ('/LOG=' + $log)) -ExpectFailure:$ExpectFailure
+    try {
+        return Run-Process $SetupPath @('/CURRENTUSER', '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', ('/DIR=' + $Destination), ('/LOG=' + $log)) -ExpectFailure:$ExpectFailure
+    } finally {
+        # Publish only fixed diagnostic markers, never raw setup logs, paths,
+        # command arguments, environment variables or account information.
+        $markers = @()
+        if ([IO.File]::Exists($log)) {
+            foreach ($line in [IO.File]::ReadLines($log)) {
+                if ($line -match '(ODIBO_PREPARE_REFUSED: (version|folder|executable-in-use)|ODIBO_EXECUTABLE_LOCKED: odibo-pdf(?:-cli)?\.exe|ODIBO_BUILD_METADATA_WRITTEN)$') { $markers += $Matches[1] }
+            }
+        }
+        [ordered]@{ expected_refusal = [bool]$ExpectFailure; markers = @($markers | Select-Object -Last 20) } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $QaDir ('setup-outcome-' + [Guid]::NewGuid().ToString('N') + '.json')) -Encoding utf8NoBOM
+    }
 }
 function Assert-Payload([string]$Destination) {
     $expectedPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -225,8 +237,9 @@ function Ui($Session, [string[]]$Arguments) {
 function Stop-Gui($Session) {
     $quit = Ui $Session @('quit')
     Assert-True ($quit.quitting -eq $true) 'Clean GUI quit unexpectedly requires confirmation.'
-    Assert-True ($Session.Process.WaitForExit(15000)) 'GUI did not finish normal shutdown.'
-    Assert-True ($Session.Process.ExitCode -eq 0) 'GUI returned an error during normal shutdown.'
+    . (Join-Path $PSScriptRoot 'close-odibo-gui-process.ps1')
+    Close-OdiboGuiProcess $Session.Process
+    [void]$guiProcesses.Remove($Session.Process)
     if (Test-Path -LiteralPath $Session.Control) { Remove-Item -LiteralPath $Session.Control -Force }
 }
 function Assert-UiPreferences($Session, [string]$Language, [string]$Theme) {

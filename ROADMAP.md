@@ -1,5 +1,7 @@
 # PdfCraft roadmap
 
+> **Fork update:** 2026-10-27 · M4.0 full run40503319692 verified native shortcut and installed PDF/GUI edit/save, then post-GUI reinstall returned7. Investigate retained test process handles with five isolated OS-process controls, release normally exited GUI handles, and retain safe fixed refusal diagnostics. Full verification pending; distribution blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
+
 > **Fork update:** 2026-10-27 · M4.0 run40486018971 passed nine real Cancel cases, silent folder refusal and installed payload/build identity, then failed its Start menu target assertion. Add native Unicode target diagnostics and strict wrong-target/argument controls to the short fixture and full acceptance. Verification pending; distribution blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
 
 > **Fork update:** 2026-10-27 · M4.0 full run 40467568616 passed compilation, GUI startup and core tests, then OCR staging failed on upstream S3 HTTP 403. Restore exact already-pinned model bytes from verified project provenance as durable offline build inputs; add an early hash/licence gate. Fresh full acceptance remains required. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).

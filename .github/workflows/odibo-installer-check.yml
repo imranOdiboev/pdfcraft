@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+      - name: Prove normal-exit process handles retain image locks until released
+        run: pwsh -NoProfile -File packaging/windows/test-odibo-process-handles.ps1 -QaDir "$PWD/dist/cancel-diagnostics/process-handles"
       - name: Verified pinned compiler on disposable runner
         id: inno
         run: pwsh -NoProfile -File packaging/windows/install-inno-toolchain.ps1

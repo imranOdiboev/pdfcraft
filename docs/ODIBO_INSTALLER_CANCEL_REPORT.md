@@ -1,6 +1,6 @@
 # ODIBO installer cancellation investigation
 
-Status: **Full run 40486018971 passed all nine real Cancel cases, folder refusal and payload/metadata checks, then failed the Start menu target assertion. Full acceptance remains blocked.**
+Status: **Full run40503319692 passed native shortcuts, installed CLI/PDF and GUI edit/save/shutdown, then same-build reinstall returned7. Full acceptance remains blocked.**
 Reviewed: 2026-10-27. This report does not authorize a release or merge.
 
 ## Observed failure and exact cause
@@ -204,6 +204,31 @@ required before this correction is considered verified.
 
 Microsoft documents the native target property in
 [System.Link.TargetParsingPath](https://learn.microsoft.com/en-us/windows/win32/properties/props-system-link-targetparsingpath).
+
+## Post-GUI reinstall failure (2026-10-27)
+
+[Full run40503319692, Windows job122209671710](https://github.com/imranOdiboev/pdfcraft/actions/runs/40503319692/job/122209671710)
+passed all nine real cancellations, silent folder refusal, exact payload/registered
+identity/native shortcut, installed CLI PDF acceptance, running-editor refusal and
+real GUI open/raster/rotate/Undo/Redo/save/normal exit. The following same-build
+reinstall returned native exit7. Its overall result is FAILURE; final distribution
+upload was skipped. Earlier shortcut correction is proven by the full run.
+
+The test retained each exited GUI Process object until its outer finally block.
+The Windows process object can remain alive while its handle is retained. Whether
+that retains the exclusive EXE lock in this case must be proved, not assumed.
+A short regression on a private copy of the runner's own cmd.exe performs five
+normal exits: require exclusive access to fail before releasing the retained
+handle and succeed after the shared shutdown helper verifies exit0 and disposes
+it. It never runs application fixture EXEs or installs anything on the owner PC.
+The hypothesis test must fail if the locking behaviour is not reproduced.
+
+Full acceptance now releases/removes a GUI Process object immediately after
+normal shutdown. Existing 15-second shutdown and exact exit0 checks remain.
+Installer guards are unchanged; fixed version/folder/executable-refusal markers
+and an EXE basename are logged. Only these allowlisted markers, not raw setup
+logs, paths or process command lines, are included in published QA diagnostics.
+The probe and a fresh complete Windows acceptance remain required.
 
 - [Microsoft BM_CLICK](https://learn.microsoft.com/en-us/windows/win32/controls/bm-click)
   describes activation of the real button handler.

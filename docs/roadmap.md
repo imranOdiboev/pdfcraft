@@ -1,5 +1,7 @@
 # PdfCraft roadmap: milestones and what's next
 
+> **Fork update:** 2026-10-27 · M4.0 strict shortcut and installed CLI/GUI PDF checks passed; post-GUI reinstall exited7. Process-handle hypothesis gets a short five-case reproducer before another full acceptance. No gate skipped; distribution remains blocked. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
+
 > **Fork update:** 2026-10-27 · M4.0 full Windows acceptance stopped at the shortcut target assertion after nine Cancel passes and valid installed metadata. Native target diagnostics and negative controls added; fresh verification pending. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
 
 > **Fork update:** 2026-10-27 · M4.0: external OCR S3 AccessDenied blocked packaging after Windows compile/GUI/core passes. Exact original models/licences recovered and attributed as offline build inputs; early verification and fresh full acceptance pending. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).

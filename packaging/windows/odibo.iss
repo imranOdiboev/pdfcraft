@@ -257,6 +257,7 @@ begin
     Stream := TFileStream.Create(Filename, $0002 or $0010);
     Stream.Free;
   except
+    Log('ODIBO_EXECUTABLE_LOCKED: ' + ExtractFileName(Filename));
     Result := True;
   end;
 end;
@@ -307,12 +308,14 @@ end;
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 begin
   Result := VersionProblem();
-  if Result <> '' then Exit;
+  if Result <> '' then begin Log('ODIBO_PREPARE_REFUSED: version'); Exit; end;
   Result := FolderProblem(ExpandConstant('{app}'));
-  if Result <> '' then Exit;
+  if Result <> '' then begin Log('ODIBO_PREPARE_REFUSED: folder'); Exit; end;
   if LockedExecutable(ExpandConstant('{app}\odibo-pdf.exe')) or
-    LockedExecutable(ExpandConstant('{app}\odibo-pdf-cli.exe')) then
+    LockedExecutable(ExpandConstant('{app}\odibo-pdf-cli.exe')) then begin
+    Log('ODIBO_PREPARE_REFUSED: executable-in-use');
     Result := CustomMessage('CloseApp');
+  end;
 end;
 
 function InitializeUninstall(): Boolean;
