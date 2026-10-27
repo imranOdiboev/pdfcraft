@@ -1,5 +1,7 @@
 # PdfCraft roadmap
 
+> **Fork update:** 2026-10-27 · M4.0 diagnostic run40528971053 attempt2 reproduced Setup exit7: the normally exited GUI EXE still had Win32 sharing violation32. The full test awaits actual exclusive availability with a bounded failure; guards remain. Sharing-lock regression and full Windows acceptance pending. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
+
 > **Fork update:** 2026-10-27 · M4.0 full run40503319692 verified native shortcut and installed PDF/GUI edit/save, then post-GUI reinstall returned7. Investigate retained test process handles with five isolated OS-process controls, release normally exited GUI handles, and retain safe fixed refusal diagnostics. Full verification pending; distribution blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
 
 > **Fork update:** 2026-10-27 · M4.0 run40486018971 passed nine real Cancel cases, silent folder refusal and installed payload/build identity, then failed its Start menu target assertion. Add native Unicode target diagnostics and strict wrong-target/argument controls to the short fixture and full acceptance. Verification pending; distribution blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).

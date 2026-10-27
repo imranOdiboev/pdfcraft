@@ -1,6 +1,6 @@
 # ODIBO installer cancellation investigation
 
-Status: **Full run40503319692 passed native shortcuts, installed CLI/PDF and GUI edit/save/shutdown, then same-build reinstall returned7. Full acceptance remains blocked.**
+Status: **Full run40503319692 failed on same-build reinstall. A repeated diagnostic reproduced exit7 and Windows sharing violation32 after normal GUI exit; a bounded readiness check awaits CI. Full acceptance remains blocked.**
 Reviewed: 2026-10-27. This report does not authorize a release or merge.
 
 ## Observed failure and exact cause
@@ -262,6 +262,29 @@ numeric exit status. Before each Setup, inspect only the two intended EXEs:
 attributes, exclusive availability and exactly matching live image-path PIDs,
 parents and sessions. No unrelated processes or full paths are published. Native
 version/folder/file-lock checks remain unchanged; no blind delay or Setup retry.
+
+The second attempt of [diagnostic run40528971053](https://github.com/imranOdiboev/pdfcraft/actions/runs/40528971053/job/122278153203)
+reproduced the same exit7 after the real GUI completed a normal exit0. The
+independently downloaded QA archive has SHA-256
+`8dfd527fc777508d97704e6de2649bdebc3895083cef897be651b24d73854705`.
+Its `gui-shutdown` evidence records Win32 error32 both before and after process
+handle disposal. Before reinstall, `setup-outcome-04.json` records no matching
+live ODIBO image process, the GUI EXE still unavailable for exclusive read/write,
+and an available CLI EXE. The actual installer recorded
+`ODIBO_EXECUTABLE_LOCKED: odibo-pdf.exe` followed by
+`ODIBO_PREPARE_REFUSED: executable-in-use`. The owner of the sharing lock is not
+identified. The old full-run log did not retain the refusal marker, so this is a
+precise reproduction of its symptoms, not retrospective proof of that run's cause.
+
+The full test now waits, only after real GUI quit and confirmed exit0, for the
+GUI EXE to become exclusively available using the same access/share mode as the
+installer. Only Win32 sharing/lock violations32/33 are polled; other errors fail
+immediately and persistent locks fail after at most15 seconds. The test does not
+kill a process, change file contents, retry Setup or bypass its guard. A separate
+CI regression requires immediate success for an unlocked file, immediate failure
+for a missing file, failure for a deliberately persistent lock, and three actual
+releases of a held lock with unchanged fixture bytes. These tests and full
+current-source acceptance must pass before any readiness claim.
 
 - [Microsoft BM_CLICK](https://learn.microsoft.com/en-us/windows/win32/controls/bm-click)
   describes activation of the real button handler.

@@ -245,9 +245,14 @@ function Ui($Session, [string[]]$Arguments) {
 function Stop-Gui($Session) {
     $quit = Ui $Session @('quit')
     Assert-True ($quit.quitting -eq $true) 'Clean GUI quit unexpectedly requires confirmation.'
+    $executable = $Session.Process.StartInfo.FileName
     . (Join-Path $PSScriptRoot 'close-odibo-gui-process.ps1')
     Close-OdiboGuiProcess $Session.Process (Join-Path $QaDir ('gui-shutdown-' + [Guid]::NewGuid().ToString('N') + '.json')) $Session.Role
     [void]$guiProcesses.Remove($Session.Process)
+    # Windows may report the executable in use after process exit. Await the same
+    # exclusive access the installer requires; no setup retry or forced release.
+    . (Join-Path $PSScriptRoot 'wait-odibo-executable-ready.ps1')
+    [void](Wait-OdiboExecutableReady -Path $executable -DiagnosticPath (Join-Path $QaDir ('gui-availability-' + [Guid]::NewGuid().ToString('N') + '.json')))
     if (Test-Path -LiteralPath $Session.Control) { Remove-Item -LiteralPath $Session.Control -Force }
 }
 function Assert-UiPreferences($Session, [string]$Language, [string]$Theme) {
