@@ -183,8 +183,16 @@ to another application.` Final distribution upload was correctly skipped.
 
 The failing assertion used WScript.Shell.TargetPath and did not record its actual
 value. An independent read-only audit found the installer explicitly targets the
-correct executable. Legacy reader conversion of the Cyrillic directory is a
-hypothesis until fresh Windows diagnostics distinguish the actual paths.
+correct executable. Short Windows run40503068385 reproduced the exact defect:
+WScript returned `?????????? — lifecycle fixture`, whereas the native Shell target
+retained `Приложение — lifecycle fixture` and matched the existing installed EXE.
+That diagnostic archive (SHA-256
+`977fab24f1ca2b9ab090e8861d1909c32933651e221aaf9b412d18ebb69256da`)
+was downloaded and independently checked. This is lossy ANSI conversion, not an
+incorrect installer target or a DOS short-path alias. The new negative control
+also exposed WScript's ANSI setter rejecting a Unicode target; use an ASCII-only
+existing same-name/same-byte file for that intentional wrong-target fixture.
+The first short run therefore failed its mutation setup, not native target reading.
 
 Read the target using native Shell `System.Link.TargetParsingPath`; require the
 exact existing full installed target and empty arguments. Record native/legacy

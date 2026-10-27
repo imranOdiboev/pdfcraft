@@ -95,12 +95,16 @@ function Test-WrongShortcut {
     Require ($links.Count -eq 1) 'Expected the fixture shortcut for negative controls.'
     $path = $links[0].FullName
     $original = [IO.File]::ReadAllBytes($path)
+    # WScript's target setter is ANSI too. Use an existing ASCII-only path for
+    # the deliberate wrong target; same filename/bytes must still be rejected.
+    $wrongTarget = Join-Path $root 'odibo-pdf.exe'
+    Copy-Item -LiteralPath (Join-Path $payload 'odibo-pdf.exe') -Destination $wrongTarget
     $shell = New-Object -ComObject WScript.Shell
     try {
         foreach ($mutation in @('wrong target','unexpected arguments')) {
             $shortcut = $shell.CreateShortcut($path)
             try {
-                if ($mutation -eq 'wrong target') { $shortcut.TargetPath = Join-Path $install 'odibo-pdf-cli.exe' }
+                if ($mutation -eq 'wrong target') { $shortcut.TargetPath = $wrongTarget }
                 else { $shortcut.Arguments = '--unexpected-fixture-option' }
                 $shortcut.Save()
             } finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shortcut) }
