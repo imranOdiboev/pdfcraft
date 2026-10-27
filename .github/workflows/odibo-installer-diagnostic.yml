@@ -1,0 +1,74 @@
+name: ODIBO diagnostic prior runtime (not a distribution build)
+on:
+  push:
+    branches: [fix/odibo-installer-cancel]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: odibo-installer-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  diagnostic:
+    if: github.repository == 'imranOdiboev/pdfcraft' && github.ref_name == 'fix/odibo-installer-cancel'
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Download exact own previous runtime without executing it
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $archive = Join-Path $env:RUNNER_TEMP 'prior-odibo-runtime.zip'
+          $start = [Diagnostics.ProcessStartInfo]::new('gh')
+          $start.UseShellExecute = $false
+          $start.CreateNoWindow = $true
+          $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
+          $start.RedirectStandardOutput = $true
+          $start.RedirectStandardError = $true
+          foreach ($argument in @('api','repos/imranOdiboev/pdfcraft/actions/artifacts/12651029055/zip')) { [void]$start.ArgumentList.Add($argument) }
+          $process = [Diagnostics.Process]::Start($start)
+          try {
+            $errorText = $process.StandardError.ReadToEndAsync()
+            $file = [IO.File]::Open($archive, [IO.FileMode]::CreateNew)
+            try { $process.StandardOutput.BaseStream.CopyTo($file) } finally { $file.Dispose() }
+            if (-not $process.WaitForExit(60000) -or $process.ExitCode -ne 0) { throw 'Pinned diagnostic artifact download failed; no runtime executed.' }
+          } finally { $process.Dispose() }
+          if ((Get-FileHash -LiteralPath $archive).Hash.ToLowerInvariant() -cne '8219c3db7c8318e2318f3f21ccf6e2b6898ffffc7a53f630ef0bca70869dd0a1') { throw 'Prior artifact digest mismatch; no runtime executed.' }
+      - name: Verify unchanged application source, runtime pins and every prior file
+        run: python packaging/windows/prepare_installer_diagnostic.py "$env:RUNNER_TEMP/prior-odibo-runtime.zip" "$env:RUNNER_TEMP/diagnostic-payload"
+      - name: Pinned verified Inno compiler on disposable runner
+        id: inno
+        run: pwsh -NoProfile -File packaging/windows/install-inno-toolchain.ps1
+      - name: Compile current installer source and stage independent diagnostic Portable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $payload = "$env:RUNNER_TEMP/diagnostic-payload"
+          $output = "$env:RUNNER_TEMP/diagnostic-setup"
+          New-Item -ItemType Directory -Path $output | Out-Null
+          & '${{ steps.inno.outputs.iscc }}' '/Qp' "/DPayloadDir=$payload" "/DOutputDir=$output" '/DAppVersion=0.10.1' '/DBuildNumber=1' '/DBuildCommit=aa9bc135ba6bfcb6b9bc40f09f81f339e9b65c30' packaging/windows/odibo.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Diagnostic installer compilation failed.' }
+          $portable = "$env:RUNNER_TEMP/diagnostic-portable"
+          Copy-Item -LiteralPath $payload -Destination $portable -Recurse
+          Copy-Item -LiteralPath packaging/windows/portable.txt -Destination $portable
+          Get-ChildItem -LiteralPath $portable -Recurse -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object FullName | ForEach-Object {
+            '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName).Hash.ToLowerInvariant(), [IO.Path]::GetRelativePath($portable, $_.FullName).Replace('\','/')
+          } | Set-Content -LiteralPath "$portable/SHA256SUMS.txt" -Encoding utf8
+          Compress-Archive -Path "$portable/*" -DestinationPath "$env:RUNNER_TEMP/diagnostic-portable.zip"
+      - name: Diagnose full real-app lifecycle (prior runtime, never final acceptance)
+        run: pwsh -NoProfile -File packaging/windows/test-odibo-installer.ps1 -SetupPath "$env:RUNNER_TEMP/diagnostic-setup/ODIBO-PDF-0.10.1-aa9bc13-Setup-x64.exe" -PayloadDir "$env:RUNNER_TEMP/diagnostic-payload" -PortableZip "$env:RUNNER_TEMP/diagnostic-portable.zip" -QaDir "$PWD/dist/installer-diagnostic"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: odibo-prior-runtime-diagnostics-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: dist/installer-diagnostic
+          retention-days: 3
+          if-no-files-found: warn
+      # Deliberately no Setup, Portable, payload or executable upload.

@@ -68,6 +68,8 @@ if (Test-Path -LiteralPath $buildInfo) {
 Assert-True ($expectedCommit -cmatch '^[0-9a-f]{40}$') 'Expected build commit must be recorded as a complete SHA.'
 Assert-True ($expectedBuild -cmatch '^\d+$') 'Expected build number must be present.'
 $checks = [Collections.Generic.List[object]]::new()
+$script:setupAttempt = 0
+$script:lastChildExitCode = $null
 $guiProcesses = [Collections.Generic.List[Diagnostics.Process]]::new()
 $report = [ordered]@{
     status = 'running'
@@ -97,8 +99,30 @@ function Run-Process([string]$File, [string[]]$Arguments, [int]$TimeoutSeconds =
     try {
         $stdout = $process.StandardOutput.ReadToEndAsync()
         $stderr = $process.StandardError.ReadToEndAsync()
-        if (-not $process.WaitForExit($TimeoutSeconds * 1000)) { $process.Kill($true); throw 'Acceptance child process timed out.' }
+        if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+            # Diagnose only this launch tree before failed-test cleanup, never command
+            # lines, stdout/control tokens or unrelated desktop windows. A timeout fails.
+            try {
+                . (Join-Path $PSScriptRoot 'trace-odibo-setup.ps1') -LibraryOnly
+                $owned = [Collections.Generic.HashSet[int]]::new()
+                [void]$owned.Add($process.Id)
+                $snapshot = @(Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId, SessionId, Name)
+                do {
+                    $before = $owned.Count
+                    foreach ($entry in $snapshot) { if ($owned.Contains([int]$entry.ParentProcessId)) { [void]$owned.Add([int]$entry.ProcessId) } }
+                } while ($owned.Count -ne $before)
+                $diagnostic = Get-OdiboSetupSnapshot $owned ($TimeoutSeconds * 1000L)
+                $diagnostic.processes = @($snapshot | Where-Object { $owned.Contains([int]$_.ProcessId) })
+                $diagnostic.executable = [IO.Path]::GetFileName($File)
+                $diagnostic.status = 'failed timeout; cleanup is not a passing operation'
+                $diagnostic | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath (Join-Path $QaDir ('child-timeout-' + [Guid]::NewGuid().ToString('N') + '.json')) -Encoding utf8NoBOM
+            } catch { Write-Host ('Owned-child timeout diagnostic unavailable: ' + $_.Exception.GetType().Name) }
+            $process.Kill($true)
+            [void]$process.WaitForExit(5000)
+            throw ('Acceptance child process timed out: ' + [IO.Path]::GetFileName($File))
+        }
         $result = [pscustomobject]@{ ExitCode = $process.ExitCode; Out = $stdout.GetAwaiter().GetResult(); Error = $stderr.GetAwaiter().GetResult() }
+        $script:lastChildExitCode = $result.ExitCode
         if ($ExpectFailure) { Assert-True ($result.ExitCode -ne 0) 'A refused operation unexpectedly succeeded.' }
         elseif ($result.ExitCode -ne 0) { throw ('Acceptance child failed with exit ' + $result.ExitCode + ': ' + $result.Error) }
         return $result
@@ -107,7 +131,24 @@ function Run-Process([string]$File, [string[]]$Arguments, [int]$TimeoutSeconds =
 function Run-Setup([string]$Destination, [switch]$ExpectFailure) {
     Assert-Beneath $Destination $testRoot
     $log = Join-Path $testRoot ('setup-' + [Guid]::NewGuid().ToString('N') + '.log')
-    return Run-Process $SetupPath @('/CURRENTUSER', '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', ('/DIR=' + $Destination), ('/LOG=' + $log)) -ExpectFailure:$ExpectFailure
+    $script:setupAttempt++
+    $attempt = $script:setupAttempt
+    $script:lastChildExitCode = $null
+    . (Join-Path $PSScriptRoot 'observe-odibo-executables.ps1')
+    $before = @(Get-OdiboExecutableObservation $Destination)
+    try {
+        return Run-Process $SetupPath @('/CURRENTUSER', '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', ('/DIR=' + $Destination), ('/LOG=' + $log)) -ExpectFailure:$ExpectFailure
+    } finally {
+        # Publish only fixed diagnostic markers, never raw setup logs, paths,
+        # command arguments, environment variables or account information.
+        $markers = @()
+        if ([IO.File]::Exists($log)) {
+            foreach ($line in [IO.File]::ReadLines($log)) {
+                if ($line -match '(ODIBO_PREPARE_REFUSED: (version|folder|executable-in-use)|ODIBO_EXECUTABLE_LOCKED: odibo-pdf(?:-cli)?\.exe|ODIBO_BUILD_METADATA_WRITTEN)$') { $markers += $Matches[1] }
+            }
+        }
+        [ordered]@{ attempt = $attempt; observed_at_utc = [DateTime]::UtcNow.ToString('o'); exit_code = $script:lastChildExitCode; expected_refusal = [bool]$ExpectFailure; before = $before; markers = @($markers | Select-Object -Last 20) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $QaDir ('setup-outcome-' + $attempt.ToString('D2') + '.json')) -Encoding utf8NoBOM
+    }
 }
 function Assert-Payload([string]$Destination) {
     $expectedPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -134,6 +175,9 @@ function Assert-Payload([string]$Destination) {
         Assert-True ($info.ProductVersion -cin @($expectedVersion, ($expectedVersion + '.0'))) 'Wrong installed executable version.'
     }
     $properties = Get-ItemProperty -LiteralPath $registryPath
+    foreach ($name in @('ODIBOAppVersion', 'ODIBOBuildNumber', 'ODIBOBuildCommit')) {
+        Assert-True ($null -ne $properties.PSObject.Properties[$name]) ('Installed build metadata is missing: ' + $name)
+    }
     Assert-True ($properties.DisplayName.StartsWith('ODIBO PDF', [StringComparison]::Ordinal)) 'Wrong installed-programs name.'
     Assert-True ($properties.Publisher -ceq 'IMR4N') 'Wrong installed-programs publisher.'
     Assert-True ($properties.ODIBOAppVersion -ceq $expectedVersion) 'Wrong registered version.'
@@ -143,9 +187,8 @@ function Assert-Payload([string]$Destination) {
     $programs = [Environment]::GetFolderPath([Environment+SpecialFolder]::Programs)
     $links = @(Get-ChildItem -LiteralPath $programs -Filter '*.lnk' -Recurse -File | Where-Object { $_.BaseName -ceq 'ODIBO PDF' })
     Assert-True ($links.Count -eq 1) 'Expected exactly one per-user ODIBO PDF Start menu shortcut.'
-    $shell = New-Object -ComObject WScript.Shell
-    try { Assert-True ((Full-Path $shell.CreateShortcut($links[0].FullName).TargetPath) -ieq (Full-Path (Join-Path $Destination 'odibo-pdf.exe'))) 'Start menu shortcut points to another application.' }
-    finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
+    . (Join-Path $PSScriptRoot 'assert-odibo-shortcut.ps1')
+    [void](Assert-OdiboShortcut -LinkPath $links[0].FullName -ExpectedTarget (Join-Path $Destination 'odibo-pdf.exe') -DiagnosticPath (Join-Path $QaDir ('shortcut-' + [Guid]::NewGuid().ToString('N') + '.json')))
 }
 function Assert-NoBackgroundRegistration {
     $services = @(Get-CimInstance Win32_Service | Where-Object { $_.Name -match '(?i)odibo' -or $_.PathName -like ('*' + $installDir + '*') })
@@ -193,7 +236,7 @@ function Start-Gui([string]$Folder, [string[]]$Options = @()) {
         Assert-True ([DateTime]::UtcNow -lt $deadline) 'Installed GUI startup timed out.'
         Start-Sleep -Milliseconds 250
     }
-    return [pscustomobject]@{ Process = $process; Control = $control; Cli = Join-Path $Folder 'odibo-pdf-cli.exe' }
+    return [pscustomobject]@{ Process = $process; Control = $control; Cli = Join-Path $Folder 'odibo-pdf-cli.exe'; Role = $(if ($Folder -ieq $installDir) { 'installed' } else { 'portable' }) }
 }
 function Ui($Session, [string[]]$Arguments) {
     $result = Run-Process $Session.Cli (@('ui', '--control', $Session.Control) + $Arguments) -TimeoutSeconds 60
@@ -202,8 +245,14 @@ function Ui($Session, [string[]]$Arguments) {
 function Stop-Gui($Session) {
     $quit = Ui $Session @('quit')
     Assert-True ($quit.quitting -eq $true) 'Clean GUI quit unexpectedly requires confirmation.'
-    Assert-True ($Session.Process.WaitForExit(15000)) 'GUI did not finish normal shutdown.'
-    Assert-True ($Session.Process.ExitCode -eq 0) 'GUI returned an error during normal shutdown.'
+    $executable = $Session.Process.StartInfo.FileName
+    . (Join-Path $PSScriptRoot 'close-odibo-gui-process.ps1')
+    Close-OdiboGuiProcess $Session.Process (Join-Path $QaDir ('gui-shutdown-' + [Guid]::NewGuid().ToString('N') + '.json')) $Session.Role
+    [void]$guiProcesses.Remove($Session.Process)
+    # Windows may report the executable in use after process exit. Await the same
+    # exclusive access the installer requires; no setup retry or forced release.
+    . (Join-Path $PSScriptRoot 'wait-odibo-executable-ready.ps1')
+    [void](Wait-OdiboExecutableReady -Path $executable -DiagnosticPath (Join-Path $QaDir ('gui-availability-' + [Guid]::NewGuid().ToString('N') + '.json')))
     if (Test-Path -LiteralPath $Session.Control) { Remove-Item -LiteralPath $Session.Control -Force }
 }
 function Assert-UiPreferences($Session, [string]$Language, [string]$Theme) {
@@ -216,6 +265,13 @@ function Uninstall {
     $uninstallers = @(Get-ChildItem -LiteralPath $installDir -Filter 'unins*.exe' -File)
     Assert-True ($uninstallers.Count -eq 1) 'Expected one registered Inno uninstaller.'
     [void](Run-Process $uninstallers[0].FullName @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'))
+    # The native first phase returns before its temporary second phase deletes
+    # this EXE. Wait for real self-removal before any same-folder reinstall.
+    $deadline = [DateTime]::UtcNow.AddSeconds(15)
+    while (Test-Path -LiteralPath $uninstallers[0].FullName) {
+        Assert-True ([DateTime]::UtcNow -lt $deadline) 'Uninstaller second-phase self-removal did not complete.'
+        Start-Sleep -Milliseconds 50
+    }
     Assert-True (-not (Test-Path -LiteralPath $registryPath)) 'Uninstall registration remains.'
     Assert-True (-not (Test-Path -LiteralPath (Join-Path $installDir 'odibo-pdf.exe'))) 'GUI remains after uninstall.'
     Assert-True (-not (Test-Path -LiteralPath (Join-Path $installDir 'odibo-pdf-cli.exe'))) 'CLI remains after uninstall.'
@@ -228,75 +284,13 @@ function Uninstall {
     Assert-True ($links.Count -eq 0) 'Start menu shortcut remains after uninstall.'
 }
 function Test-WizardCancellation {
-    # Genuine button activation. No process killing is counted as cancellation. This proves
-    # cancellation before file installation, not mid-copy rollback or physical desktop UX.
-    try {
-        Add-Type -AssemblyName UIAutomationClient
-        Add-Type -AssemblyName UIAutomationTypes
-        Add-Type -TypeDefinition @'
-using System;
-using System.Runtime.InteropServices;
-public static class OdiboSetupButtons {
-    [DllImport("user32.dll", SetLastError=true)] public static extern bool PostMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
-    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
-}
-'@
-    } catch {
-        $checks.Add([pscustomobject]@{ name = 'wizard Cancel before installation'; status = 'manual-required'; details = 'Windows UI Automation assemblies unavailable on this runner.' })
-        return
-    }
-    $cancelDir = Join-Path $testRoot 'Отменённая установка'
-    $start = [Diagnostics.ProcessStartInfo]::new($SetupPath)
-    $start.UseShellExecute = $false
-    # Visible only in the disposable CI desktop: this is the actual wizard under test,
-    # whose accessible controls must exist. Nothing is opened on the owner's machine.
-    $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Normal
-    foreach ($argument in @('/CURRENTUSER', '/NORESTART', '/SP-', ('/DIR=' + $cancelDir), ('/LOG=' + (Join-Path $testRoot 'cancel-wizard.log')))) { [void]$start.ArgumentList.Add($argument) }
-    $process = [Diagnostics.Process]::Start($start)
-    $owned = [Collections.Generic.HashSet[int]]::new()
-    [void]$owned.Add($process.Id)
-    $cancelClicked = $false
-    $deadline = [DateTime]::UtcNow.AddSeconds(45)
-    try {
-        while (-not $process.HasExited -and [DateTime]::UtcNow -lt $deadline) {
-            # Inno's bootstrap may create a child temporary executable. Restrict all UI
-            # actions to this launch and descendants, never another program's Yes button.
-            $snapshot = @(Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId)
-            for ($depth = 0; $depth -lt 4; $depth++) {
-                foreach ($entry in $snapshot) { if ($owned.Contains([int]$entry.ParentProcessId)) { [void]$owned.Add([int]$entry.ProcessId) } }
-            }
-            $windows = [Windows.Automation.AutomationElement]::RootElement.FindAll([Windows.Automation.TreeScope]::Children, [Windows.Automation.Condition]::TrueCondition)
-            foreach ($window in $windows) {
-                if (-not $owned.Contains($window.Current.ProcessId)) { continue }
-                $buttons = $window.FindAll([Windows.Automation.TreeScope]::Descendants, [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::Button))
-                foreach ($button in $buttons) {
-                    $name = $button.Current.Name.Replace('&', '').Trim()
-                    if ((-not $cancelClicked -and $name -cmatch '^(Cancel|Отмена)$') -or ($cancelClicked -and $name -cmatch '^(Yes|Да)$')) {
-                        if ($button.Current.IsEnabled) {
-                            # Post the actual button click asynchronously: a synchronous
-                            # UIA Invoke can block while the confirmation modal is open.
-                            $handle = [IntPtr]$button.Current.NativeWindowHandle
-                            Assert-True ($handle -ne [IntPtr]::Zero) 'The real Cancel/Yes button did not expose a native window.'
-                            [void][OdiboSetupButtons]::SetForegroundWindow([IntPtr]$window.Current.NativeWindowHandle)
-                            Assert-True ([OdiboSetupButtons]::PostMessage($handle, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)) 'Could not post a click to the owned setup button.'
-                            $cancelClicked = $true
-                            break
-                        }
-                    }
-                }
-            }
-            Start-Sleep -Milliseconds 250
-        }
-        Assert-True $cancelClicked 'Could not activate the real setup Cancel button.'
-        Assert-True ($process.WaitForExit(10000)) 'Setup did not exit after Cancel confirmation.'
-        Assert-True ($process.ExitCode -ne 0) 'Cancelled setup reported successful installation.'
-        Assert-True (-not (Test-Path -LiteralPath $registryPath)) 'Cancelled setup registered the application.'
-        Assert-True (-not (Test-Path -LiteralPath (Join-Path $cancelDir 'odibo-pdf.exe'))) 'Cancelled setup installed the executable.'
-        Passed 'real wizard Cancel before installation' @{ exit_code = $process.ExitCode; method = 'UI Automation identifies own native Cancel/Yes button; bounded asynchronous BM_CLICK activates its real handler' }
-    } finally {
-        if (-not $process.HasExited) { $process.Kill($true); [void]$process.WaitForExit(5000) }
-        $process.Dispose()
-    }
+    # The same mandatory real-button test also runs against the exact-source fixture.
+    # No process termination or manual-required fallback is counted as cancellation.
+    $result = & (Join-Path $PSScriptRoot 'test-odibo-setup-cancel.ps1') `
+        -SetupPath $SetupPath -CancelRoot (Join-Path $testRoot 'Отменённые установки') `
+        -QaDir (Join-Path $QaDir 'cancellation') -Iterations 3
+    Assert-True ($result.status -ceq 'passed' -and $result.passed -eq 9) 'All nine real cancellation scenarios must pass.'
+    Passed 'real wizard Cancel before installation, three repetitions in language selection, EN and RU' $result
 }
 
 try {

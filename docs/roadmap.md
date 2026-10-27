@@ -1,5 +1,19 @@
 # PdfCraft roadmap: milestones and what's next
 
+> **Fork update:** 2026-10-27 · M4.0 reproduced a post-exit Win32 sharing violation behind Setup exit7 in the diagnostic lifecycle. Bounded wait for real EXE availability and persistent-lock failure checks added; fresh full acceptance pending. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0 strict shortcut and installed CLI/GUI PDF checks passed; post-GUI reinstall exited7. Process-handle hypothesis gets a short five-case reproducer before another full acceptance. No gate skipped; distribution remains blocked. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0 full Windows acceptance stopped at the shortcut target assertion after nine Cancel passes and valid installed metadata. Native target diagnostics and negative controls added; fresh verification pending. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0: external OCR S3 AccessDenied blocked packaging after Windows compile/GUI/core passes. Exact original models/licences recovered and attributed as offline build inputs; early verification and fresh full acceptance pending. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0: full run passed nine real Cancel cases and silent folder refusal, then exposed premature build-identity writes erased by native uninstall-key registration. Post-install correction and expanded fast lifecycle regression pending CI; Beta distribution remains blocked. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0 full Setup passed nine real cancellations; a later silent Portable-folder refusal hung on ordinary `MsgBox`. Scoped correction and independent audit recorded; regression/full rerun pending and distribution remains blocked. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0 installer cancellation: UIA Pane/Button mismatch reproduced and corrected discovery passed nine exact-source fixture cancellations, including EN/RU wizard confirmation. Full Windows acceptance pending; beta distribution remains blocked. [Evidence](ODIBO_INSTALLER_CANCEL_REPORT.md).
+
 > **Fork update:** 2026-10-26 · M4.0: four-agent Windows distribution audit and per-user installer/portable preparation in progress. Cloud verification pending; clean Windows 10/11 acceptance remains separate. [Audit](ODIBO_M4_0_AUDIT.md).
 
 > **Fork update:** 2026-10-25 · M3.7 quality/beta preparation: four-agent audit, targeted safety/UX fixes, observational performance protocol and limited user-test plan. CI pending; no beta-readiness claim. See [audit](ODIBO_M3_7_AUDIT.md).

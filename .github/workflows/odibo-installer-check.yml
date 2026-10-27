@@ -17,6 +17,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+      - name: Check ordinary exited process access before and after handle release
+        run: pwsh -NoProfile -File packaging/windows/test-odibo-process-handles.ps1 -QaDir "$PWD/dist/cancel-diagnostics/process-handles"
+      - name: Require actual executable availability and reject persistent locks
+        run: pwsh -NoProfile -File packaging/windows/test-odibo-executable-ready.ps1 -QaDir "$PWD/dist/cancel-diagnostics/sharing"
       - name: Verified pinned compiler on disposable runner
         id: inno
         run: pwsh -NoProfile -File packaging/windows/install-inno-toolchain.ps1
@@ -31,15 +35,76 @@ jobs:
           'Non-executable CLI fixture, never run.' | Set-Content -LiteralPath (Join-Path $payload 'odibo-pdf-cli.exe')
           & '${{ steps.inno.outputs.iscc }}' '/Qp' "/DPayloadDir=$payload" "/DOutputDir=$output" '/DAppVersion=0.10.1' '/DBuildNumber=1' '/DBuildCommit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' packaging/windows/odibo.iss
           if ($LASTEXITCODE -ne 0) { throw 'Inno source compilation failed.' }
-          $setup = Join-Path $output 'ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe'
-          $install = Join-Path $env:RUNNER_TEMP 'Проверка установщика'
-          $process = Start-Process -FilePath $setup -ArgumentList @('/CURRENTUSER','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/DIR="' + $install + '"')) -WindowStyle Hidden -Wait -PassThru
-          if ($process.ExitCode -ne 0) { throw "Fixture installation failed: $($process.ExitCode)" }
-          if ((Get-FileHash -LiteralPath (Join-Path $install 'odibo-pdf.exe')).Hash -ne (Get-FileHash -LiteralPath (Join-Path $payload 'odibo-pdf.exe')).Hash) { throw 'Fixture payload differs.' }
-          $sentinel = Join-Path $install 'unknown-user-data.txt'
-          'Must survive uninstall' | Set-Content -LiteralPath $sentinel
-          $uninstaller = Join-Path $install 'unins000.exe'
-          $process = Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -WindowStyle Hidden -Wait -PassThru
-          if ($process.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $sentinel)) { throw 'Fixture uninstall failed to preserve unknown data.' }
-          if (Test-Path -LiteralPath (Join-Path $install 'odibo-pdf.exe')) { throw 'Fixture executable remains after uninstall.' }
-          'Passed installer syntax and fixture install/uninstall. This is not GUI/CLI/PDF acceptance, a beta package or a release.'
+      - name: Prove registry timing regression, build identity, reinstall and safe refusal
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = [IO.File]::ReadAllText((Join-Path $PWD 'packaging/windows/odibo.iss'))
+          $fixed = 'if CurStep = ssPostInstall then SaveInstalledBuildMetadata();'
+          if ([regex]::Matches($source, [regex]::Escape($fixed)).Count -ne 1 -or $source -match '(?m)^\[Registry\]\r?$') { throw 'Expected one post-install identity write and no Registry section.' }
+          $oldRegistry = @'
+          [Registry]
+          Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\{{A7A4DC1B-3255-4BC6-9F6F-1DA0B61B6524}_is1"; ValueType: string; ValueName: "ODIBOBuildNumber"; ValueData: "{#BuildNumber}"
+          Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\{{A7A4DC1B-3255-4BC6-9F6F-1DA0B61B6524}_is1"; ValueType: string; ValueName: "ODIBOBuildCommit"; ValueData: "{#BuildCommit}"
+          Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\{{A7A4DC1B-3255-4BC6-9F6F-1DA0B61B6524}_is1"; ValueType: string; ValueName: "ODIBOAppVersion"; ValueData: "{#AppVersion}"
+
+          [Code]
+          '@
+          $baseline = $source.Replace($fixed, '{ Negative control: premature Registry writes only. }').Replace('[Code]', $oldRegistry)
+          $temporarySource = Join-Path $PWD ('packaging/windows/ci-registry-baseline-' + [Guid]::NewGuid().ToString('N') + '.iss')
+          $baselineOutput = Join-Path $env:RUNNER_TEMP 'inno-registry-baseline'
+          New-Item -ItemType Directory -Path $baselineOutput | Out-Null
+          try {
+            [IO.File]::WriteAllText($temporarySource, $baseline)
+            & '${{ steps.inno.outputs.iscc }}' '/Qp' "/DPayloadDir=$env:RUNNER_TEMP/inno-syntax-fixture" "/DOutputDir=$baselineOutput" '/DAppVersion=0.10.1' '/DBuildNumber=1' '/DBuildCommit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' $temporarySource
+            if ($LASTEXITCODE -ne 0) { throw 'Registry baseline compilation failed.' }
+          } finally { if (Test-Path -LiteralPath $temporarySource) { Remove-Item -LiteralPath $temporarySource } }
+          pwsh -NoProfile -File packaging/windows/test-odibo-installer-metadata.ps1 -SetupPath "$baselineOutput/ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe" -PayloadDir "$env:RUNNER_TEMP/inno-syntax-fixture" -WorkRoot "$env:RUNNER_TEMP/metadata-baseline" -QaDir "$PWD/dist/cancel-diagnostics/metadata-negative" -ExpectRegistryRegression
+          if ($LASTEXITCODE -ne 0) { throw 'Premature Registry writes were not proven as the negative control.' }
+          pwsh -NoProfile -File packaging/windows/test-odibo-installer-metadata.ps1 -SetupPath "$env:RUNNER_TEMP/inno-syntax-output/ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe" -PayloadDir "$env:RUNNER_TEMP/inno-syntax-fixture" -WorkRoot "$env:RUNNER_TEMP/metadata-fixed" -QaDir "$PWD/dist/cancel-diagnostics/metadata-positive"
+          if ($LASTEXITCODE -ne 0) { throw 'Installed metadata/reinstall/downgrade regression failed.' }
+      - name: Observe real wizard accessibility (diagnostics only, not cancellation acceptance)
+        run: pwsh -NoProfile -File packaging/windows/trace-odibo-setup.ps1 -SetupPath "$env:RUNNER_TEMP/inno-syntax-output/ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe" -QaDir "$PWD/dist/cancel-diagnostics"
+      - name: Prove silent unsafe-folder regression and safe EN/RU refusal
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = [IO.File]::ReadAllText((Join-Path $PWD 'packaging/windows/odibo.iss'))
+          $begin = $source.IndexOf('function NextButtonClick(')
+          $end = $source.IndexOf('function PrepareToInstall(', $begin)
+          if ($begin -lt 0 -or $end -le $begin) { throw 'Folder-validation event not found.' }
+          $section = $source.Substring($begin, $end - $begin)
+          $fixed = 'SuppressibleMsgBox(Error, mbError, MB_OK, IDOK);'
+          if ([regex]::Matches($section, [regex]::Escape($fixed)).Count -ne 1) { throw 'Expected precisely one fixed directory-error dialog.' }
+          $baseline = $source.Substring(0, $begin) + $section.Replace($fixed, 'MsgBox(Error, mbError, MB_OK);') + $source.Substring($end)
+          $temporarySource = Join-Path $PWD ('packaging/windows/ci-baseline-' + [Guid]::NewGuid().ToString('N') + '.iss')
+          $baselineOutput = Join-Path $env:RUNNER_TEMP 'inno-unsuppressible-baseline'
+          New-Item -ItemType Directory -Path $baselineOutput | Out-Null
+          try {
+            [IO.File]::WriteAllText($temporarySource, $baseline)
+            & '${{ steps.inno.outputs.iscc }}' '/Qp' "/DPayloadDir=$env:RUNNER_TEMP/inno-syntax-fixture" "/DOutputDir=$baselineOutput" '/DAppVersion=0.10.1' '/DBuildNumber=1' '/DBuildCommit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' $temporarySource
+            if ($LASTEXITCODE -ne 0) { throw 'Baseline installer compilation failed.' }
+          } finally { if (Test-Path -LiteralPath $temporarySource) { Remove-Item -LiteralPath $temporarySource } }
+          pwsh -NoProfile -File packaging/windows/test-odibo-setup-refusal.ps1 -SetupPath "$baselineOutput/ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe" -WorkRoot "$env:RUNNER_TEMP/refusal-baseline" -QaDir "$PWD/dist/cancel-diagnostics/refusal-negative" -ExpectBlockingRegression
+          if ($LASTEXITCODE -ne 0) { throw 'Unsuppressible modal was not proven as the negative control.' }
+          pwsh -NoProfile -File packaging/windows/test-odibo-setup-refusal.ps1 -SetupPath "$env:RUNNER_TEMP/inno-syntax-output/ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe" -WorkRoot "$env:RUNNER_TEMP/refusal-fixed" -QaDir "$PWD/dist/cancel-diagnostics/refusal-positive"
+          if ($LASTEXITCODE -ne 0) { throw 'Silent folder-refusal regression failed.' }
+      - name: Prove old discovery fails and actual Cancel succeeds repeatedly (fixture only)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = "$env:RUNNER_TEMP/inno-syntax-output/ODIBO-PDF-0.10.1-aaaaaaa-Setup-x64.exe"
+          pwsh -NoProfile -File packaging/windows/test-odibo-setup-cancel.ps1 -SetupPath $setup -CancelRoot "$env:RUNNER_TEMP/legacy-cancel" -QaDir "$PWD/dist/cancel-diagnostics/negative-control" -Iterations 1 -LegacyButtonFilter
+          if ($LASTEXITCODE -eq 0) { throw 'The original discovery unexpectedly passed; negative control invalid.' }
+          $negative = Get-Content "$PWD/dist/cancel-diagnostics/negative-control/setup-cancellation.json" -Raw | ConvertFrom-Json
+          if ($negative.status -ne 'failed' -or $negative.error -cne 'Could not activate the real setup Cancel button.' -or -not $negative.attempts[0].legacy_filtered_visible_cancel) { throw 'Negative control did not reproduce the intended visible Pane-button discovery failure.' }
+          'Confirmed negative control: the old Button-only filter missed the real visible enabled Cancel.'
+          pwsh -NoProfile -File packaging/windows/test-odibo-setup-cancel.ps1 -SetupPath $setup -CancelRoot "$env:RUNNER_TEMP/repeated-cancel" -QaDir "$PWD/dist/cancel-diagnostics/positive" -Iterations 3
+          if ($LASTEXITCODE -ne 0) { throw 'Real repeated cancellation failed.' }
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: odibo-setup-window-diagnostics-${{ github.sha }}
+          path: dist/cancel-diagnostics
+          retention-days: 7
+          if-no-files-found: error

@@ -1,5 +1,19 @@
 # PdfCraft roadmap
 
+> **Fork update:** 2026-10-27 · M4.0 diagnostic run40528971053 attempt2 reproduced Setup exit7: the normally exited GUI EXE still had Win32 sharing violation32. The full test awaits actual exclusive availability with a bounded failure; guards remain. Sharing-lock regression and full Windows acceptance pending. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0 full run40503319692 verified native shortcut and installed PDF/GUI edit/save, then post-GUI reinstall returned7. Investigate retained test process handles with five isolated OS-process controls, release normally exited GUI handles, and retain safe fixed refusal diagnostics. Full verification pending; distribution blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0 run40486018971 passed nine real Cancel cases, silent folder refusal and installed payload/build identity, then failed its Start menu target assertion. Add native Unicode target diagnostics and strict wrong-target/argument controls to the short fixture and full acceptance. Verification pending; distribution blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0 full run 40467568616 passed compilation, GUI startup and core tests, then OCR staging failed on upstream S3 HTTP 403. Restore exact already-pinned model bytes from verified project provenance as durable offline build inputs; add an early hash/licence gate. Fresh full acceptance remains required. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0: full run 40453694150 passed nine real cancellations and silent Portable-folder refusal, then failed because Inno recreated its uninstall key after our registry writes. Move build identity to post-install; add a reproducing old-timing control and fast metadata/reinstall/downgrade fixture. Complete Windows acceptance and Beta distribution remain blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0 follow-up: full application Setup passed all nine real Cancel cases. The next Portable-folder refusal hung on a custom `MsgBox` in silent mode; a scoped suppressible-dialog correction and old-dialog regression are awaiting CI. Full acceptance and Beta distribution remain blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
+
+> **Fork update:** 2026-10-27 · M4.0 Cancel acceptance: Inno `TNewButton` is exposed as UIA Pane, so the old Button-only filter missed it. Root cause reproduced; corrected real cancellation passed 9/9 fixture cases with an old-filter negative control. Full Windows acceptance pending. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
+
 > **Fork update:** 2026-10-26 · M4.0: owner accepted Windows M3.7; PRs #8/#9 merged. Four-agent audit and per-user Setup/portable candidate in progress; cloud verification pending. No stable-release or readiness increase. [Audit](docs/ODIBO_M4_0_AUDIT.md).
 
 > **Fork update:** 2026-10-25 · M3.7: four real subagents, source-preserving extraction/OCR, bounded print and keyboard workflows, measured CLI baseline and independent README showcase. Verification in progress; upstream readiness estimates unchanged. See [audit](docs/ODIBO_M3_7_AUDIT.md).
@@ -181,6 +195,14 @@ Ranked; detail and the full milestone table in [docs/roadmap.md](docs/roadmap.md
 | 8 | 1.0 polish: performance, right-to-left, missing languages, keyboard-only (M14) | 55–95 |
 
 ## Progress log
+
+- **2026-10-27 (M4.0, verified OCR build inputs):** Full Windows compile/release CLI/GUI/core passed, then S3 model download returned AccessDenied. Recover exact original model/licence pins from verified project archive, preserve author/CC-BY-SA notices, declare durable offline inputs and verify them before expensive Windows compilation. No replacement model or disabled feature; fresh full acceptance pending.
+
+- **2026-10-27 (M4.0, installed build identity):** Full run 40453694150 passed nine real cancellations and safe silent folder refusal, then failed on absent custom registry metadata. Record identity after native uninstall-key registration, retaining all version/downgrade assertions; add old-timing negative control and fast reinstall/data-preservation regression. Full rerun pending; no package verification, merge or release claimed.
+
+- **2026-10-27 (M4.0, silent folder refusal):** Full run 40390282213 confirmed 9/9 Cancel passes, then exposed an unsuppressible folder-error dialog in silent setup. Two read-only auditors confirmed the path. Preserve refusal/data guards, honor suppression, add an observed-modal negative control and safe failure diagnostics. Full rerun pending; no release or merge.
+
+- **2026-10-27 (M4.0, installer Cancel):** Observed owned setup/child windows on hosted Windows, confirmed UIA Pane discovery mismatch, preserved real Cancel/Yes activation and strengthened mandatory repetition/exit/no-install evidence. Exact-source fixture: 9/9 passed; full application acceptance and verified final packages pending. No release or merge.
 
 - **2026-10-21 (M0, ODIBO foundation):** Independent Windows x64 build and synthetic CLI round-trip acceptance passed in run 39579542556. Two TLS dependency advisories patched; original bundled font/CMap notices preserved; ZIP checksums verified. Linux unbranded workspace: 3856 passed / 15 ignored; Windows release acceptance: 3 passed. ArtCraft marks excluded from the test distribution. No release or merge; upstream readiness estimates unchanged.
 
