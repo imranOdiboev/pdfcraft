@@ -428,7 +428,7 @@ pub fn render_markdown(m: &Manifest) -> String {
         );
     }
     s.push_str(&format!(
-        "\n## Downloaded at build time ({})\n\nFonts are fetched by `cargo xtask demo-pdf` into `target/demo-fonts/`, OCR models by `cargo xtask models` into `assets/models/`; each is verified by SHA-256 and never committed.\n\n| File | Title | Author | Licence | Source | Used for |\n|---|---|---|---|---|---|\n",
+        "\n## Downloaded at build time ({})\n\nFonts are fetched by `cargo xtask demo-pdf` into `target/demo-fonts/`, OCR models by `cargo xtask models` into `assets/models/`; each is verified by SHA-256. Download directories are not committed; approved offline build-input copies are separately listed as repository assets above.\n\n| File | Title | Author | Licence | Source | Used for |\n|---|---|---|---|---|---|\n",
         m.fetched.len()
     ));
     for f in &m.fetched {

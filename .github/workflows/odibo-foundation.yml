@@ -23,6 +23,30 @@ env:
   ODIBO_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
+  models:
+    name: Verify unchanged offline OCR build inputs before Windows compilation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Reject corrupt, missing or mismatched build inputs
+        run: python3 -m unittest discover -s packaging/windows -p 'test_stage_odibo_model_cache.py' -v
+      - name: Verify canonical model and licence pins before any Rust compilation
+        run: python3 packaging/windows/stage_odibo_model_cache.py --repository . --output "$RUNNER_TEMP/odibo-verified-models"
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.95.0
+      - name: Revalidate with existing model command and generate original attribution
+        run: cargo xtask models "$RUNNER_TEMP/odibo-verified-models"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: odibo-verified-models-${{ github.sha }}
+          path: ${{ runner.temp }}/odibo-verified-models
+          retention-days: 7
+          if-no-files-found: error
+
   security:
     name: Security and Windows dependency notices
     runs-on: ubuntu-24.04
@@ -199,7 +223,7 @@ jobs:
 
   windows:
     name: Windows x64 build and acceptance
-    needs: [security, checks]
+    needs: [security, checks, models]
     runs-on: windows-2025
     timeout-minutes: 120
     env:
@@ -249,6 +273,10 @@ jobs:
         with:
           name: odibo-rebranding-notices-${{ github.sha }}
           path: dist/windows-x64
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: odibo-verified-models-${{ github.sha }}
+          path: dist/windows-x64/models
       - name: Stage executables, OCR models and all existing licence material
         shell: pwsh
         run: |

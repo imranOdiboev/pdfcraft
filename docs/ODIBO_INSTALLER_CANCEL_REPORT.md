@@ -136,6 +136,40 @@ UIA Pane exposure is recorded, not described as screen-reader certification.
 No code signing, updater, PDF-engine changes, owner-machine installation, release
 or automatic merge is included.
 
+## Subsequent external OCR download failure and unchanged-input recovery
+
+[Full run 40467568616, Windows job 122085084643](https://github.com/imranOdiboev/pdfcraft/actions/runs/40467568616/job/122085084643)
+passed complete Linux gates/security, Windows desktop/CLI compilation, release CLI
+acceptance, real GUI startup and Windows core/CLI tests. Packaging then failed before
+Setup acceptance: the original OCR model S3 URL returned HTTP 403 `AccessDenied`.
+This run did not recheck the installer and produced no final package. Its unrelated
+network failure is not a passed installer result.
+
+The author-hosted Hugging Face RTen files have different hashes, so they were not
+substituted. Both existing model blobs and their licence texts were recovered from
+the project's prior successful run 40317028274, artifact 12651029055. The archive
+digest and all four canonical hashes matched. No historical executable was extracted
+or run. The exact two weights (about 12.2 MB) and unchanged CC-BY-SA-4.0 licence are
+now declared as offline build-input assets under `vendor/ocrs-models`; original
+fetched model/hash/author/licence entries remain unchanged. Their notice records
+the original sources and recovery chain. This durable copy avoids reliance on the
+old artifact expiring November 2; no new repository, release or paid service is used.
+
+A new early gate verifies cache/model/licence hashes and mutation regressions before
+Windows compilation, then runs the existing `cargo xtask models` unchanged to
+revalidate and generate original attribution. Windows consumes this same-run model
+artifact and runs the existing model verifier again during staging. Final package
+checks and all actual Setup/PDF/settings/uninstall/Portable gates remain mandatory.
+Generated attribution is prepared by the existing isolated GitHub workflow, never
+hand-edited. New complete-run results remain pending.
+
+Two additional actual read-only agents, `ocr_source_recovery` and
+`installer_final_gate_audit`, independently reviewed provenance/cache expiry and
+the remaining real installed-app scenario. They found no further CLI/UI schema
+mismatch. A recommendation for more specific running-editor refusal reason checks
+is recorded as a future coverage improvement; existing failure/data assertions are
+retained and are not claimed to prove every refusal reason.
+
 ## Reference behavior
 
 - [Microsoft BM_CLICK](https://learn.microsoft.com/en-us/windows/win32/controls/bm-click)

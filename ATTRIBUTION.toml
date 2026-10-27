@@ -1,4 +1,26 @@
 [[asset]]
+path = "vendor/ocrs-models/text-detection.rten"
+title = "Unmodified Ocrs text detection model, offline build input"
+author = "Robert Knight (ocrs-models; trained on HierText, CC-BY-SA-4.0)"
+source = "https://ocrs-models.s3-accelerate.amazonaws.com/text-detection.rten; exact-byte recovery from project build 40317028274, archive SHA-256 8219c3db7c8318e2318f3f21ccf6e2b6898ffffc7a53f630ef0bca70869dd0a1; vendor/ocrs-models/NOTICE.md"
+licence = "CC-BY-SA-4.0"
+licence_file = "vendor/ocrs-models/LICENSE-CC-BY-SA-4.0.txt"
+kind = "model"
+usage = "Windows packaging input, copied unchanged and SHA-256-verified against the canonical fetched model entry"
+sha256 = "f15cfb56bd02c4bf478a20343986504a1f01e1665c2b3a0ad66340f054b1b5ca"
+
+[[asset]]
+path = "vendor/ocrs-models/text-recognition.rten"
+title = "Unmodified Ocrs text recognition model, offline build input"
+author = "Robert Knight (ocrs-models; trained on HierText, CC-BY-SA-4.0)"
+source = "https://ocrs-models.s3-accelerate.amazonaws.com/text-recognition.rten; exact-byte recovery from project build 40317028274, archive SHA-256 8219c3db7c8318e2318f3f21ccf6e2b6898ffffc7a53f630ef0bca70869dd0a1; vendor/ocrs-models/NOTICE.md"
+licence = "CC-BY-SA-4.0"
+licence_file = "vendor/ocrs-models/LICENSE-CC-BY-SA-4.0.txt"
+kind = "model"
+usage = "Windows packaging input, copied unchanged and SHA-256-verified against the canonical fetched model entry"
+sha256 = "e484866d4cce403175bd8d00b128feb08ab42e208de30e42cd9889d8f1735a6e"
+
+[[asset]]
 path = "crates/ui-egui/src/i18n/el.tsv"
 title = "Greek interface translation catalog"
 author = "Camthalion77 and contributors"
@@ -15,6 +37,7 @@ sha256 = "4c2a98679a3a52595d04a5eaec9a0e9296e62d5156d17417b71a3212c98532a5"
 # [[asset]]    a file in this repository (committed or vendored); `sha256` must match the file.
 # [[bundled]]  a file compiled into PdfCraft by a Cargo dependency (its crate version must match Cargo.lock).
 # [[fetched]]  downloaded at build time by xtask (never committed), pinned by `sha256`.
+# Exact offline copies, when required, are separate [[asset]] entries with their own paths.
 # [[build_input]] an optional build input outside this repository (e.g. craft-fonts via CRAFT_FONTS_DIR);
 #              never committed or downloaded here, its own repository attributes each file.
 #

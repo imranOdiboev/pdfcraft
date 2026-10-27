@@ -1,5 +1,7 @@
 # PdfCraft roadmap
 
+> **Fork update:** 2026-10-27 · M4.0 full run 40467568616 passed compilation, GUI startup and core tests, then OCR staging failed on upstream S3 HTTP 403. Restore exact already-pinned model bytes from verified project provenance as durable offline build inputs; add an early hash/licence gate. Fresh full acceptance remains required. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
+
 > **Fork update:** 2026-10-27 · M4.0: full run 40453694150 passed nine real cancellations and silent Portable-folder refusal, then failed because Inno recreated its uninstall key after our registry writes. Move build identity to post-install; add a reproducing old-timing control and fast metadata/reinstall/downgrade fixture. Complete Windows acceptance and Beta distribution remain blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
 
 > **Fork update:** 2026-10-27 · M4.0 follow-up: full application Setup passed all nine real Cancel cases. The next Portable-folder refusal hung on a custom `MsgBox` in silent mode; a scoped suppressible-dialog correction and old-dialog regression are awaiting CI. Full acceptance and Beta distribution remain blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
@@ -187,6 +189,8 @@ Ranked; detail and the full milestone table in [docs/roadmap.md](docs/roadmap.md
 | 8 | 1.0 polish: performance, right-to-left, missing languages, keyboard-only (M14) | 55–95 |
 
 ## Progress log
+
+- **2026-10-27 (M4.0, verified OCR build inputs):** Full Windows compile/release CLI/GUI/core passed, then S3 model download returned AccessDenied. Recover exact original model/licence pins from verified project archive, preserve author/CC-BY-SA notices, declare durable offline inputs and verify them before expensive Windows compilation. No replacement model or disabled feature; fresh full acceptance pending.
 
 - **2026-10-27 (M4.0, installed build identity):** Full run 40453694150 passed nine real cancellations and safe silent folder refusal, then failed on absent custom registry metadata. Record identity after native uninstall-key registration, retaining all version/downgrade assertions; add old-timing negative control and fast reinstall/data-preservation regression. Full rerun pending; no package verification, merge or release claimed.
 
