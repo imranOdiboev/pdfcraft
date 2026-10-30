@@ -3,7 +3,6 @@ package com.odibo.pdf
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.os.ParcelFileDescriptor
 import android.view.View
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -88,25 +87,15 @@ class HomeUiAcceptanceTest {
         // connectedDebugAndroidTest may uninstall the app before CI can pull its
         // private files. Export only these synthetic Home captures while installed.
         assertTrue(name in setOf("home-en-light.png", "home-ru-dark.png"))
-        val command = "run-as com.odibo.pdf cat files/screenshots/$name > /data/local/tmp/odibo-$name.part && mv /data/local/tmp/odibo-$name.part /data/local/tmp/odibo-$name && cat /data/local/tmp/odibo-$name"
-        // UiAutomation executes argv directly; shell operators require sh -c.
-        // The only interpolated value is one of the two allowlisted names above.
-        val descriptor = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("sh -c '$command'")
-        val exported = ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { it.readBytes() }
-        assertTrue("Exported screenshot must match the actual PNG", encoded.contentEquals(exported))
-        // Wait for the host collector before Gradle is allowed to uninstall us.
+        val folder = File(InstrumentationRegistry.getInstrumentation().targetContext.filesDir, "screenshots")
+        // The host waits for this marker before reading the completed private PNG.
+        File(folder, "$name.ready").writeText("ready")
+        val collected = File(folder, "$name.collected")
         val deadline = android.os.SystemClock.elapsedRealtime() + 30_000
-        var collected = false
-        while (!collected && android.os.SystemClock.elapsedRealtime() < deadline) {
-            val status = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(
-                "sh -c 'test -f /data/local/tmp/odibo-captured-$name && echo ready'"
-            )
-            collected = ParcelFileDescriptor.AutoCloseInputStream(status).use {
-                it.bufferedReader().readText().trim() == "ready"
-            }
-            if (!collected) Thread.sleep(100)
+        while (!collected.isFile && android.os.SystemClock.elapsedRealtime() < deadline) {
+            Thread.sleep(100)
         }
-        assertTrue("CI must retrieve the real screenshot before teardown", collected)
+        assertTrue("CI must retrieve the real screenshot before teardown", collected.isFile)
         return encoded
     }
 }

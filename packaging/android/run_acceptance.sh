@@ -6,9 +6,10 @@ collect() {
   while true; do
     for name in home-en-light.png home-ru-dark.png; do
       local_file="dist/android-emulator/$name"
-      if [[ ! -f "$local_file" ]] && adb pull "/data/local/tmp/odibo-$name" "$local_file.part" >/dev/null 2>&1; then
+      if [[ ! -f "$local_file" ]] && adb shell run-as com.odibo.pdf test -f "files/screenshots/$name.ready" >/dev/null 2>&1 &&
+        adb exec-out run-as com.odibo.pdf cat "files/screenshots/$name" > "$local_file.part" 2>/dev/null; then
         mv "$local_file.part" "$local_file"
-        adb shell touch "/data/local/tmp/odibo-captured-$name" >/dev/null
+        adb shell run-as com.odibo.pdf touch "files/screenshots/$name.collected" >/dev/null
       fi
     done
     sleep 0.2
