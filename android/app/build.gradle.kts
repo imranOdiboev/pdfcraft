@@ -30,6 +30,7 @@ android {
         getByName("main") {
             res.srcDir(layout.buildDirectory.dir("generated/odibo/res"))
             assets.srcDir(layout.buildDirectory.dir("generated/odibo/assets"))
+            assets.srcDir(layout.buildDirectory.dir("generated/dependencyNotices"))
             jniLibs.srcDir(layout.buildDirectory.dir("generated/odibo/jniLibs"))
         }
     }
@@ -65,7 +66,9 @@ dependencies {
 // Inventory resolved Android inputs, including actual archive digests. No plugin
 // or telemetry service is needed. Preserve licence/notice files found in AAR/JARs.
 tasks.register("collectAndroidNotices") {
-    val destination = layout.buildDirectory.dir("generated/odibo/assets/legal")
+    // Own a separate output directory: Gradle may clean task outputs before
+    // execution. Never claim the pre-staged upstream/brand/font legal directory.
+    val destination = layout.buildDirectory.dir("generated/dependencyNotices/legal")
     outputs.dir(destination)
     doLast {
         val dir = destination.get().asFile.apply { mkdirs() }
@@ -88,7 +91,8 @@ tasks.register("collectAndroidNotices") {
             }
         dir.resolve("ANDROID_DEPENDENCIES.txt").writeText(output.toString())
         val common = dir.resolve("THIRD_PARTY_NOTICES.txt")
-        val rust = dir.resolve("RUST_DEPENDENCIES.txt").takeIf { it.exists() }?.readText().orEmpty()
+        val rust = layout.buildDirectory.file("generated/odibo/assets/legal/RUST_DEPENDENCIES.txt")
+            .get().asFile.readText()
         common.writeText("Dependency inventory and preserved licence texts\n\n" + output + "\n" + rust)
     }
 }

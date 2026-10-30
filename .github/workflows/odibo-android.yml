@@ -75,7 +75,7 @@ jobs:
           sha256sum dist/android/app-debug.apk > dist/android/SHA256SUMS.txt
           python3 -c 'import json,os,subprocess;from pathlib import Path;Path("dist/android/BUILD_MANIFEST.json").write_text(json.dumps({"source_sha":os.environ["ODIBO_SOURCE_SHA"],"checkout_sha":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"run_id":os.environ["GITHUB_RUN_ID"],"version":"0.1.0-debug","abi":"arm64-v8a","signing":"ephemeral debug key; not production","native_execution":"not yet proven on physical ARM64 phone"},indent=2))'
           cp android/native/Cargo.lock dist/android/NATIVE_CARGO_LOCK.txt
-          cp android/app/build/generated/odibo/assets/legal/THIRD_PARTY_NOTICES.txt dist/android/
+          cp android/app/build/generated/dependencyNotices/legal/THIRD_PARTY_NOTICES.txt dist/android/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: odibo-android-arm64-debug-${{ github.sha }}
