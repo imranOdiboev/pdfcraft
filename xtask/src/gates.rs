@@ -18,9 +18,9 @@ pub fn target_dir() -> PathBuf {
     std::env::var_os("CARGO_TARGET_DIR").map_or_else(|| root().join("target"), |d| root().join(d))
 }
 
-/// The release `pdfcraft-cli` that `cargo build --release -p pdfcraft-cli` produced.
+/// The release binary produced by `cargo build --release -p pdfcraft-cli`.
 pub fn release_cli() -> PathBuf {
-    target_dir().join("release").join(format!("pdfcraft-cli{}", std::env::consts::EXE_SUFFIX))
+    target_dir().join("release").join(format!("odibo-pdf-cli{}", std::env::consts::EXE_SUFFIX))
 }
 
 fn cargo() -> Command {
