@@ -30,6 +30,11 @@ jobs:
         with:
           toolchain: 1.95.0
           targets: aarch64-linux-android
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          cmdline-tools-version: '12266719'
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
       - name: Select existing Java 17 and install pinned Android tools on disposable runner
         shell: bash
         run: |
@@ -47,6 +52,7 @@ jobs:
         shell: bash
         run: |
           cargo generate-lockfile --manifest-path android/native/Cargo.toml
+          cargo fmt --manifest-path android/native/Cargo.toml
           cargo test --locked --manifest-path android/native/Cargo.toml
           RUSTFLAGS='-C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,common-page-size=16384' cargo build --locked --release --target aarch64-linux-android --manifest-path android/native/Cargo.toml
       - name: Stage attributed resources, native executable and exact Rust notices
@@ -82,6 +88,16 @@ jobs:
             android/app/build/test-results
           if-no-files-found: warn
 
+      - name: Preserve native lock and formatted candidate for review
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: odibo-android-native-review-${{ github.sha }}
+          path: |
+            android/native/Cargo.lock
+            android/native/src
+          if-no-files-found: warn
+          retention-days: 14
   emulator:
     name: Android API 35 x86_64 real native and PDF smoke
     runs-on: ubuntu-24.04
@@ -94,6 +110,11 @@ jobs:
         with:
           toolchain: 1.95.0
           targets: x86_64-linux-android
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          cmdline-tools-version: '12266719'
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
       - name: Prepare pinned Android native toolchain on disposable runner
         shell: bash
         run: |
@@ -139,6 +160,10 @@ jobs:
           script: |
             "$ODIBO_GRADLE" -p android --no-daemon -PodiboAbi=x86_64 :app:connectedDebugAndroidTest
             mkdir -p dist/android-emulator
+            adb exec-out run-as com.odibo.pdf cat files/screenshots/home-en-light.png > dist/android-emulator/home-en-light.png
+            adb exec-out run-as com.odibo.pdf cat files/screenshots/home-ru-dark.png > dist/android-emulator/home-ru-dark.png
+            cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/android-emulator/
+            cp assets/fonts/OFL-Inter.txt dist/android-emulator/
             printf '{"test_environment":"Android API 35 x86_64 emulator","distributed_apk_abi":"arm64-v8a","physical_arm64_device_tested":false,"native_execution":"real ProcessBuilder native helper; no JNI"}\n' > dist/android-emulator/TEST_ENVIRONMENT.json
       - name: Preserve instrumentation reports (never distribute the x86_64 APK)
         if: always()
@@ -151,4 +176,3 @@ jobs:
             android/app/build/outputs/androidTest-results
           retention-days: 14
           if-no-files-found: warn
-
