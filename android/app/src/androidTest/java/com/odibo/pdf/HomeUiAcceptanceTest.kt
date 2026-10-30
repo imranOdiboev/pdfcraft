@@ -92,6 +92,19 @@ class HomeUiAcceptanceTest {
         val descriptor = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
         val exported = ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { it.readBytes() }
         assertTrue("Exported screenshot must match the actual PNG", encoded.contentEquals(exported))
+        // Wait for the host collector before Gradle is allowed to uninstall us.
+        val deadline = android.os.SystemClock.elapsedRealtime() + 30_000
+        var collected = false
+        while (!collected && android.os.SystemClock.elapsedRealtime() < deadline) {
+            val status = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(
+                "test -f /data/local/tmp/odibo-captured-$name && echo ready"
+            )
+            collected = ParcelFileDescriptor.AutoCloseInputStream(status).use {
+                it.bufferedReader().readText().trim() == "ready"
+            }
+            if (!collected) Thread.sleep(100)
+        }
+        assertTrue("CI must retrieve the real screenshot before teardown", collected)
         return encoded
     }
 }

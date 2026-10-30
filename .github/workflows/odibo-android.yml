@@ -173,11 +173,7 @@ jobs:
           disable-animations: true
           disable-spellchecker: true
           script: |
-            "$ODIBO_GRADLE" -p android --no-daemon -PodiboAbi=x86_64 :app:connectedDebugAndroidTest
-            mkdir -p dist/android-emulator
-            adb pull /data/local/tmp/odibo-home-en-light.png dist/android-emulator/home-en-light.png
-            adb pull /data/local/tmp/odibo-home-ru-dark.png dist/android-emulator/home-ru-dark.png
-            python3 -c 'from pathlib import Path; import struct,zlib; files=list(Path("dist/android-emulator").glob("*.png")); assert len(files)==2; [(lambda d: (d.startswith(b"\x89PNG\r\n\x1a\n") and len(d)>5000) or (_ for _ in ()).throw(ValueError("Invalid screenshot PNG")))(p.read_bytes()) for p in files]'
+            bash packaging/android/run_acceptance.sh
             cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/android-emulator/
             cp assets/fonts/OFL-Inter.txt dist/android-emulator/
             printf '{"test_environment":"Android API 35 x86_64 emulator","distributed_apk_abi":"arm64-v8a","physical_arm64_device_tested":false,"native_execution":"real ProcessBuilder native helper; no JNI"}\n' > dist/android-emulator/TEST_ENVIRONMENT.json
