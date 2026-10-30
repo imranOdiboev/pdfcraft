@@ -136,8 +136,8 @@ class OdiboViewModel(application: Application) : AndroidViewModel(application) {
             throw failure
         }
     }
-    fun setTheme(value: String) { theme = value; storage.preferences.edit().putString("theme", value).apply() }
-    fun setLanguage(value: String) { language = value; storage.preferences.edit().putString("language", value).apply() }
+    fun updateTheme(value: String) { theme = value; storage.preferences.edit().putString("theme", value).apply() }
+    fun updateLanguage(value: String) { language = value; storage.preferences.edit().putString("language", value).apply() }
     fun loadLicences() = runOperation {
         licences = withContext(Dispatchers.IO) {
             listOf("NOTICE", "LICENSE-MIT", "LICENSE-APACHE", "LICENSE-ODIBO-BRAND.txt", "THIRD_PARTY_NOTICES.txt").joinToString("\n\n") { name ->
