@@ -3,6 +3,7 @@ package com.odibo.pdf
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.os.ParcelFileDescriptor
 import android.view.View
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -84,6 +85,13 @@ class HomeUiAcceptanceTest {
                 assertTrue("PNG must contain actual rendered content", encoded.size > 5000)
             } finally { bitmap.recycle() }
         }
+        // connectedDebugAndroidTest may uninstall the app before CI can pull its
+        // private files. Export only these synthetic Home captures while installed.
+        assertTrue(name in setOf("home-en-light.png", "home-ru-dark.png"))
+        val command = "run-as com.odibo.pdf cat files/screenshots/$name > /data/local/tmp/odibo-$name && cat /data/local/tmp/odibo-$name"
+        val descriptor = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
+        val exported = ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { it.readBytes() }
+        assertTrue("Exported screenshot must match the actual PNG", encoded.contentEquals(exported))
         return encoded
     }
 }
