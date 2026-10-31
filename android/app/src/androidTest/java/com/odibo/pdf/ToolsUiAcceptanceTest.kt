@@ -20,6 +20,7 @@ import com.odibo.pdf.data.Problem
 import com.odibo.pdf.storage.SafDocumentStore
 import java.io.File
 import java.security.MessageDigest
+import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import org.junit.Assert.*
 import org.junit.Rule
