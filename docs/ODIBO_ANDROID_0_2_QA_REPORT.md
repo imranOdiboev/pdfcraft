@@ -57,6 +57,11 @@ were installed, no local builds/tests were run, and no commits or pushes were ma
 - `PdfToolsFixtureProvider.kt`: read-only procedural vector-PDF provider.
 - `ToolsUiAcceptanceTest.kt`: real Combine/Split/Reorder, RU/dark, recreation,
   genuine screenshots and source/cancel/failure assertions.
+- `PdfToolsSafProvider.kt` and `SafToolsAcceptanceTest.kt`: test-only SAF contract
+  provider; actual new-document export of native Split outputs, SHA-256 read-back
+  and native reopening; pre-write old-document-ID refusal, controlled write-open
+  denial, read-back corruption and cancellation after one complete new output.
+  No production provider or signature storage permission is introduced.
 - Root's `PdfToolsAcceptanceTest.kt`: independently rendered output page order,
   reopen, source SHA-256 and worker validation tests (reviewed, root-owned).
 

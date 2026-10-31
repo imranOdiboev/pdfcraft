@@ -1,6 +1,8 @@
 package com.odibo.pdf
 
 import android.content.Context
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.net.Uri
@@ -68,10 +70,16 @@ class ToolsUiAcceptanceTest {
             compose.onNodeWithContentDescription("Переместить страницу 2 вверх").performScrollTo().assertIsNotEnabled()
             compose.onNodeWithText("Применить порядок").performScrollTo().assertIsEnabled()
             capture(activity, "tools-reorder-ru-dark.png")
+            activity.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
+            compose.waitUntil(timeoutMillis = 15_000) { context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE }
+            compose.onNodeWithContentDescription("Переместить страницу 2 вверх").performScrollTo().assertIsNotEnabled()
+            compose.onNodeWithText("Применить порядок").performScrollTo().assertIsEnabled()
             val prior = model.document!!.file
             compose.onNodeWithText("Применить порядок").performClick()
             waitFor(model) { model.document?.file != prior }
             compose.runOnIdle { assertEquals(4, model.document?.info?.pageCount) }
+            activity.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT }
+            compose.waitUntil(timeoutMillis = 15_000) { context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT }
         }
         assertEquals(before, inputs.map(::sourceHash))
     }

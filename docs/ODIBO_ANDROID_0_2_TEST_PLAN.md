@@ -17,6 +17,7 @@ or proprietary fonts are needed.
 | Native Android instrumentation | `PdfToolsAcceptanceTest` runs the real worker; compares rendered page hashes and original SHA-256 | Emulator JUnit XML |
 | Real Compose UI | `ToolsUiAcceptanceTest` imports two provider PDFs, moves inputs, combines, prepares Split, changes order and recreates the activity | Emulator JUnit XML |
 | SAF failure/cancel | Same-source export refused; cancellation callback prevents writes; actual read-only provider rejects a destination; source SHA-256 unchanged | Emulator JUnit XML |
+| SAF positive/fault contract | `SafToolsAcceptanceTest` exports native Split outputs through real DocumentsContract calls and file descriptors, verifies SHA-256/reopen, rejects old document IDs before write, refuses write denial/read-back mismatch and cancellation after one completed new file | Emulator JUnit XML |
 | Screenshots | Application-owned view PNGs, collected before uninstall, validated by signature/chunk CRCs | Actual PNGs, not text error files |
 | APK | ARM64 worker, debug identity/signature, ABI/alignment, notices and no storage/network/test-provider exposure | APK verification JSON and SHA-256 |
 | Regression | Existing open/view/rotate/save-copy/reopen native acceptance, Home RU/EN themes, Windows/Linux checks | Current-head CI results |
@@ -26,6 +27,14 @@ synthetic first/second PDFs and denies every write. It is not shipped in the
 production debug APK. The UI test injects selected URIs into the real ViewModel;
 it does not pretend that Android's system picker was clicked. Processing, native
 execution, Compose buttons and rendering remain real.
+
+`PdfToolsSafProvider` is another instrumentation-only ContentProvider implementing
+the queried tree/create/open portion of the SAF contract. It deliberately avoids
+the framework DocumentsProvider subclass's signature `MANAGE_DOCUMENTS` grant;
+no broad permission is added to the app. It is a controlled provider, not proof
+that arbitrary third-party providers or the system picker work. Its write-denial
+mode refuses opening an output and its mismatch mode returns corrupted read-back
+data. These are controlled failure tests, not a real ENOSPC volume experiment.
 
 Expected genuine screenshot files:
 

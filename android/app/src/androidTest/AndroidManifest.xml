@@ -4,5 +4,10 @@
         <provider android:name="com.odibo.pdf.PdfToolsFixtureProvider"
             android:authorities="com.odibo.pdf.test.fixtures"
             android:exported="true" />
+        <provider android:name="com.odibo.pdf.PdfToolsSafProvider"
+            android:authorities="com.odibo.pdf.test.saf"
+            android:exported="true" android:grantUriPermissions="true">
+            <intent-filter><action android:name="android.content.action.DOCUMENTS_PROVIDER" /></intent-filter>
+        </provider>
     </application>
 </manifest>

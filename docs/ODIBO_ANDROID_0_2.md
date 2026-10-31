@@ -28,7 +28,10 @@ Windows Beta 1, its tag, assets and binaries remain unchanged.
 No clouds, accounts, analytics, JNI, unsafe code or broad storage permissions are
 introduced. Existing file/page/object/rendering budgets remain rejection limits,
 not guarantees against every low-memory condition. Combine inputs share the
-16 MiB budget; native output remains bounded to 32 MiB.
+16 MiB budget. New tools cap each result at 16 MiB so that the unchanged
+import/inspect path can reopen it; the complete Split batch is capped at 32 MiB.
+At most 32 input documents or Split parts are accepted. Compressed non-image
+content is additionally bounded before invoking existing organize operations.
 
 ## Safety and limits
 
@@ -50,14 +53,31 @@ Three worker slots are available concurrently; the fourth role is queued.
 
 | Agent | Responsibility | Evidence status |
 |---|---|---|
-| `android02_core` | Rust worker commands, bounds, source preservation and native tests | In progress |
-| `android02_ui` | Mobile screens, RU/EN, themes, previews and accessible ordering | In progress |
-| `android02_integration` | Bridge, SAF, state, Kotlin tests, build and APK verification | In progress |
-| `android02_qa` | Independent security/functional review, device tests and test plan | Queued |
+| `android02_core` | Rust worker commands, bounds, source preservation and native tests | Candidate integrated; CI pending |
+| `android02_ui` | Mobile screens, RU/EN, themes, previews and accessible ordering | Candidate integrated; CI pending |
+| `android02_integration` | Bridge, SAF, state, Kotlin tests, build and APK verification | Candidate integrated; CI pending |
+| `android02_qa` | Independent security/functional review, device tests and test plan | Audit and tests integrated; additional provider tests in progress |
 
 Agents use isolated worktrees. Only the orchestrator integrates into the primary
 working directory. No SDK, Gradle, Rust toolchain or application is installed or
 built on the owner's PC; compilation and execution belong in GitHub Actions.
+
+Core review identified compressed-content amplification and shared multi-document
+budgets; the candidate adds conservative decoding limits and aggregate checks.
+UI review chose labeled up/down controls instead of drag-only reordering; this is
+the supported accessible ordering mechanism, not a claim of drag-and-drop.
+Integration review added protected source identities, fresh SAF names and read-back
+hash verification; blocking provider I/O can still delay cancellation. Independent
+QA found stale Split result provenance after a document switch: a separate batch
+source label now distinguishes prepared results from the current viewer document.
+See [QA findings](ODIBO_ANDROID_0_2_QA_REPORT.md) and the
+[test plan](ODIBO_ANDROID_0_2_TEST_PLAN.md).
+
+Tool queues and prepared Split results survive ordinary background/rotation through
+the ViewModel, but are not promised to survive process death. The working document
+retains the existing restoration path. No universal ENOSPC, hard-OOM or malicious
+provider guarantee is claimed. Arbitrary extraction, drag ordering and new PDF
+engine capabilities were deliberately excluded from this stage.
 
 ## Acceptance evidence
 
