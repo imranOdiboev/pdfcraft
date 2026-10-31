@@ -22,11 +22,30 @@ class NativeBridge(context: Context) {
     private val worker = File(context.applicationInfo.nativeLibraryDir, "libodibo_core_exec.so")
     private val mutex = Mutex()
 
-    suspend fun inspect(input: File): PdfInfo = invoke(listOf("inspect", input.absolutePath))
+    suspend fun inspect(input: File): PdfInfo = information(invoke(listOf("inspect", input.absolutePath)))
     suspend fun rotate(input: File, output: File, page: Int): PdfInfo =
-        invoke(listOf("rotate", input.absolutePath, output.absolutePath, page.toString()))
+        information(invoke(listOf("rotate", input.absolutePath, output.absolutePath, page.toString())))
+    suspend fun combine(inputs: List<File>, output: File): PdfInfo =
+        information(invoke(listOf("combine", output.absolutePath) + inputs.map { it.absolutePath }))
+    suspend fun reorder(input: File, output: File, order: List<Int>): PdfInfo =
+        information(invoke(listOf("reorder", input.absolutePath, output.absolutePath, order.joinToString(","))))
+    suspend fun split(input: File, directory: File, cuts: List<Int>): List<Pair<File, PdfInfo>> {
+        val result = invoke(listOf("split", input.absolutePath, directory.absolutePath, cuts.joinToString(",")))
+        val outputs = result.optJSONArray("outputs") ?: throw DocumentFailure(Problem.NATIVE)
+        if (outputs.length() !in 2..32) throw DocumentFailure(Problem.NATIVE)
+        var bytes = 0L
+        return List(outputs.length()) { index ->
+            val value = outputs.optJSONObject(index) ?: throw DocumentFailure(Problem.NATIVE)
+            val name = "part-%03d.pdf".format(java.util.Locale.ROOT, index + 1)
+            if (value.optString("file") != name) throw DocumentFailure(Problem.NATIVE)
+            val file = File(directory, name)
+            bytes += file.length()
+            if (!file.isFile || file.length() !in 1..ToolArguments.MAX_OUTPUT || bytes > ToolArguments.MAX_OUTPUT) throw DocumentFailure(Problem.VERIFY)
+            file to information(value)
+        }
+    }
 
-    private suspend fun invoke(arguments: List<String>): PdfInfo = mutex.withLock {
+    private suspend fun invoke(arguments: List<String>): JSONObject = mutex.withLock {
         withContext(Dispatchers.IO) {
             if (!worker.isFile || !worker.canExecute()) throw DocumentFailure(Problem.NATIVE)
             val process = ProcessBuilder(listOf(worker.absolutePath) + arguments).start()
@@ -60,13 +79,7 @@ class NativeBridge(context: Context) {
                     }
                     throw DocumentFailure(problem)
                 }
-                val count = json.optInt("pageCount", -1)
-                if (count !in 1..2000) throw DocumentFailure(Problem.INVALID_PDF)
-                val values = json.optJSONArray("rotations") ?: throw DocumentFailure(Problem.NATIVE)
-                if (values.length() != count) throw DocumentFailure(Problem.NATIVE)
-                val rotations = List(count) { values.optInt(it, -1) }
-                if (rotations.any { it !in listOf(0, 90, 180, 270) }) throw DocumentFailure(Problem.NATIVE)
-                PdfInfo(count, rotations)
+                json
             } finally {
                 try {
                     if (process.isAlive) {
@@ -81,6 +94,16 @@ class NativeBridge(context: Context) {
                 }
             }
         }
+    }
+
+    private fun information(json: JSONObject): PdfInfo {
+        val count = json.optInt("pageCount", -1)
+        if (count !in 1..2000) throw DocumentFailure(Problem.INVALID_PDF)
+        val values = json.optJSONArray("rotations") ?: throw DocumentFailure(Problem.NATIVE)
+        if (values.length() != count) throw DocumentFailure(Problem.NATIVE)
+        val rotations = List(count) { values.optInt(it, -1) }
+        if (rotations.any { it !in listOf(0, 90, 180, 270) }) throw DocumentFailure(Problem.NATIVE)
+        return PdfInfo(count, rotations)
     }
 
     private fun boundedText(stream: InputStream): String = stream.use {

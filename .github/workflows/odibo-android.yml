@@ -1,4 +1,4 @@
-name: ODIBO Android 0.1
+name: ODIBO Android 0.2
 
 on:
   pull_request:
@@ -29,7 +29,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
         with:
           toolchain: 1.95.0
-          components: rustfmt
+          components: rustfmt, clippy
           targets: aarch64-linux-android
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
         with:
@@ -54,8 +54,8 @@ jobs:
       - name: Native helper host tests and ARM64 build
         shell: bash
         run: |
-          cargo generate-lockfile --manifest-path android/native/Cargo.toml
-          cargo fmt --manifest-path android/native/Cargo.toml
+          cargo fmt --manifest-path android/native/Cargo.toml --check
+          cargo clippy --locked --manifest-path android/native/Cargo.toml --all-targets -- -D warnings
           cargo test --locked --manifest-path android/native/Cargo.toml
           RUSTFLAGS='-C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,common-page-size=16384' cargo build --locked --release --target aarch64-linux-android --manifest-path android/native/Cargo.toml
       - name: Stage attributed resources, native executable and exact Rust notices
@@ -73,7 +73,7 @@ jobs:
           python3 packaging/android/verify_apk.py dist/android/app-debug.apk --aapt "$ANDROID_HOME/build-tools/35.0.0/aapt" --apksigner "$ANDROID_HOME/build-tools/35.0.0/apksigner" --output dist/android/APK_VERIFICATION.json
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 dist/android/app-debug.apk
           sha256sum dist/android/app-debug.apk > dist/android/SHA256SUMS.txt
-          python3 -c 'import json,os,subprocess;from pathlib import Path;Path("dist/android/BUILD_MANIFEST.json").write_text(json.dumps({"source_sha":os.environ["ODIBO_SOURCE_SHA"],"checkout_sha":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"run_id":os.environ["GITHUB_RUN_ID"],"version":"0.1.0-debug","abi":"arm64-v8a","signing":"ephemeral debug key; not production","native_execution":"not yet proven on physical ARM64 phone"},indent=2))'
+          python3 -c 'import json,os,subprocess;from pathlib import Path;Path("dist/android/BUILD_MANIFEST.json").write_text(json.dumps({"source_sha":os.environ["ODIBO_SOURCE_SHA"],"checkout_sha":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"run_id":os.environ["GITHUB_RUN_ID"],"version":"0.2.0-debug","abi":"arm64-v8a","signing":"ephemeral debug key; not production","native_execution":"not yet proven on physical ARM64 phone"},indent=2))'
           cp android/native/Cargo.lock dist/android/NATIVE_CARGO_LOCK.txt
           cp android/app/build/generated/dependencyNotices/legal/THIRD_PARTY_NOTICES.txt dist/android/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
@@ -134,7 +134,6 @@ jobs:
       - name: Compile the same native core for the emulator ABI
         shell: bash
         run: |
-          cargo generate-lockfile --manifest-path android/native/Cargo.toml
           RUSTFLAGS='-C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,common-page-size=16384' cargo build --locked --release --target x86_64-linux-android --manifest-path android/native/Cargo.toml
           python3 packaging/android/prepare_inputs.py --abi x86_64 --native android/native/target/x86_64-linux-android/release/odibo_core_exec
           python3 packaging/android/collect_rust_notices.py
