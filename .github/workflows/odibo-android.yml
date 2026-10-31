@@ -54,7 +54,7 @@ jobs:
       - name: Native helper host tests and ARM64 build
         shell: bash
         run: |
-          cargo fmt --manifest-path android/native/Cargo.toml
+          cargo fmt --manifest-path android/native/Cargo.toml --check
           cargo clippy --locked --manifest-path android/native/Cargo.toml --all-targets -- -D warnings
           cargo test --locked --manifest-path android/native/Cargo.toml
           RUSTFLAGS='-C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,common-page-size=16384' cargo build --locked --release --target aarch64-linux-android --manifest-path android/native/Cargo.toml

@@ -78,7 +78,14 @@ class SafDocumentStore(private val context: Context) {
         // Snapshot existing IDs. A provider returning an old document must never be written.
         val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
         val existing = resolver.query(children, arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID), null, null, null)?.use { cursor ->
-            buildSet { while (cursor.moveToNext()) add(cursor.getString(0)) }
+            buildSet {
+                while (cursor.moveToNext()) {
+                    checkCancelled()
+                    // Refuse huge provider listings rather than retaining unbounded IDs.
+                    if (size >= 20_000) throw DocumentFailure(Problem.TOO_LARGE)
+                    add(cursor.getString(0))
+                }
+            }
         } ?: throw DocumentFailure(Problem.ACCESS)
         val created = mutableSetOf<String>()
         return files.mapIndexed { index, file ->

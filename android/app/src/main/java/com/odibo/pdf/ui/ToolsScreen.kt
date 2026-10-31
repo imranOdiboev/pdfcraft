@@ -84,6 +84,7 @@ fun SplitScreen(model: OdiboViewModel, labels: Labels, open: () -> Unit, export:
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(labels.text("Prepared and verified. Choose a folder to save new files.", "Файлы подготовлены и проверены. Выберите папку для сохранения новых файлов."), style = MaterialTheme.typography.titleMedium)
+                    Text(labels.text("Prepared from: ${model.splitSourceName}", "Подготовлено из: ${model.splitSourceName}"), style = MaterialTheme.typography.titleMedium)
                     Text(labels.text("A provider failure may leave partial new files. Originals remain unchanged.", "При ошибке провайдера могут остаться неполные новые файлы. Оригиналы не изменяются."))
                     Button(onClick = export, enabled = !model.busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(labels.text("Choose folder and save", "Выбрать папку и сохранить")) }
                 }

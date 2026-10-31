@@ -42,6 +42,7 @@ class OdiboViewModel(application: Application) : AndroidViewModel(application) {
     private var protectedSources: List<Uri> = storage.preferences.getStringSet("protected-sources", emptySet())?.map { Uri.parse(it) }.orEmpty()
     var combineInputs by mutableStateOf<List<ToolInput>>(emptyList()); private set
     var toolResults by mutableStateOf<List<ToolResult>>(emptyList()); private set
+    var splitSourceName by mutableStateOf(""); private set
     var savedToolCopies by mutableStateOf<List<Uri>>(emptyList()); private set
     var document by mutableStateOf<OpenPdf?>(null); private set
     var busy by mutableStateOf(false); private set
@@ -220,6 +221,7 @@ class OdiboViewModel(application: Application) : AndroidViewModel(application) {
             }
             val old = resultDirectory
             toolResults = parts.map { ToolResult(it.first, it.first.name, it.second) }
+            splitSourceName = current.name
             resultDirectory = folder
             splitSources = (protectedSources + current.source).distinct()
             savedToolCopies = emptyList()

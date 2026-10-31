@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
 
-use std::path::PathBuf;
 use odibo_android_core::{Failure, Result};
 use serde_json::Value;
+use std::path::PathBuf;
 
 fn execute() -> Result<Value> {
     let args = std::env::args_os().skip(1).collect::<Vec<_>>();
@@ -25,10 +25,27 @@ fn execute_args(args: &[std::ffi::OsString]) -> Result<Value> {
             let indices = odibo_android_core::parse_indices(indices.to_str().ok_or(usage)?)?;
             let input = PathBuf::from(input.as_os_str());
             let output = PathBuf::from(output.as_os_str());
-            if command == "split" { odibo_android_core::split_path(&input, &output, &indices) }
-            else { odibo_android_core::reorder_path(&input, &output, &indices) }
+            if command == "split" {
+                odibo_android_core::split_path(&input, &output, &indices)
+            } else {
+                odibo_android_core::reorder_path(&input, &output, &indices)
+            }
         }
         _ => Err(usage),
+    }
+}
+
+fn main() {
+    // Worker panics never disclose PDF content or app-private paths to logs.
+    std::panic::set_hook(Box::new(|_| {}));
+    let result = std::panic::catch_unwind(execute)
+        .unwrap_or(Err(Failure("worker_failed", "The PDF operation failed safely. The original document is unchanged.")));
+    match result {
+        Ok(value) => println!("{value}"),
+        Err(error) => {
+            println!("{}", error.json());
+            std::process::exit(1);
+        }
     }
 }
 
@@ -37,20 +54,17 @@ mod tests {
     use super::*;
     #[test]
     fn invalid_command_shapes_are_refused_before_opening_files() {
-        for args in [vec![], vec!["unknown"], vec!["combine", "output"], vec!["combine", "output", "one-input"],
-            vec!["rotate", "in", "out", "-1"], vec!["split", "in", "out", "1,,2"], vec!["reorder", "in", "out", ""]] {
+        for args in [
+            vec![],
+            vec!["unknown"],
+            vec!["combine", "output"],
+            vec!["combine", "output", "one-input"],
+            vec!["rotate", "in", "out", "-1"],
+            vec!["split", "in", "out", "1,,2"],
+            vec!["reorder", "in", "out", ""],
+        ] {
             let args = args.iter().map(|arg| std::ffi::OsString::from(*arg)).collect::<Vec<_>>();
             assert_eq!(execute_args(&args).unwrap_err().0, "invalid_arguments");
         }
-    }
-}
-
-fn main() {
-    // Worker panics never disclose PDF content or app-private paths to logs.
-    std::panic::set_hook(Box::new(|_| {}));
-    let result = std::panic::catch_unwind(execute).unwrap_or(Err(Failure("worker_failed", "The PDF operation failed safely. The original document is unchanged.")));
-    match result {
-        Ok(value) => println!("{value}"),
-        Err(error) => { println!("{}", error.json()); std::process::exit(1); }
     }
 }

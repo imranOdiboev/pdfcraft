@@ -3,7 +3,7 @@ from pathlib import Path
 import struct
 import zlib
 
-for name in ("home-en-light.png", "home-ru-dark.png"):
+for name in ("home-en-light.png", "home-ru-dark.png", "tools-combine-en-light.png", "tools-split-en-light.png", "tools-reorder-ru-dark.png"):
     data = (Path("dist/android-emulator") / name).read_bytes()
     if len(data) < 5000 or not data.startswith(b"\x89PNG\r\n\x1a\n"):
         raise ValueError("Missing real PNG screenshot: " + name)

@@ -4,7 +4,7 @@ set -euo pipefail
 mkdir -p dist/android-emulator
 collect() {
   while true; do
-    for name in home-en-light.png home-ru-dark.png; do
+    for name in home-en-light.png home-ru-dark.png tools-combine-en-light.png tools-split-en-light.png tools-reorder-ru-dark.png; do
       local_file="dist/android-emulator/$name"
       if [[ ! -f "$local_file" ]] && adb shell run-as com.odibo.pdf test -f "files/screenshots/$name.ready" >/dev/null 2>&1 &&
         adb exec-out run-as com.odibo.pdf cat "files/screenshots/$name" > "$local_file.part" 2>/dev/null; then

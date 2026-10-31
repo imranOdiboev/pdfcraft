@@ -20,6 +20,9 @@ if "name='com.odibo.pdf'" not in badging or "versionName='0.2.0-debug'" not in b
 if "sdkVersion:'26'" not in badging or "targetSdkVersion:'36'" not in badging:
     raise ValueError("Unexpected SDK configuration")
 permissions = subprocess.run([str(args.aapt), "dump", "permissions", str(args.apk)], check=True, capture_output=True, text=True).stdout
+manifest = subprocess.run([str(args.aapt), "dump", "xmltree", str(args.apk), "AndroidManifest.xml"], check=True, capture_output=True, text=True).stdout
+if "PdfToolsFixtureProvider" in manifest or "com.odibo.pdf.test.fixtures" in manifest:
+    raise ValueError("Instrumentation-only provider leaked into the distributable APK")
 for permission in ("android.permission.INTERNET", "android.permission.MANAGE_EXTERNAL_STORAGE",
                    "android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"):
     if permission in permissions:
