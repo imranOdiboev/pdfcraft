@@ -85,3 +85,5 @@ No public release, Google Play upload, PR merge or Android 0.3 work is authorize
 
 Revision history: 2026-10-31 — independent QA plan and CI-only instrumentation
 candidates prepared; results pending actual execution.
+
+CI investigation: run 41173947311 passed ARM64 packaging, 16 native tests and four Kotlin JVM tests; emulator execution stopped after a standalone test-provider process could not load the target APK Kotlin runtime. Both instrumentation-only providers were translated to Android/Java APIs without adding dependencies or moving them into production. Full emulator verification remains pending a fresh run.

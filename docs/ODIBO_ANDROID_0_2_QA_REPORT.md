@@ -54,10 +54,10 @@ were installed, no local builds/tests were run, and no commits or pushes were ma
 ## Delivered test sources
 
 - `androidTest/AndroidManifest.xml`: instrumentation-only provider declaration.
-- `PdfToolsFixtureProvider.kt`: read-only procedural vector-PDF provider.
+- `PdfToolsFixtureProvider.java`: read-only procedural vector-PDF provider.
 - `ToolsUiAcceptanceTest.kt`: real Combine/Split/Reorder, RU/dark, recreation,
   genuine screenshots and source/cancel/failure assertions.
-- `PdfToolsSafProvider.kt` and `SafToolsAcceptanceTest.kt`: test-only SAF contract
+- `PdfToolsSafProvider.java` and `SafToolsAcceptanceTest.kt`: test-only SAF contract
   provider; actual new-document export of native Split outputs, SHA-256 read-back
   and native reopening; pre-write old-document-ID refusal, controlled write-open
   denial, read-back corruption and cancellation after one complete new output.
@@ -72,3 +72,5 @@ remain explicit limitations rather than fabricated green checks.
 
 Revision history: 2026-10-31 — independent source audit and added instrumentation
 test candidates; pending integration and CI.
+
+CI investigation: run 41173947311 passed ARM64 packaging, 16 native tests and four Kotlin JVM tests; emulator execution stopped after a standalone test-provider process could not load the target APK Kotlin runtime. Both instrumentation-only providers were translated to Android/Java APIs without adding dependencies or moving them into production. Full emulator verification remains pending a fresh run.
