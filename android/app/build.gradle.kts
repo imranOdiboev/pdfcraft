@@ -16,8 +16,8 @@ android {
         applicationId = "com.odibo.pdf"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0-debug"
+        versionCode = 2
+        versionName = "0.2.0-debug"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += (providers.gradleProperty("odiboAbi").orNull ?: "arm64-v8a") }
     }
@@ -72,7 +72,7 @@ tasks.register("collectAndroidNotices") {
     outputs.dir(destination)
     doLast {
         val dir = destination.get().asFile.apply { mkdirs() }
-        val output = StringBuilder("ODIBO PDF Android 0.1 Android dependencies\n")
+        val output = StringBuilder("ODIBO PDF Android 0.2 Android dependencies\n")
         configurations.getByName("debugRuntimeClasspath").resolvedConfiguration.resolvedArtifacts
             .sortedBy { it.moduleVersion.id.toString() }.forEach { artifact ->
                 val hash = MessageDigest.getInstance("SHA-256").digest(artifact.file.readBytes())

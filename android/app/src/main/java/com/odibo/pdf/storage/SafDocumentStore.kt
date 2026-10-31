@@ -19,6 +19,12 @@ class SafDocumentStore(private val context: Context) {
     private val directory = File(context.filesDir, "working-pdf").apply { mkdirs() }
 
     fun newWorkingFile(): File = File(directory, UUID.randomUUID().toString() + ".pdf")
+    fun newSplitDirectory(): File = File(directory, UUID.randomUUID().toString())
+    fun forgetSplit(folder: File) {
+        if (folder.parentFile?.canonicalFile != directory.canonicalFile || !folder.name.matches(Regex("[0-9a-f-]{36}"))) return
+        folder.listFiles()?.forEach { file -> if (file.isFile && file.name.matches(Regex("part-[0-9]{3,4}\\.pdf"))) file.delete() }
+        folder.delete()
+    }
     fun forget(file: File) { if (file.parentFile?.canonicalFile == directory.canonicalFile) file.delete() }
 
     fun importPdf(uri: Uri): File {
@@ -53,15 +59,41 @@ class SafDocumentStore(private val context: Context) {
             .putString("working-title", name).putBoolean("working-dirty", dirty).apply()
     }
 
-    fun export(file: File, destination: Uri, source: Uri) {
-        if (sameDocument(source, destination)) throw DocumentFailure(Problem.SAME_SOURCE)
+    fun export(file: File, destination: Uri, source: Uri) = export(file, destination, listOf(source))
+    fun export(file: File, destination: Uri, sources: List<Uri>, checkCancelled: () -> Unit = {}) {
+        if (sources.any { sameDocument(it, destination) }) throw DocumentFailure(Problem.SAME_SOURCE)
+        checkCancelled()
         val expected = digest(file.inputStream())
         resolver.openOutputStream(destination, "w")?.use { output ->
-            file.inputStream().use { copyBounded(it, output, 32L * 1024 * 1024) }
+            file.inputStream().use { copyBounded(it, output, 32L * 1024 * 1024, checkCancelled) }
             output.flush()
         } ?: throw DocumentFailure(Problem.SAVE)
         val actual = resolver.openInputStream(destination)?.use { digest(it) } ?: throw DocumentFailure(Problem.VERIFY)
         if (!actual.contentEquals(expected)) throw DocumentFailure(Problem.VERIFY)
+    }
+
+    fun exportParts(files: List<File>, tree: Uri, sources: List<Uri>, checkCancelled: () -> Unit): List<Uri> {
+        if (tree.scheme != "content" || !DocumentsContract.isTreeUri(tree)) throw DocumentFailure(Problem.ACCESS)
+        val parent = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+        // Snapshot existing IDs. A provider returning an old document must never be written.
+        val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+        val existing = resolver.query(children, arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID), null, null, null)?.use { cursor ->
+            buildSet { while (cursor.moveToNext()) add(cursor.getString(0)) }
+        } ?: throw DocumentFailure(Problem.ACCESS)
+        val created = mutableSetOf<String>()
+        return files.mapIndexed { index, file ->
+            checkCancelled()
+            val name = "odibo-${UUID.randomUUID()}-part-${index + 1}.pdf"
+            val output = DocumentsContract.createDocument(resolver, parent, "application/pdf", name) ?: throw DocumentFailure(Problem.SAVE)
+            val id = DocumentsContract.getDocumentId(output)
+            if (output.authority != tree.authority || id in existing || !created.add(id) || sources.any { sameDocument(it, output) }) {
+                throw DocumentFailure(Problem.SAME_SOURCE)
+            }
+            // Provider export is not atomic; on failure keep any new partial file
+            // for explicit owner inspection. Never delete provider documents here.
+            export(file, output, sources, checkCancelled)
+            output
+        }
     }
 
     private fun sameDocument(first: Uri, second: Uri): Boolean {
@@ -85,10 +117,11 @@ class SafDocumentStore(private val context: Context) {
         }
         digest.digest()
     }
-    private fun copyBounded(input: InputStream, output: OutputStream, limit: Long) {
+    private fun copyBounded(input: InputStream, output: OutputStream, limit: Long, checkCancelled: () -> Unit = {}) {
         val buffer = ByteArray(64 * 1024)
         var total = 0L
         while (true) {
+            checkCancelled()
             val size = input.read(buffer)
             if (size < 0) break
             total += size

@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -20,12 +21,16 @@ import com.odibo.pdf.app.OdiboViewModel
 import java.util.Locale
 
 @Composable
-fun OdiboApp(model: OdiboViewModel, incoming: Uri?, consumeIncoming: () -> Unit, onOpen: () -> Unit, onSave: () -> Unit) {
+fun OdiboApp(model: OdiboViewModel, incoming: Uri?, consumeIncoming: () -> Unit, onOpen: () -> Unit, onSave: () -> Unit, onAddCombine: () -> Unit, onExportSplit: () -> Unit) {
     val labels = Labels(model.language == "ru" || (model.language == "system" && Locale.getDefault().language == "ru"))
-    var screen by remember { mutableStateOf("home") }
+    var screen by rememberSaveable { mutableStateOf("home") }
     var pending by remember { mutableStateOf<(() -> Unit)?>(null) }
     fun requestOpen(action: () -> Unit) { if (model.document?.dirty == true) pending = action else action() }
-    LaunchedEffect(model.document?.file) { if (model.document != null) screen = "viewer" }
+    var shownFile by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(model.document?.file) {
+        val file = model.document?.file?.absolutePath
+        if (file != null && file != shownFile) { shownFile = file; screen = "viewer" }
+    }
     LaunchedEffect(incoming, model.busy) {
         if (incoming != null && !model.busy) {
             requestOpen { model.open(incoming) }
@@ -39,11 +44,20 @@ fun OdiboApp(model: OdiboViewModel, incoming: Uri?, consumeIncoming: () -> Unit,
                 navigationIcon = { if (screen != "home") TextButton(onClick = { screen = "home" }) { Text(labels.home) } })
         }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding)) {
-                if (model.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+                if (model.busy) {
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(labels.text("Processing on this device…", "Обработка на устройстве…"), Modifier.weight(1f))
+                        TextButton(onClick = model::cancelOperation) { Text(labels.text("Cancel", "Отмена")) }
+                    }
+                }
                 when (screen) {
-                    "viewer" -> model.document?.let { ViewerScreen(model, it, labels, onSave) } ?: HomeScreen(model, labels, { requestOpen(onOpen) }, { screen = "settings" }, { uri -> requestOpen { model.open(uri) } }, { screen = "viewer" })
+                    "viewer" -> model.document?.let { ViewerScreen(model, it, labels, onSave, { screen = "split" }, { screen = "reorder" }) } ?: HomeScreen(model, labels, { requestOpen(onOpen) }, { screen = "settings" }, { uri -> requestOpen { model.open(uri) } }, { screen = "viewer" }, { screen = it })
+                    "combine" -> CombineScreen(model, labels, onAddCombine, { requestOpen { model.combine() } })
+                    "split" -> SplitScreen(model, labels, { requestOpen(onOpen) }, onExportSplit, { index -> requestOpen { model.openToolResult(index) } })
+                    "reorder" -> ReorderScreen(model, labels, { requestOpen(onOpen) })
                     "settings" -> SettingsScreen(model, labels)
-                    else -> HomeScreen(model, labels, { requestOpen(onOpen) }, { screen = "settings" }, { uri -> requestOpen { model.open(uri) } }, { screen = "viewer" })
+                    else -> HomeScreen(model, labels, { requestOpen(onOpen) }, { screen = "settings" }, { uri -> requestOpen { model.open(uri) } }, { screen = "viewer" }, { screen = it })
                 }
             }
         }
@@ -59,17 +73,20 @@ fun OdiboApp(model: OdiboViewModel, incoming: Uri?, consumeIncoming: () -> Unit,
 }
 
 @Composable
-private fun HomeScreen(model: OdiboViewModel, labels: Labels, open: () -> Unit, settings: () -> Unit, recent: (Uri) -> Unit, resume: () -> Unit) {
+private fun HomeScreen(model: OdiboViewModel, labels: Labels, open: () -> Unit, settings: () -> Unit, recent: (Uri) -> Unit, resume: () -> Unit, tool: (String) -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.Start) {
         Image(painterResource(R.drawable.odibo_icon), contentDescription = "ODIBO PDF", modifier = Modifier.size(88.dp))
         Text(labels.text("Your PDFs, on your phone", "Ваши PDF — на вашем телефоне"), style = MaterialTheme.typography.headlineMedium)
-        Text(labels.text("Open, view, rotate and save a new copy. Processing stays on this device.", "Открывайте, просматривайте, поворачивайте и сохраняйте новую копию. Обработка выполняется на устройстве."))
+        Text(labels.text("Open, combine, split and organize pages. Originals stay unchanged; processing stays on this device.", "Открывайте, объединяйте, разделяйте PDF и меняйте порядок страниц. Оригиналы не изменяются; обработка выполняется на устройстве."))
         Button(onClick = open, enabled = !model.busy, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(labels.open) }
+        OutlinedButton(onClick = { tool("combine") }, enabled = !model.busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(labels.combine) }
+        OutlinedButton(onClick = { tool("split") }, enabled = !model.busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(labels.split) }
+        OutlinedButton(onClick = { tool("reorder") }, enabled = !model.busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(labels.reorder) }
         model.document?.let { document -> OutlinedButton(onClick = resume, enabled = !model.busy, modifier = Modifier.fillMaxWidth()) { Text(labels.text("Continue: ", "Продолжить: ") + document.name, maxLines = 2) } }
         model.recent?.let { uri -> OutlinedButton(onClick = { recent(uri) }, enabled = !model.busy, modifier = Modifier.fillMaxWidth()) { Text(labels.text("Reopen last permitted document", "Открыть последний доступный документ")) } }
         if (model.document == null && model.recent == null) Text(labels.text("No recent documents yet. Use Open PDF to choose one safely.", "Недавних документов пока нет. Нажмите «Открыть PDF», чтобы выбрать файл."), style = MaterialTheme.typography.bodyMedium)
         TextButton(onClick = settings, enabled = !model.busy) { Text(labels.settings) }
-        Text(labels.text("Android 0.1 · Test build · Back up important documents", "Android 0.1 · Тестовая сборка · Сохраняйте резервные копии"), style = MaterialTheme.typography.bodyMedium)
+        Text(labels.text("Android 0.2 · Test build · Back up important documents", "Android 0.2 · Тестовая сборка · Сохраняйте резервные копии"), style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -85,7 +102,7 @@ private fun SettingsScreen(model: OdiboViewModel, labels: Labels) {
         Choice("system", labels.text("System theme", "Системная тема"), model.theme, model::updateTheme)
         Choice("light", labels.text("Light", "Светлая"), model.theme, model::updateTheme)
         Choice("dark", labels.text("Dark", "Тёмная"), model.theme, model::updateTheme)
-        Text("ODIBO PDF Android 0.1 · IMR4N", style = MaterialTheme.typography.titleMedium)
+        Text("ODIBO PDF Android 0.2 · IMR4N", style = MaterialTheme.typography.titleMedium)
         Text(labels.limitations)
         Text(labels.text("Based on PdfCraft. Open code: MIT OR Apache-2.0. ODIBO brand terms are separate.", "На основе PdfCraft. Открытый код: MIT OR Apache-2.0. Фирменные материалы ODIBO имеют отдельные условия."))
         OutlinedButton(onClick = model::loadLicences, enabled = !model.busy) { Text(labels.text("Read licences and notices", "Лицензии и уведомления")) }

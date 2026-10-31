@@ -1,8 +1,9 @@
 # ODIBO PDF Android 0.1
 
-Status: implementation and verification in progress. An APK build alone is not
-proof of a working mobile editor. Consult the PR and its actual CI results before
-marking any acceptance scenario passed.
+Status: Android 0.1 merged in PR #13. ARM64 packaging and API 35 x86_64
+emulator checks passed in [run 41134714016](https://github.com/imranOdiboev/pdfcraft/actions/runs/41134714016).
+Physical ARM64 phone acceptance remains **not performed**. Android 0.2 tools are
+under development; see [the current stage report](ODIBO_ANDROID_0_2.md).
 
 Android 0.1 targets Android 8.0/API 26 or newer on **ARM64-v8a**. It is an offline
 test application: no mandatory account, analytics or document upload. Selecting a

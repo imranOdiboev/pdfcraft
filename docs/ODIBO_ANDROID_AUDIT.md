@@ -1,7 +1,11 @@
 # Android 0.1 foundation audit
 
-Status: implementation and proof of concept in progress; no APK or Android runtime
-acceptance claimed. Reviewed 2026-10-30.
+Status: historical Android 0.1 design audit. PR #13 subsequently merged;
+[run 41134714016](https://github.com/imranOdiboev/pdfcraft/actions/runs/41134714016)
+passed ARM64 packaging and x86_64 Android emulator checks. Physical ARM64
+acceptance remains outstanding. The candidate/risk descriptions below record the
+original design review, not a claim that every listed risk was tested on a phone.
+Android 0.2 work is tracked in [its stage report](ODIBO_ANDROID_0_2.md).
 
 ## Baseline
 

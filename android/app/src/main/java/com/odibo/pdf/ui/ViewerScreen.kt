@@ -31,7 +31,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 @Composable
-fun ViewerScreen(model: OdiboViewModel, document: OpenPdf, labels: Labels, save: () -> Unit) {
+fun ViewerScreen(model: OdiboViewModel, document: OpenPdf, labels: Labels, save: () -> Unit, split: () -> Unit, reorder: () -> Unit) {
     val list = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val page by remember(list, document.info.pageCount) { derivedStateOf { list.firstVisibleItemIndex.coerceIn(0, document.info.pageCount - 1) } }
@@ -40,6 +40,8 @@ fun ViewerScreen(model: OdiboViewModel, document: OpenPdf, labels: Labels, save:
         Text(labels.page(page + 1, document.info.pageCount) + if (document.dirty) labels.text(" · Unsaved", " · Не сохранено") else "", Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.titleSmall)
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { model.rotate(page) }, enabled = !model.busy) { Text(labels.rotate) }
+            OutlinedButton(onClick = split, enabled = !model.busy) { Text(labels.split) }
+            OutlinedButton(onClick = reorder, enabled = !model.busy) { Text(labels.reorder) }
             Button(onClick = save, enabled = !model.busy) { Text(labels.save) }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

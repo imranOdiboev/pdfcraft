@@ -1,5 +1,7 @@
 # PdfCraft roadmap
 
+> **Fork update:** 2026-10-31 · Android 0.2: verified merged Android 0.1 baseline; Combine/Split/Reorder implementation and four-agent review in progress. Physical ARM64 acceptance remains pending; Windows Beta 1 unchanged. [Plan](docs/ODIBO_ANDROID_0_2.md).
+
 > **Fork update:** 2026-10-27 · M4.0 diagnostic run40528971053 attempt2 reproduced Setup exit7: the normally exited GUI EXE still had Win32 sharing violation32. The full test awaits actual exclusive availability with a bounded failure; guards remain. Sharing-lock regression and full Windows acceptance pending. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).
 
 > **Fork update:** 2026-10-27 · M4.0 full run40503319692 verified native shortcut and installed PDF/GUI edit/save, then post-GUI reinstall returned7. Investigate retained test process handles with five isolated OS-process controls, release normally exited GUI handles, and retain safe fixed refusal diagnostics. Full verification pending; distribution blocked. [Evidence](docs/ODIBO_INSTALLER_CANCEL_REPORT.md).

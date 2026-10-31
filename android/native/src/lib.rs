@@ -9,6 +9,9 @@ use std::sync::Arc;
 use pdfcraft_cos::{Document, Object, SaveOptions};
 use serde_json::{Value, json};
 
+mod tools;
+pub use tools::{combine_path, reorder_path, split_path, parse_indices};
+
 pub const MAX_INPUT: usize = 16 * 1024 * 1024;
 pub const MAX_OUTPUT: usize = 32 * 1024 * 1024;
 const MAX_STREAM: usize = 8 * 1024 * 1024;
@@ -25,10 +28,10 @@ impl Failure {
 }
 
 const INVALID: Failure = Failure("invalid_pdf", "This PDF could not be safely processed.");
-const LIMIT: Failure = Failure("limit_exceeded", "This document exceeds the Android 0.1 safety limits.");
-const SECURITY: Failure = Failure("unsupported_security", "Encrypted PDFs are not supported in Android 0.1.");
-const SIGNED: Failure = Failure("unsupported_signed", "Signed PDFs are not editable in Android 0.1.");
-const REPAIRED: Failure = Failure("unsupported_repaired", "This PDF needs repair and cannot be edited in Android 0.1.");
+const LIMIT: Failure = Failure("limit_exceeded", "This document exceeds the Android safety limits.");
+const SECURITY: Failure = Failure("unsupported_security", "Encrypted PDFs are not supported in Android.");
+const SIGNED: Failure = Failure("unsupported_signed", "Signed PDFs are not editable in Android.");
+const REPAIRED: Failure = Failure("unsupported_repaired", "This PDF needs repair and cannot be edited in Android.");
 
 pub fn read_input(path: &Path) -> Result<Vec<u8>> {
     let file = File::open(path).map_err(|_| Failure("read_failed", "The selected PDF could not be read."))?;
@@ -56,7 +59,14 @@ fn inspect_nested(value: &Object, budget: &mut usize, depth: usize) -> Result<()
 
 /// A stream-limited document is used only for preflight and is never saved.
 /// Validate every live object and bound decoded metadata before normal opening.
+#[derive(Default)]
+struct Budget { objects: usize, decoded: usize, nodes: usize }
+
 fn preflight(bytes: Arc<Vec<u8>>, editing: bool) -> Result<Document> {
+    preflight_budget(bytes, editing, &mut Budget { nodes: 100_000, ..Budget::default() })
+}
+
+fn preflight_budget(bytes: Arc<Vec<u8>>, editing: bool, budget: &mut Budget) -> Result<Document> {
     if bytes.is_empty() || bytes.len() > MAX_OUTPUT { return Err(LIMIT); }
     let limited = Document::open_with_stream_limit(bytes.clone(), None, MAX_STREAM).map_err(|error| match error {
         pdfcraft_cos::CosError::NeedsPassword | pdfcraft_cos::CosError::WrongPassword | pdfcraft_cos::CosError::Security(_) => SECURITY,
@@ -64,22 +74,19 @@ fn preflight(bytes: Arc<Vec<u8>>, editing: bool) -> Result<Document> {
     })?;
     if limited.security().is_some() || limited.trailer().get(b"Encrypt").is_some() { return Err(SECURITY); }
     if limited.reconstructed() { return Err(REPAIRED); }
-    let mut object_count = 0_usize;
-    let mut decoded = 0_usize;
-    let mut budget = 100_000_usize;
     for (_, object) in limited.scan_objects_checked() {
-        object_count = object_count.checked_add(1).ok_or(LIMIT)?;
-        if object_count > MAX_OBJECTS { return Err(LIMIT); }
+        budget.objects = budget.objects.checked_add(1).ok_or(LIMIT)?;
+        if budget.objects > MAX_OBJECTS { return Err(LIMIT); }
         let object = object.map_err(|_| INVALID)?;
         // Viewing stays available for signed documents; all editing is refused.
-        if editing { inspect_nested(&object, &mut budget, 0)?; }
+        if editing { inspect_nested(&object, &mut budget.nodes, 0)?; }
         if let Object::Stream(stream) = object.as_ref() {
             let metadata = matches!(stream.dict.name(b"Type"), Some(b"ObjStm" | b"XRef"))
                 || stream.dict.get(b"N").is_some() || stream.dict.get(b"First").is_some() || stream.dict.get(b"W").is_some();
             if metadata {
                 let data = stream.decoded_within(MAX_STREAM).map_err(|_| LIMIT)?;
-                decoded = decoded.checked_add(data.len()).ok_or(LIMIT)?;
-                if decoded > MAX_DECODED_METADATA { return Err(LIMIT); }
+                budget.decoded = budget.decoded.checked_add(data.len()).ok_or(LIMIT)?;
+                if budget.decoded > MAX_DECODED_METADATA { return Err(LIMIT); }
             }
         }
     }

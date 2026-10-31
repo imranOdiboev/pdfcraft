@@ -12,24 +12,37 @@ import com.odibo.pdf.data.DocumentFailure
 import com.odibo.pdf.data.NativeBridge
 import com.odibo.pdf.data.PdfInfo
 import com.odibo.pdf.data.Problem
+import com.odibo.pdf.data.ToolArguments
 import com.odibo.pdf.render.PageRenderer
 import com.odibo.pdf.storage.SafDocumentStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.coroutines.coroutineContext
 
 data class OpenPdf(val file: File, val source: Uri, val name: String, val info: PdfInfo, val dirty: Boolean)
+data class ToolInput(val file: File, val source: Uri, val name: String, val info: PdfInfo)
+data class ToolResult(val file: File, val name: String, val info: PdfInfo)
 
 class OdiboViewModel(application: Application) : AndroidViewModel(application) {
     private val storage = SafDocumentStore(application)
     private val core = NativeBridge(application)
     private val operations = Mutex()
     private var renderer: PageRenderer? = null
+    private var operation: Job? = null
+    private var resultDirectory: File? = null
+    private var splitSources: List<Uri> = emptyList()
+    private var protectedSources: List<Uri> = storage.preferences.getStringSet("protected-sources", emptySet())?.map { Uri.parse(it) }.orEmpty()
+    var combineInputs by mutableStateOf<List<ToolInput>>(emptyList()); private set
+    var toolResults by mutableStateOf<List<ToolResult>>(emptyList()); private set
+    var savedToolCopies by mutableStateOf<List<Uri>>(emptyList()); private set
     var document by mutableStateOf<OpenPdf?>(null); private set
     var busy by mutableStateOf(false); private set
     var error by mutableStateOf<Problem?>(null); private set
@@ -67,6 +80,8 @@ class OdiboViewModel(application: Application) : AndroidViewModel(application) {
                 val oldRenderer = renderer
                 renderer = next
                 document = OpenPdf(file, uri, name, info, false)
+                protectedSources = listOf(uri)
+                storage.preferences.edit().putStringSet("protected-sources", setOf(uri.toString())).apply()
                 savedCopy = null
                 accepted = true
                 withContext(Dispatchers.IO) {
@@ -99,13 +114,15 @@ class OdiboViewModel(application: Application) : AndroidViewModel(application) {
                 oldRenderer?.close()
                 storage.forget(previous.file)
             }
-        } finally { if (!accepted) withContext(NonCancellable + Dispatchers.IO) { storage.forget(output) } }
+        } finally { if (!accepted && document?.file != output) withContext(NonCancellable + Dispatchers.IO) { storage.forget(output) } }
     }
 
     fun save(uri: Uri) = runOperation {
         val current = document ?: return@runOperation
         withContext(Dispatchers.IO) {
-            try { storage.export(current.file, uri, current.source) }
+            val job = coroutineContext
+            try { storage.export(current.file, uri, protectedSources + current.source) { job.ensureActive() } }
+            catch (cancelled: CancellationException) { throw cancelled }
             catch (failure: DocumentFailure) { throw failure }
             catch (_: Exception) { throw DocumentFailure(Problem.SAVE) }
         }
@@ -120,6 +137,146 @@ class OdiboViewModel(application: Application) : AndroidViewModel(application) {
         try { current.page(page, width) } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
     }
     fun clearError() { error = null }
+    fun cancelOperation() { operation?.cancel() }
+
+    fun addCombine(uris: List<Uri>) = runOperation {
+        if (uris.isEmpty()) return@runOperation
+        if (combineInputs.size + uris.size > 32) throw DocumentFailure(Problem.TOO_LARGE)
+        val added = mutableListOf<ToolInput>()
+        var accepted = false
+        try {
+            var total = combineInputs.sumOf { it.file.length() }
+            for (uri in uris) {
+                if (uri.scheme != "content") throw DocumentFailure(Problem.ACCESS)
+                val file = importFile(uri)
+                // Register immediately so inspection/read failures clean our copy.
+                added += ToolInput(file, uri, "document.pdf", PdfInfo(1, listOf(0)))
+                total += file.length()
+                if (total > ToolArguments.MAX_INPUT) throw DocumentFailure(Problem.TOO_LARGE)
+                val info = core.inspect(file)
+                if (combineInputs.sumOf { it.info.pageCount } + added.dropLast(1).sumOf { it.info.pageCount } + info.pageCount > 2000) throw DocumentFailure(Problem.TOO_LARGE)
+                val title = withContext(Dispatchers.IO) { storage.displayName(uri) }
+                added[added.lastIndex] = ToolInput(file, uri, title, info)
+            }
+            combineInputs = combineInputs + added
+            accepted = true
+        } finally {
+            if (!accepted) withContext(NonCancellable + Dispatchers.IO) { added.forEach { storage.forget(it.file) } }
+        }
+    }
+
+    fun moveCombine(index: Int, delta: Int) {
+        if (busy || delta !in listOf(-1, 1)) return
+        val target = index + delta
+        if (index !in combineInputs.indices || target !in combineInputs.indices) return
+        combineInputs = combineInputs.toMutableList().apply { add(target, removeAt(index)) }
+    }
+    fun removeCombine(index: Int) {
+        if (busy || index !in combineInputs.indices) return
+        val removed = combineInputs[index]
+        combineInputs = combineInputs.filterIndexed { i, _ -> i != index }
+        viewModelScope.launch(Dispatchers.IO) { storage.forget(removed.file) }
+    }
+
+    fun combine() = runOperation {
+        val inputs = combineInputs
+        try { ToolArguments.validateAggregate(inputs.map { it.file.length() }) }
+        catch (_: IllegalArgumentException) { throw DocumentFailure(Problem.TOO_LARGE) }
+        val output = storage.newWorkingFile()
+        var accepted = false
+        try {
+            val info = core.combine(inputs.map { it.file }, output)
+            if (info.pageCount != inputs.sumOf { it.info.pageCount }) throw DocumentFailure(Problem.VERIFY)
+            installResult(output, inputs.first().source, "combined.pdf", info, inputs.map { it.source })
+            accepted = true
+        } finally { if (!accepted && document?.file != output) withContext(NonCancellable + Dispatchers.IO) { storage.forget(output) } }
+    }
+
+    fun reorder(order: List<Int>) = runOperation {
+        val current = document ?: return@runOperation
+        try { ToolArguments.validateOrder(order, current.info.pageCount) }
+        catch (_: IllegalArgumentException) { throw DocumentFailure(Problem.INVALID_PDF) }
+        val output = storage.newWorkingFile()
+        var accepted = false
+        try {
+            val info = core.reorder(current.file, output, order)
+            if (info.pageCount != current.info.pageCount) throw DocumentFailure(Problem.VERIFY)
+            installResult(output, current.source, current.name, info, protectedSources + current.source)
+            accepted = true
+        } finally { if (!accepted && document?.file != output) withContext(NonCancellable + Dispatchers.IO) { storage.forget(output) } }
+    }
+
+    fun split(ranges: String) = runOperation {
+        val current = document ?: return@runOperation
+        val partition = try { ToolArguments.parseRanges(ranges, current.info.pageCount) }
+        catch (_: IllegalArgumentException) { throw DocumentFailure(Problem.INVALID_PDF) }
+        val folder = storage.newSplitDirectory()
+        var accepted = false
+        try {
+            val parts = core.split(current.file, folder, partition.drop(1).map { it.first - 1 })
+            if (parts.size != partition.size) throw DocumentFailure(Problem.VERIFY)
+            for ((index, part) in parts.withIndex()) {
+                if (part.second.pageCount != partition[index].count() || core.inspect(part.first) != part.second) throw DocumentFailure(Problem.VERIFY)
+            }
+            val old = resultDirectory
+            toolResults = parts.map { ToolResult(it.first, it.first.name, it.second) }
+            resultDirectory = folder
+            splitSources = (protectedSources + current.source).distinct()
+            savedToolCopies = emptyList()
+            accepted = true
+            withContext(NonCancellable + Dispatchers.IO) { old?.let { storage.forgetSplit(it) } }
+        } finally { if (!accepted) withContext(NonCancellable + Dispatchers.IO) { storage.forgetSplit(folder) } }
+    }
+
+    fun exportTools(tree: Uri) = runOperation {
+        val parts = toolResults
+        if (parts.isEmpty()) return@runOperation
+        val job = coroutineContext
+        savedToolCopies = withContext(Dispatchers.IO) {
+            try { storage.exportParts(parts.map { it.file }, tree, splitSources) { job.ensureActive() } }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: DocumentFailure) { throw failure }
+            catch (_: Exception) { throw DocumentFailure(Problem.SAVE) }
+        }
+    }
+
+    fun openToolResult(index: Int) = runOperation {
+        val result = toolResults.getOrNull(index) ?: return@runOperation
+        val current = document ?: return@runOperation
+        // Copy to an independent working file; split cleanup never owns the viewer.
+        val output = storage.newWorkingFile()
+        var accepted = false
+        try {
+            withContext(Dispatchers.IO) { result.file.copyTo(output, overwrite = false) }
+            installResult(output, splitSources.firstOrNull() ?: current.source, result.name, core.inspect(output), splitSources)
+            accepted = true
+        } finally { if (!accepted && document?.file != output) withContext(NonCancellable + Dispatchers.IO) { storage.forget(output) } }
+    }
+
+    private suspend fun installResult(file: File, source: Uri, name: String, info: PdfInfo, sources: List<Uri>) {
+        val next = createRenderer(file)
+        if (next.pageCount != info.pageCount) { next.close(); throw DocumentFailure(Problem.VERIFY) }
+        withContext(NonCancellable) {
+            val previous = document
+            val oldRenderer = renderer
+            renderer = next
+            document = OpenPdf(file, source, name, info, true)
+            protectedSources = sources.distinct()
+            savedCopy = null
+            withContext(Dispatchers.IO) {
+                storage.rememberWorkingFile(file, source, name, true)
+                storage.preferences.edit().putStringSet("protected-sources", protectedSources.map { it.toString() }.toSet()).apply()
+                oldRenderer?.close()
+                previous?.let { storage.forget(it.file) }
+            }
+        }
+    }
+
+    suspend fun renderToolPreview(file: File, width: Int): Bitmap? = withContext(Dispatchers.IO) {
+        if (combineInputs.none { it.file == file } && toolResults.none { it.file == file }) return@withContext null
+        try { PageRenderer(file).use { it.page(0, width) } }
+        catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
+    }
     private suspend fun importFile(uri: Uri): File {
         var imported: File? = null
         try { return withContext(Dispatchers.IO) { storage.importPdf(uri).also { imported = it } } }
@@ -149,7 +306,7 @@ class OdiboViewModel(application: Application) : AndroidViewModel(application) {
         if (busy) return
         busy = true
         error = null
-        viewModelScope.launch {
+        operation = viewModelScope.launch {
             try { operations.withLock { action() } }
             catch (cancelled: CancellationException) { throw cancelled }
             catch (failure: DocumentFailure) { error = failure.problem }
