@@ -233,6 +233,8 @@ class OdiboViewModel(application: Application) : AndroidViewModel(application) {
     fun exportTools(tree: Uri) = runOperation {
         val parts = toolResults
         if (parts.isEmpty()) return@runOperation
+        // Counts describe this export attempt, never a previous successful folder.
+        savedToolCopies = emptyList()
         val job = coroutineContext
         savedToolCopies = withContext(Dispatchers.IO) {
             try { storage.exportParts(parts.map { it.file }, tree, splitSources) { job.ensureActive() } }

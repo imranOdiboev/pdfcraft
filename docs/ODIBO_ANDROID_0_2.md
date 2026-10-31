@@ -1,6 +1,8 @@
 # ODIBO PDF Android 0.2 — PDF Tools
 
-Status: implementation and CI verification in progress. No physical ARM64 phone
+Status: implemented with passing Android emulator and ARM64 packaging evidence.
+Current-head checks and download links are maintained in
+[PR #14](https://github.com/imranOdiboev/pdfcraft/pull/14). No physical ARM64 phone
 acceptance or public Android release is claimed.
 
 ## Baseline and scope
@@ -81,11 +83,24 @@ engine capabilities were deliberately excluded from this stage.
 
 ## Acceptance evidence
 
-Pending: Rust tests and Clippy, Kotlin unit tests, Android lint, real emulator
-Combine/Split/Reorder and Android 0.1 regressions, ARM64 packaging, Windows/Linux
-CI, independently verified APK SHA-256 and genuine screenshots. A source test or
-pending workflow is not a passed result. Final run URLs and limitations will be
-recorded after actual execution.
+[Run 41174958886](https://github.com/imranOdiboev/pdfcraft/actions/runs/41174958886)
+on source `c0ac2d3b39711eee07b4128cd7e709e3c85646d4` passed 16 Rust tests,
+Clippy with warnings denied, formatting, four Kotlin JVM tests, Android lint,
+ARM64 assembly/verification and nine API 35 x86_64 instrumentation tests.
+JUnit reports contain zero failures, errors or skips. Evidence includes actual
+rendered page order, original SHA-256, native reopen, SAF export/read-back,
+failure/cancellation cases and Compose tool actions with orientation/recreation.
+The orchestrator and QA independently inspected downloaded reports, APK hashes
+and five genuine PNGs. Updated results after the export-retry counter regression
+are recorded in the PR; use the current verified artifact rather than assuming a
+historical APK belongs to a newer source commit.
+
+Screenshots cover Home EN/light and RU/dark, Combine and Split EN/light, and
+Reorder RU/dark. They are real emulator app-content captures, not phone testing
+or a complete device/font-scale/theme matrix. Windows/Linux CI, advisories and
+licence gates are reported separately in the PR. The existing nightly fuzz job
+is schedule-only and is skipped by its normal condition on pull requests; it was
+not disabled by this stage.
 
 No PR merge, Android release, Google Play upload or Android 0.3 work is authorized.
 

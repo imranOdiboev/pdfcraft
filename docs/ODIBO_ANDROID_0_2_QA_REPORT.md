@@ -1,7 +1,10 @@
 # Android 0.2 independent QA review
 
-Status: source audit and test candidates only. This report does not claim that
-compilation, instrumentation, screenshots or physical ARM64 acceptance passed.
+Status: independent source and downloaded-evidence review completed for Android
+run 41174958886/source c0ac2d3. Four JVM tests and nine instrumentation tests passed
+with zero failures/errors/skips; five PNGs and the real ARM64 APK were inspected.
+Physical ARM64 acceptance remains unperformed. Current-head regression results
+and final packages are maintained in PR #14.
 
 Reviewer: real `android02_qa` subagent, in a separate worktree. Reviewed the Rust
 worker candidate, Kotlin subprocess/SAF/ViewModel, Compose tools, prior Android

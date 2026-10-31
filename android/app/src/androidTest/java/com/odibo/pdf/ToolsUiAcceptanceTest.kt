@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.net.Uri
+import android.provider.DocumentsContract
 import android.view.View
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -62,6 +63,17 @@ class ToolsUiAcceptanceTest {
             compose.onNodeWithText("Prepare split PDFs").performScrollTo().performClick()
             waitFor(model) { model.toolResults.size == 2 }
             compose.runOnIdle { assertEquals(listOf(2, 2), model.toolResults.map { it.info.pageCount }) }
+            val savedFolder = DocumentsContract.buildTreeDocumentUri(PdfToolsSafProvider.AUTHORITY, "success-${UUID.randomUUID()}")
+            activity.onActivity { model.exportTools(savedFolder) }
+            waitFor(model) { model.savedToolCopies.size == 2 }
+            val deniedFolder = DocumentsContract.buildTreeDocumentUri(PdfToolsSafProvider.AUTHORITY, "deny-${UUID.randomUUID()}")
+            activity.onActivity { model.exportTools(deniedFolder) }
+            compose.waitUntil(timeoutMillis = 30_000) { !model.busy && model.error != null }
+            compose.runOnIdle {
+                assertEquals(Problem.SAVE, model.error)
+                assertTrue("A failed retry must not display stale success counts", model.savedToolCopies.isEmpty())
+                model.clearError()
+            }
             compose.onNodeWithText("Home").performClick()
             activity.onActivity { model.updateLanguage("ru"); model.updateTheme("dark") }
             compose.onNodeWithText("Порядок страниц").performScrollTo().performClick()
