@@ -1,0 +1,190 @@
+name: ODIBO Android 0.1
+
+on:
+  pull_request:
+    paths: ['android/**', 'packaging/android/**', 'crates/**', 'Cargo.toml', 'Cargo.lock', 'assets/**', 'ATTRIBUTION.*', '.github/workflows/odibo-android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: odibo-android-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  CARGO_BUILD_JOBS: '2'
+  CARGO_INCREMENTAL: '0'
+  ODIBO_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+jobs:
+  arm64:
+    name: ARM64 core, Android checks and real APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.95.0
+          components: rustfmt
+          targets: aarch64-linux-android
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          cmdline-tools-version: '12266719'
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Select existing Java 17 and install pinned Android tools on disposable runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME_17_X64/bin" >> "$GITHUB_PATH"
+          sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'ndk;30.0.16248370'
+          toolchain="$ANDROID_HOME/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          {
+            echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$toolchain/aarch64-linux-android26-clang"
+            echo "CC_aarch64_linux_android=$toolchain/aarch64-linux-android26-clang"
+            echo "AR_aarch64_linux_android=$toolchain/llvm-ar"
+          } >> "$GITHUB_ENV"
+      - name: Check existing Rust components for Android ARM64
+        run: cargo check --locked --target aarch64-linux-android -p pdfcraft-cos -p pdfcraft-organize -p pdfcraft-render -p pdfcraft-edit -p pdfcraft-model -p pdfcraft-platform
+      - name: Native helper host tests and ARM64 build
+        shell: bash
+        run: |
+          cargo generate-lockfile --manifest-path android/native/Cargo.toml
+          cargo fmt --manifest-path android/native/Cargo.toml
+          cargo test --locked --manifest-path android/native/Cargo.toml
+          RUSTFLAGS='-C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,common-page-size=16384' cargo build --locked --release --target aarch64-linux-android --manifest-path android/native/Cargo.toml
+      - name: Stage attributed resources, native executable and exact Rust notices
+        run: |
+          python3 packaging/android/prepare_inputs.py --native android/native/target/aarch64-linux-android/release/odibo_core_exec
+          python3 packaging/android/collect_rust_notices.py
+      - name: Prepare checksum-verified pinned Gradle
+        run: bash packaging/android/gradle_ci.sh
+      - name: Kotlin compile, lint, unit tests and debug APK
+        run: '"$ODIBO_GRADLE" -p android --no-daemon :app:lintDebug :app:testDebugUnitTest :app:assembleDebug'
+      - name: Verify APK identity, permissions, signature, real native ABI and licences
+        run: |
+          mkdir -p dist/android
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/android/app-debug.apk
+          python3 packaging/android/verify_apk.py dist/android/app-debug.apk --aapt "$ANDROID_HOME/build-tools/35.0.0/aapt" --apksigner "$ANDROID_HOME/build-tools/35.0.0/apksigner" --output dist/android/APK_VERIFICATION.json
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 dist/android/app-debug.apk
+          sha256sum dist/android/app-debug.apk > dist/android/SHA256SUMS.txt
+          python3 -c 'import json,os,subprocess;from pathlib import Path;Path("dist/android/BUILD_MANIFEST.json").write_text(json.dumps({"source_sha":os.environ["ODIBO_SOURCE_SHA"],"checkout_sha":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"run_id":os.environ["GITHUB_RUN_ID"],"version":"0.1.0-debug","abi":"arm64-v8a","signing":"ephemeral debug key; not production","native_execution":"not yet proven on physical ARM64 phone"},indent=2))'
+          cp android/native/Cargo.lock dist/android/NATIVE_CARGO_LOCK.txt
+          cp android/app/build/generated/dependencyNotices/legal/THIRD_PARTY_NOTICES.txt dist/android/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: odibo-android-arm64-debug-${{ github.sha }}
+          path: dist/android
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: odibo-android-test-reports-${{ github.sha }}
+          path: |
+            android/app/build/reports
+            android/app/build/test-results
+          if-no-files-found: warn
+
+      - name: Preserve native lock and formatted candidate for review
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: odibo-android-native-review-${{ github.sha }}
+          path: |
+            android/native/Cargo.lock
+            android/native/src
+          if-no-files-found: warn
+          retention-days: 14
+  emulator:
+    name: Android API 35 x86_64 real native and PDF smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.95.0
+          targets: x86_64-linux-android
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          cmdline-tools-version: '12266719'
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Prepare pinned Android native toolchain on disposable runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME_17_X64/bin" >> "$GITHUB_PATH"
+          sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'ndk;30.0.16248370'
+          toolchain="$ANDROID_HOME/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          {
+            echo "CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=$toolchain/x86_64-linux-android26-clang"
+            echo "CC_x86_64_linux_android=$toolchain/x86_64-linux-android26-clang"
+            echo "AR_x86_64_linux_android=$toolchain/llvm-ar"
+          } >> "$GITHUB_ENV"
+      - name: Compile the same native core for the emulator ABI
+        shell: bash
+        run: |
+          cargo generate-lockfile --manifest-path android/native/Cargo.toml
+          RUSTFLAGS='-C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,common-page-size=16384' cargo build --locked --release --target x86_64-linux-android --manifest-path android/native/Cargo.toml
+          python3 packaging/android/prepare_inputs.py --abi x86_64 --native android/native/target/x86_64-linux-android/release/odibo_core_exec
+          python3 packaging/android/collect_rust_notices.py
+      - name: Prepare checksum-verified pinned Gradle
+        run: bash packaging/android/gradle_ci.sh
+      - name: Enable KVM for the disposable Android emulator
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-odibo-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo udevadm settle
+          if [[ ! -c /dev/kvm ]]; then
+            echo '::error::This runner does not expose the KVM device required by the emulator.'
+            exit 1
+          fi
+          # udev group membership is not refreshed in the existing runner process.
+          # Grant access explicitly on this disposable GitHub runner only.
+          sudo chmod a+rw /dev/kvm
+          ls -l /dev/kvm
+          id
+          test -r /dev/kvm
+          test -w /dev/kvm
+      - name: Real Android native inspect, rotate, save and PDF rendering acceptance
+        # Resolved from ReactiveCircus/android-emulator-runner v2 on 2026-10-31.
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          cores: 2
+          ram-size: 2048M
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: true
+          disable-spellchecker: true
+          script: |
+            bash packaging/android/run_acceptance.sh
+            cp assets/odibo/LICENSE-ODIBO-BRAND.txt dist/android-emulator/
+            cp assets/fonts/OFL-Inter.txt dist/android-emulator/
+            printf '{"test_environment":"Android API 35 x86_64 emulator","distributed_apk_abi":"arm64-v8a","physical_arm64_device_tested":false,"native_execution":"real ProcessBuilder native helper; no JNI"}\n' > dist/android-emulator/TEST_ENVIRONMENT.json
+      - name: Preserve instrumentation reports (never distribute the x86_64 APK)
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: odibo-android-emulator-evidence-${{ github.sha }}
+          path: |
+            dist/android-emulator
+            android/app/build/reports/androidTests
+            android/app/build/outputs/androidTest-results
+          retention-days: 14
+          if-no-files-found: warn
